@@ -1,0 +1,36 @@
+# Dependencies
+/vendor/
+
+# Logs
+/logs/*.log
+
+# Backup
+/backup/
+
+# IDE
+/.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Composer
+composer.phar
+
+# PHP
+*.cache
+*.tmp
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Docker volumes
+.docker/mysql-data/

@@ -1,0 +1,23 @@
+parameters:
+    level: 5
+    paths:
+        - .
+    excludePaths:
+        - vendor
+        - .docker
+        - logs
+        - .idea
+        - backup
+        - rector.php
+    phpVersion: 80400
+    reportUnmatchedIgnoredErrors: false
+    treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+        # Legacy code patterns - to be fixed over time
+        - '#Variable \$[a-zA-Z_]+ might not be defined#'
+        - '#Undefined variable: \$[a-zA-Z_]+#'
+        - '#Function [a-zA-Z_]+ invoked with \d+ parameters, \d+ required#'
+        # PHPStan false positives for strict comparisons
+        - '#Result of \|\| is always false#'
+        - '#Strict comparison using === between .* will always evaluate to (true|false)#'
+        - '#Call to function is_array\(\) with array will always evaluate to true#'

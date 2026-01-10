@@ -1,0 +1,25 @@
+BODY, TABLE, TR, TD {
+  font-family: Arial;
+  font-size: 11px;
+  color: #D0D0D0;
+}
+
+A {
+  font-family: Arial;
+  color: #D0D0D0;
+  font-size: 11px;
+  text-decoration: none;
+}
+
+A:HOVER {
+  font-family: Arial;
+  color: #F0F0F0;
+  font-size: 11px;
+  text-decoration: none;
+}
+
+SMALL {
+  font-family: Arial;
+  font-weight: normal;
+  font-size: 9px;
+}

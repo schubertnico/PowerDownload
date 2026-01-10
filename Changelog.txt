@@ -1,0 +1,87 @@
+-------------------------------------------------------------------------------------
+=====================================================================================
+
+                             PowerDownload Changelog
+
+=====================================================================================
+-------------------------------------------------------------------------------------
+von 3.0.2 auf 3.0.3
+-------------------------------------------------------------------------------------
+Geänderte Dateien:
+- pdl-admin/addscreen.php
+- pdl-inc/pdl_header.inc.php
+- pdl-admin/functions.inc.php
+-------------------------------------------------------------------------------------
+Muss ein Update ausgeführt werden? - Nein.
+-------------------------------------------------------------------------------------
+Änderungen:
+- GD Version wird nun richtig erkannt.
+-------------------------------------------------------------------------------------
+=====================================================================================
+-------------------------------------------------------------------------------------
+von 3.0.1 auf 3.0.2
+-------------------------------------------------------------------------------------
+Geänderte Dateien:
+- pdl-admin/ftp_browser.php
+- pdl-admin/edituser.php
+- pdl-admin/deluser.php
+- pdl-inc/pdl_header.inc.php
+- pdl-inc/pdl_functions.inc.php
+- pdl-inc/pdl_release.modul.php
+- pdl-admin/header.inc.php
+- pdl-admin/editdeltemplatestgroup.php
+- pdl-admin/editdelsettingssgroup.php
+- pdl-inc/pdl_ordner.modul.php
+- pdl-inc/pdl_top.inc.php
+- pdl-inc/pdl_flop.inc.php
+- pdl-inc/pdl_latest.inc.php
+- pdl-inc/pdl_rated.inc.php
+- pdl-inc/pdl_search.modul.php
+- install_302.php
+- update_224to302.php
+- install_querys.inc
+- update_301to302.php
+-------------------------------------------------------------------------------------
+Muss ein Update ausgeführt werden? - Ja.
+-------------------------------------------------------------------------------------
+Änderungen:
+- Beim User ändern/löschen werden nun 25 User pro Seite angezeigt.
+- Beim FTP Browser werden die Files/Ordner nach Name gelistet und es sind 25 Files
+  pro Seite. Es kann also geblättert werden.
+- kleiner Bug wurde gefixt: auch wenn keine FTP Daten angegeben waren wurde der FTP
+  Browser/Upload aktiviert.
+- User werden gleich zu anfang geholt, damit nicht bei jedem User eine neue
+  Datenbankabfrage kommen muss. Das selbe gilt für die Replacements.
+- winziger kosmetischer Fehler in dem Admin Header beseitigt.
+- Email Adressen werden in ASCII Codes umgewandelt, damit Spam Bots keine Chance mehr
+  haben. Auch Email Addys in Kommentaren und Releasen, werden encodet.
+  Ihr könnt auch die Funktion ascii_encode() benutzen um einen String in ASCII
+  zu convertieren. Ist hilfreich wenn ihr eine Kontakt Page habt.
+- "schützen" der Templates und Settings nun über Variablenname.
+- Aus Header/Footer für Tops, Releaseübersicht und Ordner übersicht wurden nun Boxen
+- Template "Hintergrundfarbe für Admin" wurde entfernt, da die Admin Farben fest sind
+  Wer andere Farben für den Admin haben will, soll die pdl-admin/header.inc.php
+  anpassen.
+- Boxen wurden eingeführt.
+- Das aus der v2.2.4 vermisste Individuelle Listen der Release ist wieder da.
+-------------------------------------------------------------------------------------
+=====================================================================================
+-------------------------------------------------------------------------------------
+von 3.0.0 auf 3.0.1
+-------------------------------------------------------------------------------------
+Geänderte Dateien:
+- pdl-admin/addscreen.php
+- install_301.php
+- update_224to301.php
+- install_querys.inc
+- pdl-inc/pdl_header.inc.php
+-------------------------------------------------------------------------------------
+Muss ein Update ausgeführt werden? - Nein.
+-------------------------------------------------------------------------------------
+Änderungen:
+- Schreibrechte in pdl-gfx/smilies und pdl-gfx/screens werden jetzt richtig erkannt.
+- GD Version wird nun richtig erkannt.
+- Der Gast hat nun von anfang an Das Recht zu Voten und Kommentare abzugeben.
+- HTML in Releasen ist von Anfang an An.
+-------------------------------------------------------------------------------------
+=====================================================================================
