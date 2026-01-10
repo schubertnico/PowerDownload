@@ -1,73 +1,82 @@
-<?
+<?php
 include("header.inc.php");
 
-if($user_rights[god] == "Y")
+$submit = isset($_GET['submit']) ? (int)$_GET['submit'] : 0;
+
+if($user_rights['god'] == "Y")
  {
   if($submit == 1)
    {
     foreach($_POST as $variablenname => $wert)
      {
-      $db_handler->sql_query("UPDATE $sql_table[settings] SET wert='$wert' WHERE variablenname='$variablenname'");
+      $variablenname_escaped = $db_handler->sql_escape_string($variablenname);
+      $wert_escaped = $db_handler->sql_escape_string($wert);
+      $db_handler->sql_query("UPDATE " . $sql_table['settings'] . " SET wert='" . $wert_escaped . "' WHERE variablenname='" . $variablenname_escaped . "'");
      }
-    echo "Settings übernommen.";
+    echo "Settings uebernommen.";
    }
   else
    {
-    $sgroup_res = $db_handler->sql_query("SELECT * FROM $sql_table[settingsgroup] ORDER BY reihenfolge ASC");
+    $sgroup_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['settingsgroup'] . " ORDER BY reihenfolge ASC");
     while($sgroup_row = $db_handler->sql_fetch_array($sgroup_res))
      {
-      echo "<li><a href=\"#$sgroup_row[sgroup_id]\">$sgroup_row[name]</a></li>";
+      echo "<li><a href=\"#" . htmlspecialchars($sgroup_row['sgroup_id'], ENT_QUOTES, 'UTF-8') . "\">" . htmlspecialchars($sgroup_row['name'], ENT_QUOTES, 'UTF-8') . "</a></li>";
      }
     echo "
     <br>
     <form action=\"settings.php?submit=1\" method=\"post\">";
 
-    $sgroup_res = $db_handler->sql_query("SELECT * FROM $sql_table[settingsgroup] ORDER BY reihenfolge ASC");
+    $sgroup_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['settingsgroup'] . " ORDER BY reihenfolge ASC");
     while($sgroup_row = $db_handler->sql_fetch_array($sgroup_res))
      {
       echo "
 <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"90%\">
   <tr>
-    <td bgcolor=\"$template[table_border]\">
+    <td bgcolor=\"" . htmlspecialchars($template['table_border'], ENT_QUOTES, 'UTF-8') . "\">
       <table border=\"0\" cellpadding=\"3\" cellspacing=\"1\" width=\"100%\">
         <tr>
-          <td bgcolor=\"$template[header_bg]\" align=\"center\" colspan=\"2\">
-            <a name=\"$sgroup_row[sgroup_id]\"><b>$sgroup_row[name]</b></a>
+          <td bgcolor=\"" . htmlspecialchars($template['header_bg'], ENT_QUOTES, 'UTF-8') . "\" align=\"center\" colspan=\"2\">
+            <a name=\"" . htmlspecialchars($sgroup_row['sgroup_id'], ENT_QUOTES, 'UTF-8') . "\"><b>" . htmlspecialchars($sgroup_row['name'], ENT_QUOTES, 'UTF-8') . "</b></a>
           </td>
         </tr>
       ";
 
-      $settings_res = $db_handler->sql_query("SELECT * FROM $sql_table[settings] WHERE sgroup_id='$sgroup_row[sgroup_id]' ORDER BY reihenfolge ASC");
+      $sgroup_id_escaped = $db_handler->sql_escape_string($sgroup_row['sgroup_id']);
+      $settings_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['settings'] . " WHERE sgroup_id='" . $sgroup_id_escaped . "' ORDER BY reihenfolge ASC");
       while($settings_row = $db_handler->sql_fetch_array($settings_res))
        {
         $alt = alt_switch();
         echo "
         <tr>
-          <td bgcolor=\"$alt\" width=\"35%\">
-            <b>$settings_row[name]</b><br>
-            <small>$settings_row[bez]</small>
+          <td bgcolor=\"" . htmlspecialchars($alt, ENT_QUOTES, 'UTF-8') . "\" width=\"35%\">
+            <b>" . htmlspecialchars($settings_row['name'], ENT_QUOTES, 'UTF-8') . "</b><br>
+            <small>" . htmlspecialchars($settings_row['bez'], ENT_QUOTES, 'UTF-8') . "</small>
           </td>
-          <td bgcolor=\"$alt\">";
-        if($settings_row[eingabe] == "anaus")
+          <td bgcolor=\"" . htmlspecialchars($alt, ENT_QUOTES, 'UTF-8') . "\">";
+        if($settings_row['eingabe'] == "anaus")
          {
           echo "
-          <select name=\"$settings_row[variablenname]\">
+          <select name=\"" . htmlspecialchars($settings_row['variablenname'], ENT_QUOTES, 'UTF-8') . "\">
           <option value=\"Y\">An</option>
-          <option value=\"N\"".pdlif($settings_row[wert] == "N"," selected","").">Aus</option>
+          <option value=\"N\"".pdlif($settings_row['wert'] == "N"," selected","").">Aus</option>
           </select>
           ";
          }
-        elseif($settings_row[eingabe] == "input")
+        elseif($settings_row['eingabe'] == "input")
          {
-          echo "<input type=\"text\" name=\"$settings_row[variablenname]\" value=\"$settings_row[wert]\" size=\"35\">";
+          echo "<input type=\"text\" name=\"" . htmlspecialchars($settings_row['variablenname'], ENT_QUOTES, 'UTF-8') . "\" value=\"" . htmlspecialchars($settings_row['wert'], ENT_QUOTES, 'UTF-8') . "\" size=\"35\">";
          }
-        elseif($settings_row[eingabe] == "textarea")
+        elseif($settings_row['eingabe'] == "textarea")
          {
-          echo "<textarea cols=\"50\" rows=\"5\" name=\"$settings_row[variablenname]\">$settings_row[wert]</textarea>";
+          echo "<textarea cols=\"50\" rows=\"5\" name=\"" . htmlspecialchars($settings_row['variablenname'], ENT_QUOTES, 'UTF-8') . "\">" . htmlspecialchars($settings_row['wert'], ENT_QUOTES, 'UTF-8') . "</textarea>";
          }
         else
          {
-          eval("echo \"$settings_row[eingabe]\";");
+          // WARNING: Original code used eval() here which is a security risk.
+          // The 'eingabe' field may contain custom HTML/form elements from the database.
+          // For safety, we now output the content escaped. If you need to render HTML,
+          // ensure the database content is sanitized or use a whitelist approach.
+          echo htmlspecialchars($settings_row['eingabe'], ENT_QUOTES, 'UTF-8');
          }
         echo "
           </td>
@@ -78,7 +87,7 @@ if($user_rights[god] == "Y")
       echo "
         </tr>
         <tr>
-          <td bgcolor=\"$template[footer_bg]\" colspan=\"2\">
+          <td bgcolor=\"" . htmlspecialchars($template['footer_bg'], ENT_QUOTES, 'UTF-8') . "\" colspan=\"2\">
             &nbsp;
           </td>
         </tr>
@@ -90,7 +99,7 @@ if($user_rights[god] == "Y")
       ";
      }
     echo "
-    <input type=\"submit\" value=\"Settings ändern\">
+    <input type=\"submit\" value=\"Settings aendern\">
     </form>";
    }
  }

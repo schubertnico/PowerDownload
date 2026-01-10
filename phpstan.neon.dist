@@ -7,7 +7,7 @@ parameters:
         - .docker
         - logs
         - .idea
-        - backup
+        - tests
         - rector.php
     phpVersion: 80400
     reportUnmatchedIgnoredErrors: false

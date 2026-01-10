@@ -1,16 +1,23 @@
-<?
+<?php
 include("header.inc.php");
 
-if($user_rights[edituser] == "Y" && $user_rights[deluser] == "Y")
+// Extract POST/GET variables
+$submit = isset($_GET['submit']) ? (int)$_GET['submit'] : 0;
+$name = isset($_POST['name']) ? $db_handler->sql_escape_string($_POST['name']) : '';
+$rights = isset($_POST['rights']) ? $_POST['rights'] : array();
+
+if($user_rights['edituser'] == "Y" && $user_rights['deluser'] == "Y")
  {
   if($submit == 1)
    {
+    $into = '';
+    $values = '';
     for($i = 0;$i < count($rights);$i++)
      {
-      $into .= ", ".$rights[$i][variablenname];
-      $values .= ", '".$rights[$i][wert]."'";
+      $into .= ", " . $db_handler->sql_escape_string($rights[$i]['variablenname']);
+      $values .= ", '" . $db_handler->sql_escape_string($rights[$i]['wert']) . "'";
      }
-    $db_handler->sql_query("INSERT INTO $sql_table[usergroup] (name$into) VALUES ('$name'$values)");
+    $db_handler->sql_query("INSERT INTO `" . $sql_table['usergroup'] . "` (name$into) VALUES ('$name'$values)");
     echo "Usergruppe eingetragen.";
    }
   else
@@ -20,41 +27,41 @@ if($user_rights[edituser] == "Y" && $user_rights[deluser] == "Y")
 <form action=\"addugroup.php?submit=1\" method=\"post\">
 <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"90%\">
   <tr>
-    <td bgcolor=\"$template[table_border]\">
+    <td bgcolor=\"" . htmlspecialchars($template['table_border']) . "\">
       <table border=\"0\" cellpadding=\"3\" cellspacing=\"1\" width=\"100%\">
         <tr>
-          <td bgcolor=\"$template[header_bg]\" align=\"center\" colspan=\"2\">
-            <b>Usergruppe hinzufügen</b>
+          <td bgcolor=\"" . htmlspecialchars($template['header_bg']) . "\" align=\"center\" colspan=\"2\">
+            <b>Usergruppe hinzuf&uuml;gen</b>
           </td>
         </tr>";
     $alt = alt_switch();
     echo "    <tr>
-          <td bgcolor=\"$alt\">
+          <td bgcolor=\"" . htmlspecialchars($alt) . "\">
             <b>Name</b><br>
             Name der Usergruppe
           </td>
-          <td bgcolor=\"$alt\">
+          <td bgcolor=\"" . htmlspecialchars($alt) . "\">
             <input type=\"text\" name=\"name\" size=\"35\">
           </td>
         </tr>
         <tr>
-          <td bgcolor=\"$template[footer_bg]\" align=\"center\" colspan=\"2\">
+          <td bgcolor=\"" . htmlspecialchars($template['footer_bg']) . "\" align=\"center\" colspan=\"2\">
             <b>Rechte</b>
           </td>
         </tr>";
     $rights_count = -1;
-    $rights_res = $db_handler->sql_query("SELECT * FROM $sql_table[rights] ORDER BY reihenfolge ASC");
+    $rights_res = $db_handler->sql_query("SELECT * FROM `" . $sql_table['rights'] . "` ORDER BY reihenfolge ASC");
     while($rights_row = $db_handler->sql_fetch_array($rights_res))
      {
       $rights_count++;
       $alt = alt_switch();
       echo "    <tr>
-          <td bgcolor=\"$alt\">
-            <b>$rights_row[name]</b><br>
-            $rights_row[bez]
+          <td bgcolor=\"" . htmlspecialchars($alt) . "\">
+            <b>" . htmlspecialchars($rights_row['name']) . "</b><br>
+            " . htmlspecialchars($rights_row['bez']) . "
           </td>
-          <td bgcolor=\"$alt\">
-            <input type=\"hidden\" name=\"rights[$rights_count][variablenname]\" value=\"$rights_row[variablenname]\">
+          <td bgcolor=\"" . htmlspecialchars($alt) . "\">
+            <input type=\"hidden\" name=\"rights[$rights_count][variablenname]\" value=\"" . htmlspecialchars($rights_row['variablenname']) . "\">
             <input type=\"radio\" name=\"rights[$rights_count][wert]\" value=\"N\" checked>Nein,
             <input type=\"radio\" name=\"rights[$rights_count][wert]\" value=\"Y\">Ja
           </td>
@@ -62,8 +69,8 @@ if($user_rights[edituser] == "Y" && $user_rights[deluser] == "Y")
      }
     echo "
         <tr>
-          <td bgcolor=\"$template[footer_bg]\" align=\"center\" colspan=\"2\">
-            <input type=\"submit\" value=\"Usergruppe hinzufügen\">
+          <td bgcolor=\"" . htmlspecialchars($template['footer_bg']) . "\" align=\"center\" colspan=\"2\">
+            <input type=\"submit\" value=\"Usergruppe hinzuf&uuml;gen\">
           </td>
         </tr>
       </table>

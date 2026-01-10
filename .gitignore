@@ -26,6 +26,7 @@ composer.phar
 # PHP
 *.cache
 *.tmp
+.phpunit.cache/
 
 # Environment
 .env

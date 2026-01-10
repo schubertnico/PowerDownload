@@ -15,6 +15,7 @@
     },
     "require-dev": {
         "phpstan/phpstan": "^2.0",
+        "phpunit/phpunit": "^11.0",
         "rector/rector": "^2.0"
     },
     "autoload": {
@@ -22,13 +23,20 @@
             "pdl-inc/"
         ]
     },
+    "autoload-dev": {
+        "psr-4": {
+            "PowerDownload\\Tests\\": "tests/"
+        }
+    },
     "scripts": {
         "phpstan": "phpstan analyse --memory-limit=512M",
+        "phpunit": "phpunit",
         "rector": "rector process --dry-run",
         "rector:fix": "rector process",
         "lint": "find . -name '*.php' -not -path './vendor/*' -exec php -l {} \\;",
         "test": [
-            "@phpstan"
+            "@phpstan",
+            "@phpunit"
         ]
     },
     "config": {
