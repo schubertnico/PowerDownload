@@ -11,6 +11,8 @@
 
 declare(strict_types=1);
 
+use RuntimeException;
+
 class pdl_db_class
 {
     public string $config_sql_server = "localhost";
@@ -25,50 +27,60 @@ class pdl_db_class
     {
         $host = $this->config_sql_persistent ? 'p:' . $this->config_sql_server : $this->config_sql_server;
 
-        $this->handler = @mysqli_connect(
+        mysqli_report(MYSQLI_REPORT_OFF);
+
+        $connection = mysqli_connect(
             $host,
             $this->config_sql_user,
             $this->config_sql_password,
             $this->config_sql_database
         );
 
-        if ($this->handler === false || $this->handler === null) {
-            die("Verbindung zum MySQL Server konnte nicht aufgebaut werden. Überprüfen sie die Zugangsdaten zum MySQL Server.");
+        if ($connection === false) {
+            $error = mysqli_connect_error() ?? 'Unknown error';
+            throw new RuntimeException("Verbindung zum MySQL Server konnte nicht aufgebaut werden: " . $error);
         }
 
-        // Set charset to UTF-8
+        $this->handler = $connection;
+
         mysqli_set_charset($this->handler, 'utf8mb4');
     }
 
     public function sql_query(string $query): mysqli_result|bool
     {
         $this->querys++;
-        return @mysqli_query($this->handler, $query);
+        if ($this->handler === null) {
+            return false;
+        }
+        return mysqli_query($this->handler, $query);
     }
 
+    /**
+     * @return array<int|string, mixed>|null
+     */
     public function sql_fetch_array(mysqli_result|bool|null $result): ?array
     {
-        if ($result === false || $result === null) {
+        if (!$result instanceof mysqli_result) {
             return null;
         }
-        $row = @mysqli_fetch_array($result);
-        return $row === false ? null : $row;
+        $row = mysqli_fetch_array($result);
+        return is_array($row) ? $row : null;
     }
 
     public function sql_num_rows(mysqli_result|bool|null $result): int
     {
-        if ($result === false || $result === null) {
+        if (!$result instanceof mysqli_result) {
             return 0;
         }
-        return @mysqli_num_rows($result);
+        return (int) mysqli_num_rows($result);
     }
 
     public function sql_num_fields(mysqli_result|bool|null $result): int
     {
-        if ($result === false || $result === null) {
+        if (!$result instanceof mysqli_result) {
             return 0;
         }
-        return @mysqli_num_fields($result);
+        return mysqli_num_fields($result);
     }
 
     public function sql_escape_string(string $string): string
@@ -94,8 +106,8 @@ class pdl_db_class
 
     public function sql_close(): void
     {
-        if ($this->handler !== null) {
-            @mysqli_close($this->handler);
+        if ($this->handler instanceof mysqli) {
+            mysqli_close($this->handler);
             $this->handler = null;
         }
     }

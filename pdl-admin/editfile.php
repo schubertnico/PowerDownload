@@ -14,13 +14,13 @@ if($user_rights['editfiles'] == "Y")
  {
   if($submit == 1)
    {
-    $safe_file_id = sql_escape_int($file_id);
+    $safe_file_id = $db_handler->sql_escape_int($file_id);
     $release = $db_handler->sql_fetch_array($db_handler->sql_query("SELECT release_id FROM " . $sql_table['files'] . " WHERE file_id=" . $safe_file_id));
     $release_id = (int)$release['release_id'];
 
     $safe_name = $db_handler->sql_escape_string($name);
-    $safe_downloads = sql_escape_int($downloads);
-    $safe_size = sql_escape_int($size);
+    $safe_downloads = $db_handler->sql_escape_int($downloads);
+    $safe_size = $db_handler->sql_escape_int($size);
     $safe_url = $db_handler->sql_escape_string($url);
     $safe_mirror = $db_handler->sql_escape_string($mirror);
 
@@ -29,7 +29,7 @@ if($user_rights['editfiles'] == "Y")
    }
   else
    {
-    $safe_file_id = sql_escape_int($file_id);
+    $safe_file_id = $db_handler->sql_escape_int($file_id);
     $getfile = $db_handler->sql_fetch_array($db_handler->sql_query("SELECT * FROM " . $sql_table['files'] . " WHERE file_id=" . $safe_file_id));
     ?>
 <br><br>
@@ -94,8 +94,8 @@ if($user_rights['editfiles'] == "Y")
             <select name="mirror">
             <option value="0">Kein Mirror</option>
             <?php
-            $safe_release_id = sql_escape_int($getfile['release_id']);
-            $safe_file_id = sql_escape_int($file_id);
+            $safe_release_id = $db_handler->sql_escape_int($getfile['release_id']);
+            $safe_file_id = $db_handler->sql_escape_int($file_id);
             $mirror_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['files'] . " WHERE release_id=" . $safe_release_id . " AND mirror='0' AND file_id!=" . $safe_file_id);
             while($mirror_row = $db_handler->sql_fetch_array($mirror_res))
              {

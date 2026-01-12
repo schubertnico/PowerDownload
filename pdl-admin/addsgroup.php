@@ -1,11 +1,15 @@
-<?
+<?php
 include("header.inc.php");
 
-if($user_rights[god] == "Y")
+$submit = $_GET['submit'] ?? '';
+$name = $_POST['name'] ?? '';
+
+if($user_rights['god'] == "Y")
  {
   if($submit == 1)
    {
-    $db_handler->sql_query("INSERT INTO $sql_table[settingsgroup] VALUES ('','$name','')");
+    $name_escaped = $db_handler->sql_escape_string($name);
+    $db_handler->sql_query("INSERT INTO " . $sql_table['settingsgroup'] . " VALUES ('','" . $name_escaped . "','')");
     echo "Setting Gruppe eingetragen.";
    }
   else
@@ -15,25 +19,25 @@ if($user_rights[god] == "Y")
 <form action=\"addsgroup.php?submit=1\" method=\"post\">
 <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"45%\">
   <tr>
-    <td bgcolor=\"$template[table_border]\">
+    <td bgcolor=\"" . htmlspecialchars($template['table_border']) . "\">
       <table border=\"0\" cellpadding=\"3\" cellspacing=\"1\" width=\"100%\">
         <tr>
-          <td bgcolor=\"$template[header_bg]\" align=\"center\" colspan=\"2\">
-            <b>Setting Gruppe hinzufügen</b>
+          <td bgcolor=\"" . htmlspecialchars($template['header_bg']) . "\" align=\"center\" colspan=\"2\">
+            <b>Setting Gruppe hinzufÃ¼gen</b>
           </td>
         </tr>
         <tr>
-          <td bgcolor=\"$template[alt_1]\">
+          <td bgcolor=\"" . htmlspecialchars($template['alt_1']) . "\">
             <b>Name</b><br>
             Name der Setting Gruppe
           </td>
-          <td bgcolor=\"$template[alt_1]\">
+          <td bgcolor=\"" . htmlspecialchars($template['alt_1']) . "\">
             <input type=\"text\" name=\"name\" size=\"35\">
           </td>
         </tr>
         <tr>
-          <td bgcolor=\"$template[footer_bg]\" align=\"center\" colspan=\"2\">
-            <input type=\"submit\" value=\"Setting Gruppe hinzufügen\">
+          <td bgcolor=\"" . htmlspecialchars($template['footer_bg']) . "\" align=\"center\" colspan=\"2\">
+            <input type=\"submit\" value=\"Setting Gruppe hinzufÃ¼gen\">
           </td>
         </tr>
       </table>

@@ -1,5 +1,5 @@
 parameters:
-    level: 5
+    level: 8
     paths:
         - .
     excludePaths:
@@ -8,16 +8,28 @@ parameters:
         - logs
         - .idea
         - tests
+        - tools
         - rector.php
+        - install_303.php
+        - update_301to303.php
+        - update_224to303.php
+        - phpstan-bootstrap.php
+        - pdl-admin/ftp_browser.php
+        - pdl-admin/ftp_upload.php
+    scanFiles:
+        - phpstan-bootstrap.php
     phpVersion: 80400
     reportUnmatchedIgnoredErrors: false
     treatPhpDocTypesAsCertain: false
     ignoreErrors:
-        # Legacy code patterns - to be fixed over time
-        - '#Variable \$[a-zA-Z_]+ might not be defined#'
-        - '#Undefined variable: \$[a-zA-Z_]+#'
-        - '#Function [a-zA-Z_]+ invoked with \d+ parameters, \d+ required#'
-        # PHPStan false positives for strict comparisons
-        - '#Result of \|\| is always false#'
-        - '#Strict comparison using === between .* will always evaluate to (true|false)#'
-        - '#Call to function is_array\(\) with array will always evaluate to true#'
+        # Global variables from includes (legacy pattern)
+        - identifier: variable.undefined
+        # Legacy functions without type declarations
+        - identifier: missingType.return
+        - identifier: missingType.parameter
+        - identifier: missingType.iterableValue
+        # False positives for identical comparisons in legacy code
+        - identifier: identical.alwaysTrue
+        - identifier: identical.alwaysFalse
+        # Already narrowed type checks (legacy defensive code)
+        - identifier: function.alreadyNarrowedType

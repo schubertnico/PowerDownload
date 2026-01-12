@@ -16,18 +16,18 @@ if($user_rights['adminaccess'] == "Y")
     $escaped_name = $db_handler->sql_escape_string($name);
     $escaped_url = $db_handler->sql_escape_string($url);
     $escaped_mirror = $db_handler->sql_escape_string($mirror);
-    $escaped_release_id = sql_escape_int($release_id);
-    $escaped_size = sql_escape_int($size);
+    $escaped_release_id = $db_handler->sql_escape_int($release_id);
+    $escaped_size = $db_handler->sql_escape_int($size);
 
     $db_handler->sql_query("INSERT INTO " . $sql_table['files'] . " (release_id,url,size,name,mirror) VALUES ('" . $escaped_release_id . "', '" . $escaped_url . "', '" . $escaped_size . "', '" . $escaped_name . "', '" . $escaped_mirror . "')");
-    echo "<br>done...<br><a href=\"editrelease.php?release_id=" . htmlspecialchars($release_id) . "\">Zurueck zum Release</a>";
+    echo "<br>done...<br><a href=\"editrelease.php?release_id=" . htmlspecialchars((string) $release_id) . "\">Zurueck zum Release</a>";
    }
   else
    {
   ?>
 <br><br>
 <form action="addfile.php?submit=1" method="post">
-<input type="hidden" name="release_id" value="<?php echo htmlspecialchars($release_id); ?>">
+<input type="hidden" name="release_id" value="<?php echo htmlspecialchars((string) $release_id); ?>">
 <table border="0" cellpadding="0" cellspacing="0" width="65%">
   <tr>
     <td bgcolor="<?php echo htmlspecialchars($template['table_border']); ?>">
@@ -54,7 +54,7 @@ if($user_rights['adminaccess'] == "Y")
             <small>Dateigroesse in Byte</small>
           </td>
           <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <input type="text" name="size" size="35" value="<?php echo htmlspecialchars($size); ?>">
+            <input type="text" name="size" size="35" value="<?php echo htmlspecialchars((string) $size); ?>">
           </td>
         </tr>
         <?php $alt = alt_switch(); ?>
@@ -67,7 +67,7 @@ if($user_rights['adminaccess'] == "Y")
             <input type="text" name="url" size="35" value="<?php echo htmlspecialchars(urldecode($url)); ?>"><br />
             <?php
             if($settings['ftp_on'] == "Y" && function_exists("ftp_connect"))
-             { echo "<a href=\"ftp_browser.php?release_id=" . htmlspecialchars($release_id) . "\">FTP Browser/Upload</a>"; }
+             { echo "<a href=\"ftp_browser.php?release_id=" . htmlspecialchars((string) $release_id) . "\">FTP Browser/Upload</a>"; }
             ?>
           </td>
         </tr>
@@ -81,7 +81,7 @@ if($user_rights['adminaccess'] == "Y")
             <select name="mirror">
             <option value="0">Kein Mirror</option>
             <?php
-            $escaped_release_id = sql_escape_int($release_id);
+            $escaped_release_id = $db_handler->sql_escape_int($release_id);
             $mirror_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['files'] . " WHERE release_id='" . $escaped_release_id . "' AND mirror='0'");
             while($mirror_row = $db_handler->sql_fetch_array($mirror_res))
              {

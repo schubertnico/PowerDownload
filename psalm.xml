@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<psalm
+    errorLevel="4"
+    resolveFromConfigFile="true"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="https://getpsalm.org/schema/config"
+    xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
+    findUnusedBaselineEntry="true"
+    findUnusedCode="false"
+>
+    <projectFiles>
+        <directory name="." />
+        <ignoreFiles>
+            <directory name="vendor" />
+            <directory name=".docker" />
+            <directory name="logs" />
+            <directory name="tests" />
+            <directory name="tools" />
+            <file name="install_303.php" />
+            <file name="update_301to303.php" />
+            <file name="update_224to303.php" />
+            <file name="rector.php" />
+            <file name="phpstan-bootstrap.php" />
+            <file name="pdl-admin/ftp_browser.php" />
+            <file name="pdl-admin/ftp_upload.php" />
+        </ignoreFiles>
+    </projectFiles>
+
+    <issueHandlers>
+        <!-- Legacy global functions and variables -->
+        <UndefinedFunction errorLevel="suppress" />
+        <UndefinedGlobalVariable errorLevel="suppress" />
+        <UndefinedVariable errorLevel="suppress" />
+        <!-- Missing type annotations in legacy code -->
+        <MissingParamType errorLevel="suppress" />
+        <MissingReturnType errorLevel="suppress" />
+        <MixedAssignment errorLevel="suppress" />
+        <MixedArgument errorLevel="suppress" />
+        <MixedArrayAccess errorLevel="suppress" />
+        <MixedOperand errorLevel="suppress" />
+    </issueHandlers>
+
+</psalm>

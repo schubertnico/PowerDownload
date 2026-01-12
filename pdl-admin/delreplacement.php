@@ -9,8 +9,8 @@ if($user_rights['replacement'] == "Y")
  {
   if($submit == 1)
    {
-    $getrep = $db_handler->sql_fetch_array($db_handler->sql_query("SELECT * FROM " . $sql_table['replacements'] . " WHERE rep_id=" . sql_escape_int($rep_id)));
-    $db_handler->sql_query("DELETE FROM " . $sql_table['replacements'] . " WHERE rep_id=" . sql_escape_int($rep_id));
+    $getrep = $db_handler->sql_fetch_array($db_handler->sql_query("SELECT * FROM " . $sql_table['replacements'] . " WHERE rep_id=" . $db_handler->sql_escape_int($rep_id)));
+    $db_handler->sql_query("DELETE FROM " . $sql_table['replacements'] . " WHERE rep_id=" . $db_handler->sql_escape_int($rep_id));
     if($getrep['type'] == "s" && !preg_match("/http:\/\//siU",$getrep['neu']))
      { unlink("../".$getrep['neu']); }
     echo "<br>done...";

@@ -1,8 +1,11 @@
 # Dependencies
 /vendor/
 
-# Logs
+# Logs & Reports
 /logs/*.log
+/logs/*.html
+/logs/*.xml
+/logs/coverage-xml/
 
 # Backup
 /backup/
@@ -22,16 +25,43 @@ Desktop.ini
 
 # Composer
 composer.phar
+composer.lock
 
-# PHP
+# PHP Tools - Cache Files
+.php-cs-fixer.cache
+.phpunit.cache/
+.phpunit.result.cache
+.psalm/
+psalm.baseline.xml
+phpstan-baseline.neon
+
+# Infection
+infection.log
+infection-log.txt
+
+# Coverage
+/coverage/
+.coverage
+clover.xml
+coverage.xml
+
+# Temporary Files
 *.cache
 *.tmp
-.phpunit.cache/
+*.bak
 
 # Environment
 .env
 .env.local
 .env.*.local
 
-# Docker volumes
+# Docker
 .docker/mysql-data/
+
+# Screenshots & Uploads (user content)
+/pdl-gfx/screens/
+/pdl-gfx/uploads/
+
+# Local tools and tasks
+/tools/
+/todos/

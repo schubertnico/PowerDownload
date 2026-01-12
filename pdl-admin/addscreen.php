@@ -34,35 +34,51 @@ if($submit == 1)
        {
         move_uploaded_file($screen_g, "../pdl-gfx/screens/release".$release_id."screen".$screen_id."g.jpg");
         move_uploaded_file($screen_k, "../pdl-gfx/screens/release".$release_id."screen".$screen_id."k.jpg");
-        echo "<br>done...<br><a href=\"editrelease.php?release_id=" . htmlspecialchars($release_id) . "\">Zur&uuml;ck zum Release</a>";
+        echo "<br>done...<br><a href=\"editrelease.php?release_id=" . htmlspecialchars((string) $release_id) . "\">Zur&uuml;ck zum Release</a>";
        }
       else
        {
         move_uploaded_file($screen_g, "../pdl-gfx/screens/release".$release_id."screen".$screen_id."g.jpg");
         $full = imagecreatefromjpeg("../pdl-gfx/screens/release".$release_id."screen".$screen_id."g.jpg");
-        $full_size = getimagesize("../pdl-gfx/screens/release".$release_id."screen".$screen_id."g.jpg");
-        if($settings['screen_verhalt'] == "width")
-         {
-          $verhalt = $full_size[0]/$width;
-          $height = $full_size[1]/$verhalt;
-         }
-        else
-         {
-          $verhalt = $full_size[1]/$height;
-          $width = $full_size[0]/$verhalt;
-         }
-        if($settings['gdversion'] == 2)
-         { $thumb = imagecreatetruecolor($width,$height); }
-        else
-         { $thumb = imagecreate($width,$height); }
-        if($settings['gdversion'] == 2)
-         { imagecopyresampled($thumb,$full,0,0,0,0,$width,$height,$full_size[0],$full_size[1]); }
-        else
-         { imagecopyresized($thumb,$full,0,0,0,0,$width,$height,$full_size[0],$full_size[1]); }
-        imagejpeg($thumb, "../pdl-gfx/screens/release".$release_id."screen".$screen_id."k.jpg", 60);
-        imagedestroy($thumb);
-        imagedestroy($full);
-        echo "<br>done...<br><a href=\"editrelease.php?release_id=" . htmlspecialchars($release_id) . "\">Zur&uuml;ck zum Release</a>";
+        if ($full === false) {
+            echo "<br>Fehler beim Laden des Bildes.";
+        } else {
+            $full_size = getimagesize("../pdl-gfx/screens/release".$release_id."screen".$screen_id."g.jpg");
+            if ($full_size === false) {
+                echo "<br>Fehler beim Ermitteln der Bildgr&ouml;&szlig;e.";
+                imagedestroy($full);
+            } else {
+                if($settings['screen_verhalt'] == "width")
+                 {
+                  $verhalt = $full_size[0]/$width;
+                  $height = $full_size[1]/$verhalt;
+                 }
+                else
+                 {
+                  $verhalt = $full_size[1]/$height;
+                  $width = $full_size[0]/$verhalt;
+                 }
+                $thumb_width = max(1, (int)$width);
+                $thumb_height = max(1, (int)$height);
+                if($settings['gdversion'] == 2)
+                 { $thumb = imagecreatetruecolor($thumb_width, $thumb_height); }
+                else
+                 { $thumb = imagecreate($thumb_width, $thumb_height); }
+                if ($thumb === false) {
+                    echo "<br>Fehler beim Erstellen des Thumbnails.";
+                    imagedestroy($full);
+                } else {
+                    if($settings['gdversion'] == 2)
+                     { imagecopyresampled($thumb,$full,0,0,0,0,(int)$width,(int)$height,$full_size[0],$full_size[1]); }
+                    else
+                     { imagecopyresized($thumb,$full,0,0,0,0,(int)$width,(int)$height,$full_size[0],$full_size[1]); }
+                    imagejpeg($thumb, "../pdl-gfx/screens/release".$release_id."screen".$screen_id."k.jpg", 60);
+                    imagedestroy($thumb);
+                    imagedestroy($full);
+                    echo "<br>done...<br><a href=\"editrelease.php?release_id=" . htmlspecialchars((string) $release_id) . "\">Zur&uuml;ck zum Release</a>";
+                }
+            }
+        }
        }
      }
    }
@@ -75,7 +91,7 @@ else
  { ?>
 <br><br>
 <form action="addscreen.php?submit=1" method="post" enctype="multipart/form-data">
-<input type="hidden" name="release_id" value="<?php echo htmlspecialchars($release_id); ?>">
+<input type="hidden" name="release_id" value="<?php echo htmlspecialchars((string) $release_id); ?>">
 <table border="0" cellpadding="0" cellspacing="0" width="65%">
   <tr>
     <td bgcolor="<?php echo htmlspecialchars($template['table_border']); ?>">

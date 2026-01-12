@@ -40,7 +40,7 @@ if($user_rights['adddirs'] == "Y")
         <tr>
           <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
             Subordner<br>
-            <small>W�hlen sie einen Subordner aus</small>
+            <small>Wählen sie einen Subordner aus</small>
           </td>
           <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
             <select name="ordner_id">

@@ -1,8 +1,8 @@
-<?
+<?php
 include("pdl-inc/pdl_header.inc.php");
 include("pdl-admin/functions.inc.php");
 $mysqlversion = $db_handler->sql_fetch_array($db_handler->sql_query("SHOW VARIABLES LIKE 'version'"));
-$settings[mysqlversion] = intval(str_replace(".","",$mysqlversion[1]));
+$settings['mysqlversion'] = intval(str_replace(".","",$mysqlversion[1]));
 
 //checkt die GD Version. Hoffe das geht auch irgendwie schneller...
 ob_start();
@@ -15,15 +15,16 @@ $phpinfo=stristr($phpinfo,"version");
 $end=strpos($phpinfo," ");
 $phpinfo=substr($phpinfo,0,$end);
 $phpinfo=substr($phpinfo,7);
-$settings[gdversion] = intval($phpinfo);
+$settings['gdversion'] = intval($phpinfo);
 
 $install = 1;
 
-if(!$step) $step = 0;
+$step = isset($_GET['step']) ? (int)$_GET['step'] : 0;
+$PHP_SELF = $_SERVER['PHP_SELF'] ?? '';
 ?>
 <html>
 <head>
-<title>PowerDownload <? echo $settings[pdlversion]; ?> - Update</title>
+<title>PowerDownload <?php echo htmlspecialchars($settings['pdlversion']); ?> - Update</title>
 <link href="pdl-admin/style.css" rel="stylesheet" type="text/css">
 <style>
 body
@@ -46,7 +47,7 @@ body
             <table width="100%" cellpadding="0" cellspacing="0" border="0" height="100%">
               <tr>
                 <td height="15">
-                  <small>PowerDownload <? echo $settings[pdlversion]; ?> - Update von 2.2.4</small>
+                  <small>PowerDownload <?php echo htmlspecialchars($settings['pdlversion']); ?> - Update von 2.2.4</small>
                 </td>
                 <td align="right">
                   <small>PowerDownload &copy; 2002 by Arpad Borsos</small>
@@ -57,12 +58,12 @@ body
         </tr>
         <tr>
           <td height="100%" width="100%" bgcolor="#000000" align="center" valign="top">
-<?
+<?php
 if($step == 0)
  {
   ?>
 <br><br>
-<form action="<? echo $PHP_SELF; ?>?step=1" method="post">
+<form action="<?php echo htmlspecialchars($PHP_SELF); ?>?step=1" method="post">
 <table border="0" cellpadding="0" cellspacing="0" width="500">
   <tr>
     <td bgcolor="#9B0000">
@@ -91,7 +92,7 @@ if($step == 0)
             4.1.0
           </td>
           <td bgcolor="#3B0000">
-            <font color="<? echo pdlif($settings[phpversion] >= 410,"green","red"); ?>"><? echo phpversion(); ?></font>
+            <font color="<?php echo pdlif($settings['phpversion'] >= 410,"green","red"); ?>"><?php echo htmlspecialchars(phpversion()); ?></font>
           </td>
         </tr>
         <tr>
@@ -102,7 +103,7 @@ if($step == 0)
             3.23.20
           </td>
           <td bgcolor="#2E0000">
-            <font color="<? echo pdlif($settings[mysqlversion] >= 32320,"green","red"); ?>"><? echo $mysqlversion[1]; ?></font>
+            <font color="<?php echo pdlif($settings['mysqlversion'] >= 32320,"green","red"); ?>"><?php echo htmlspecialchars($mysqlversion[1]); ?></font>
           </td>
         </tr>
         <tr>
@@ -113,8 +114,8 @@ if($step == 0)
             2 - optional
           </td>
           <td bgcolor="#3B0000">
-            <font color="<? if($settings[gdversion] == 2) echo "green"; elseif($settings[gdversion] == 1) echo "orange"; else echo "red"; ?>">
-            <? if($settings[gdversion] == 2) echo "2.x"; elseif($settings[gdversion] == 1) echo "1.x"; else echo "nicht installiert"; ?>
+            <font color="<?php if($settings['gdversion'] == 2) echo "green"; elseif($settings['gdversion'] == 1) echo "orange"; else echo "red"; ?>">
+            <?php if($settings['gdversion'] == 2) echo "2.x"; elseif($settings['gdversion'] == 1) echo "1.x"; else echo "nicht installiert"; ?>
             </font>
           </td>
         </tr>
@@ -126,25 +127,25 @@ if($step == 0)
             aktiviert - optional
           </td>
           <td bgcolor="#2E0000">
-            <?
+            <?php
             if(function_exists("ftp_connect")) $ftp = 1;
             else $ftp = 0;
             ?>
-            <font color="<? echo pdlif($ftp == 1,"green","red"); ?>">
-            <? echo pdlif($ftp == 1,"aktiviert","deaktiviert"); ?>
+            <font color="<?php echo pdlif($ftp == 1,"green","red"); ?>">
+            <?php echo pdlif($ftp == 1,"aktiviert","deaktiviert"); ?>
             </font>
           </td>
         </tr>
         <tr>
           <td bgcolor="#3B0000">
-            upload_max_filesize (für Screenshot/Datei Upload)
+            upload_max_filesize (fï¿½r Screenshot/Datei Upload)
           </td>
           <td bgcolor="#3B0000">
             > 0
           </td>
           <td bgcolor="#3B0000">
-            <font color="<? echo pdlif(get_cfg_var("upload_max_filesize") > 0,"green","red"); ?>">
-            <? echo get_cfg_var("upload_max_filesize"); ?>
+            <font color="<?php echo pdlif(get_cfg_var("upload_max_filesize") > 0,"green","red"); ?>">
+            <?php echo htmlspecialchars(get_cfg_var("upload_max_filesize")); ?>
             </font>
           </td>
         </tr>
@@ -156,8 +157,8 @@ if($step == 0)
             Ja
           </td>
           <td bgcolor="#2E0000">
-            <font color="<? echo pdlif(is_writable("pdl-gfx/screens"),"green","red"); ?>">
-            <? echo pdlif(is_writable("pdl-gfx/screens"),"Ja","Nein"); ?>
+            <font color="<?php echo pdlif(is_writable("pdl-gfx/screens"),"green","red"); ?>">
+            <?php echo pdlif(is_writable("pdl-gfx/screens"),"Ja","Nein"); ?>
             </font>
           </td>
         </tr>
@@ -169,8 +170,8 @@ if($step == 0)
             Ja
           </td>
           <td bgcolor="#3B0000">
-            <font color="<? echo pdlif(is_writable("pdl-gfx/smilies"),"green","red"); ?>">
-            <? echo pdlif(is_writable("pdl-gfx/smilies"),"Ja","Nein"); ?>
+            <font color="<?php echo pdlif(is_writable("pdl-gfx/smilies"),"green","red"); ?>">
+            <?php echo pdlif(is_writable("pdl-gfx/smilies"),"Ja","Nein"); ?>
             </font>
           </td>
         </tr>
@@ -184,7 +185,7 @@ if($step == 0)
   </tr>
 </table>
 </form>
-  <?
+  <?php
  }
 if($step == 1)
  {
@@ -200,7 +201,7 @@ if($step == 1)
   echo "<br>Tabellen und Standardkonfiguration erzeugt.";
   ?>
 <br><br>
-<form action="<? echo $PHP_SELF; ?>?step=2" method="post">
+<form action="<?php echo htmlspecialchars($PHP_SELF); ?>?step=2" method="post">
 <table border="0" cellpadding="0" cellspacing="0" width="400">
   <tr>
     <td bgcolor="#9B0000">
@@ -212,21 +213,21 @@ if($step == 1)
         </tr>
         <tr>
           <td bgcolor="#5F0000" colspan="2">
-            Hinweis: Geben sie hier die Tabellennamen von PDL 2.2.4 an. Sollten sie die nicht geändert
+            Hinweis: Geben sie hier die Tabellennamen von PDL 2.2.4 an. Sollten sie die nicht geï¿½ndert
             haben lassen sie die Tabellennamen einfach so.<br>
-            Mit dem nächsten Schritt werden alle Daten von PowerDownload umconvertiert.
+            Mit dem nï¿½chsten Schritt werden alle Daten von PowerDownload umconvertiert.
             Dies kann u.U. sehr lange dauernd, jenachdem wieviel Downloads sie in der Datenbank
-            haben und ob sie die Screenshots direkt umändern möchten. Die alte Datenbank bleibt auf jedenfall erhalten auf den Fall hin, das dieses Update
+            haben und ob sie die Screenshots direkt umï¿½ndern mï¿½chten. Die alte Datenbank bleibt auf jedenfall erhalten auf den Fall hin, das dieses Update
             schiefgeht.<br><br>
             Was gemacht wird jetzt:<br>
             - Alle User werden umgewandelt. Die einteilung in die Usergruppen wird automatisch
-            vorgenommen. Überprüfen sie nach dem Update, ob die User auch alle die richtigen Rechte haben.<br>
+            vorgenommen. ï¿½berprï¿½fen sie nach dem Update, ob die User auch alle die richtigen Rechte haben.<br>
             - Die Kommentare werden 1:1 umconvertiert.<br>
             - Die Ordner werden 1:1 umconvertiert.<br>
             - Die Release werden 1:1 umconvertiert.<br>
-            - Name der Hauptdatei bzw. der Mirrors wird nach dem Dateinamen der verlinkten Datei vergeben. Bei Mirrors wird noch ein " - Mirror by ..." hinzugefügt.<br>
-            - Alte Settings werden, falls möglich, übernommen.
-            - Screenshots werden NICHT übernommen.
+            - Name der Hauptdatei bzw. der Mirrors wird nach dem Dateinamen der verlinkten Datei vergeben. Bei Mirrors wird noch ein " - Mirror by ..." hinzugefï¿½gt.<br>
+            - Alte Settings werden, falls mï¿½glich, ï¿½bernommen.
+            - Screenshots werden NICHT ï¿½bernommen.
           </td>
         </tr>
         <tr>
@@ -279,7 +280,7 @@ if($step == 1)
         </tr>
         <tr>
           <td bgcolor="#5F0000" align="center" colspan="2">
-            <input type="submit" value="Weiter zum nächsten Schritt.">
+            <input type="submit" value="Weiter zum nï¿½chsten Schritt.">
           </td>
         </tr>
       </table>
@@ -287,7 +288,7 @@ if($step == 1)
   </tr>
 </table>
 </form>
-  <?
+  <?php
  }
 if($step == 2)
  {
@@ -297,33 +298,33 @@ if($step == 2)
   $oldusers_res = $db_handler->sql_query("SELECT * FROM $admins");
   while($oldusers_row = $db_handler->sql_fetch_array($oldusers_res))
    {
-    if($oldusers_row[access_admin] == "Y")
+    if($oldusers_row['access_admin'] == "Y")
      {
-      if($oldusers_row[extra_recht] == "Y") $ugroup_id = 1;
-      elseif($oldusers_row[adddirs] == "Y" && $oldusers_row[editdirs] == "Y") $ugroup_id = 5;
+      if($oldusers_row['extra_recht'] == "Y") $ugroup_id = 1;
+      elseif($oldusers_row['adddirs'] == "Y" && $oldusers_row['editdirs'] == "Y") $ugroup_id = 5;
       else $ugroup_id = 4;
      }
     else
      { $ugroup_id = 2; }
 
-    $db_handler->sql_query("INSERT INTO $sql_table[user] VALUES ('$oldusers_row[id]','$oldusers_row[nick]','$oldusers_row[mail]','".md5(base64_decode($oldusers_row[pw]))."','$oldusers_row[url]','$oldusers_row[icq]','Y','','$ugroup_id','','".time()."')");
+    $db_handler->sql_query("INSERT INTO $sql_table[user] VALUES ('$oldusers_row[id]','$oldusers_row[nick]','$oldusers_row[mail]','".md5(base64_decode($oldusers_row['pw']))."','$oldusers_row[url]','$oldusers_row[icq]','Y','','$ugroup_id','','".time()."')");
    }
 
   // ordner,files,mirrors und screens convertieren
   $ordner_res = $db_handler->sql_query("SELECT * FROM $dirs");
   while($ordner_row = $db_handler->sql_fetch_array($ordner_res))
    {
-    $db_handler->sql_query("INSERT INTO $sql_table[ordner] VALUES ('$ordner_row[id]','$ordner_row[ordner_id]','".addslashes($ordner_row[name])."','".addslashes($ordner_row[text])."')");
+    $db_handler->sql_query("INSERT INTO $sql_table[ordner] VALUES ('$ordner_row[id]','$ordner_row[ordner_id]','".addslashes($ordner_row['name'])."','".addslashes($ordner_row['text'])."')");
    }
 
   // release convertieren
   $release_res = $db_handler->sql_query("SELECT * FROM $files");
   while($release_row = $db_handler->sql_fetch_array($release_res))
    {
-    $db_handler->sql_query("INSERT INTO $sql_table[release] VALUES ('$release_row[id]','".addslashes($release_row[name])."','".addslashes($release_row[text])."','$release_row[timestamp]','$release_row[views]','$release_row[ordner_id]','$release_row[uploader]','$release_row[author]','$release_row[author_nick]','$release_row[author_mail]','$release_row[author_url]','$release_row[author_icq]','$release_row[released]','$release_row[votes]','$release_row[vote]')");
-    if($release_row[loads] > $release_row[views]) $release_row[loads] = $release_row[views];
-    $dateiname = basename($release_row[url]);
-    $size = $release_row[size]*1024;
+    $db_handler->sql_query("INSERT INTO $sql_table[release] VALUES ('$release_row[id]','".addslashes($release_row['name'])."','".addslashes($release_row['text'])."','$release_row[timestamp]','$release_row[views]','$release_row[ordner_id]','$release_row[uploader]','$release_row[author]','$release_row[author_nick]','$release_row[author_mail]','$release_row[author_url]','$release_row[author_icq]','$release_row[released]','$release_row[votes]','$release_row[vote]')");
+    if($release_row['loads'] > $release_row['views']) $release_row['loads'] = $release_row['views'];
+    $dateiname = basename($release_row['url']);
+    $size = $release_row['size']*1024;
     $db_handler->sql_query("INSERT INTO $sql_table[files] VALUES ('','$release_row[id]','$release_row[loads]','$release_row[url]','$size','$dateiname','')");
     $file_id = $db_handler->sql_insert_id();
     $mirror_res = $db_handler->sql_query("SELECT * FROM $mirrors WHERE file_id='$release_row[id]'");
@@ -337,7 +338,7 @@ if($step == 2)
   $oldsettings_res = $db_handler->sql_query("SELECT * FROM $_POST[settings]");
   while($oldsettings_row = $db_handler->sql_fetch_array($oldsettings_res))
    {
-    $oldsettings[$oldsettings_row[name]] = $oldsettings_row[value];
+    $oldsettings[$oldsettings_row['name']] = $oldsettings_row['value'];
    }
 
   $db_handler->sql_query("UPDATE $sql_table[settings] SET wert='$oldsettings[script_file]' WHERE variablenname='script_file'");
@@ -365,10 +366,10 @@ if($step == 2)
   $comments_res = $db_handler->sql_query("SELECT * FROM $comments");
   while($comments_row = $db_handler->sql_fetch_array($comments_res))
    {
-    $db_handler->sql_query("INSERT INTO $sql_table[comments] VALUES ('','$comments_row[user]','$comments_row[file_id]','".addslashes($comments_row[titel])."','".addslashes($comments_row[text])."','$comments_row[timestamp]')");
+    $db_handler->sql_query("INSERT INTO $sql_table[comments] VALUES ('','$comments_row[user]','$comments_row[file_id]','".addslashes($comments_row['titel'])."','".addslashes($comments_row['text'])."','$comments_row[timestamp]')");
    }
 
-  echo "<br><br>Update erfolgreich durchgeführt. Überprüfen Sie alle Admins und erstellen sie ggf. neue Usergruppen. Überprüfen sie alle Release mit mehreren Files. Außerdem müssen sie die alten Screens neu hochladen. Löschen sie nun diese Update Datei.<br><a href=\"pdl-admin/\">weiter zum Admin Center</a>";
+  echo "<br><br>Update erfolgreich durchgefï¿½hrt. ï¿½berprï¿½fen Sie alle Admins und erstellen sie ggf. neue Usergruppen. ï¿½berprï¿½fen sie alle Release mit mehreren Files. Auï¿½erdem mï¿½ssen sie die alten Screens neu hochladen. Lï¿½schen sie nun diese Update Datei.<br><a href=\"pdl-admin/\">weiter zum Admin Center</a>";
 
  }
 
@@ -382,7 +383,7 @@ $rendertime=round($rendertime,3);
         </tr>
         <tr>
           <td bgcolor="#5F0000" align="center">
-            Renderzeit: <? echo $rendertime; ?>s; <? echo $db_handler->querys; ?> SQL Anfragen
+            Renderzeit: <?php echo htmlspecialchars($rendertime); ?>s; <?php echo htmlspecialchars($db_handler->querys); ?> SQL Anfragen
           </td>
         </tr>
       </table>

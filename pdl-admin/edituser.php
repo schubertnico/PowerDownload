@@ -45,7 +45,7 @@ if($user_rights['edituser'] == "Y")
      ?>
 <br><br>
 <form action="edituser.php?submit=1" method="post">
-<input type="hidden" name="user_id" value="<?php echo htmlspecialchars($user_id); ?>">
+<input type="hidden" name="user_id" value="<?php echo htmlspecialchars((string) $user_id); ?>">
 <table border="0" cellpadding="0" cellspacing="0" width="75%">
   <tr>
     <td bgcolor="<?php echo htmlspecialchars($template['table_border']); ?>">

@@ -7,7 +7,7 @@ $text = $_POST['text'] ?? '';
 $ordner_id = isset($_POST['ordner_id']) ? (int)$_POST['ordner_id'] : 0;
 $released = $_POST['released'] ?? 'Y';
 $views = isset($_POST['views']) ? (int)$_POST['views'] : 0;
-$refresh = isset($_POST['refresh']) ? (int)$_POST['refresh'] : 0;
+$refresh = $_POST['refresh'] ?? '';
 $autor_type = isset($_POST['autor_type']) ? (int)$_POST['autor_type'] : -1;
 $autor_nick = $_POST['autor_nick'] ?? '';
 $autor_email = $_POST['autor_email'] ?? '';
@@ -38,7 +38,7 @@ if($user_rights['editfiles'] == "Y")
      {
       $db_handler->sql_query("UPDATE ".$sql_table['release']." SET time='".time()."' WHERE release_id='".$release_id."'");
      }
-    echo "<br>done...<br><a href=\"editrelease.php?release_id=".htmlspecialchars($release_id)."\">Zur&uuml;ck zum Release</a>";
+    echo "<br>done...<br><a href=\"editrelease.php?release_id=".htmlspecialchars((string) $release_id)."\">Zur&uuml;ck zum Release</a>";
    }
   else
    {
@@ -46,7 +46,7 @@ if($user_rights['editfiles'] == "Y")
     ?>
 <br><br>
 <form action="editrelease.php?submit=1" method="post">
-<input type="hidden" name="release_id" value="<?php echo htmlspecialchars($release_id); ?>">
+<input type="hidden" name="release_id" value="<?php echo htmlspecialchars((string) $release_id); ?>">
 <table border="0" cellpadding="0" cellspacing="0" width="85%">
   <tr>
     <td bgcolor="<?php echo htmlspecialchars($template['table_border']); ?>">
@@ -209,7 +209,7 @@ while($user_row = $db_handler->sql_fetch_array($user_res))
         <tr>
           <td bgcolor="<?php echo htmlspecialchars($template['header_bg']); ?>" colspan="5" align="center">
             <a name="files"></a>
-            <b>Files</b> - <a href="addfile.php?release_id=<?php echo htmlspecialchars($release_id); ?>">Datei hinzuf&uuml;gen</a>
+            <b>Files</b> - <a href="addfile.php?release_id=<?php echo htmlspecialchars((string) $release_id); ?>">Datei hinzuf&uuml;gen</a>
           </td>
         </tr>
         <tr>
@@ -288,7 +288,7 @@ while($user_row = $db_handler->sql_fetch_array($user_res))
         <tr>
           <td bgcolor="<?php echo htmlspecialchars($template['header_bg']); ?>" colspan="4" align="center">
             <a name="screens"></a>
-            <b>Screenshots</b> - <a href="addscreen.php?release_id=<?php echo htmlspecialchars($release_id); ?>">Screenshot hochladen</a>
+            <b>Screenshots</b> - <a href="addscreen.php?release_id=<?php echo htmlspecialchars((string) $release_id); ?>">Screenshot hochladen</a>
           </td>
         </tr>
         <tr>
@@ -326,7 +326,7 @@ while($user_row = $db_handler->sql_fetch_array($user_res))
             ?>
         <tr>
           <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <img src="../pdl-gfx/screens/release<?php echo htmlspecialchars($release_id); ?>screen<?php echo htmlspecialchars($screens_row['screen_id']); ?>k.jpg" border="0">
+            <img src="../pdl-gfx/screens/release<?php echo htmlspecialchars((string) $release_id); ?>screen<?php echo htmlspecialchars((string) $screens_row['screen_id']); ?>k.jpg" border="0">
           </td>
           <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
             <?php echo htmlspecialchars($screens_row['text']); ?>

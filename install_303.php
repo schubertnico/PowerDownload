@@ -1,19 +1,24 @@
-<?
+<?php
 include("pdl-inc/pdl_header.inc.php");
 include("pdl-admin/functions.inc.php");
 $mysqlversion = $db_handler->sql_fetch_array($db_handler->sql_query("SHOW VARIABLES LIKE 'version'"));
-$settings[mysqlversion] = intval(str_replace(".","",$mysqlversion[1]));
+$settings['mysqlversion'] = intval(str_replace(".","",$mysqlversion[1]));
 
 //checkt die GD Version. Hoffe das geht auch irgendwie schneller...
 check_gd();
 
 $install = 1;
 
-if(!$step) $step = 0;
+// Extract variables
+$step = isset($_GET['step']) ? (int)$_GET['step'] : 0;
+$PHP_SELF = $_SERVER['PHP_SELF'] ?? '';
+$nick = $_POST['nick'] ?? '';
+$pw_neu = $_POST['pw_neu'] ?? '';
+$pw_neu2 = $_POST['pw_neu2'] ?? '';
 ?>
 <html>
 <head>
-<title>PowerDownload <? echo $settings[pdlversion]; ?> - Install</title>
+<title>PowerDownload <?php echo htmlspecialchars($settings['pdlversion']); ?> - Install</title>
 <link href="pdl-admin/style.css" rel="stylesheet" type="text/css">
 <style>
 body
@@ -36,7 +41,7 @@ body
             <table width="100%" cellpadding="0" cellspacing="0" border="0" height="100%">
               <tr>
                 <td height="15">
-                  <small>PowerDownload <? echo $settings[pdlversion]; ?> - Install</small>
+                  <small>PowerDownload <?php echo htmlspecialchars($settings['pdlversion']); ?> - Install</small>
                 </td>
                 <td align="right">
                   <small>PowerDownload &copy; 2002 by Arpad Borsos</small>
@@ -47,12 +52,12 @@ body
         </tr>
         <tr>
           <td height="100%" width="100%" bgcolor="#000000" align="center" valign="top">
-<?
+<?php
 if($step == 0)
  {
   ?>
 <br><br>
-<form action="<? echo $PHP_SELF; ?>?step=1" method="post">
+<form action="<?php echo htmlspecialchars($PHP_SELF); ?>?step=1" method="post">
 <table border="0" cellpadding="0" cellspacing="0" width="500">
   <tr>
     <td bgcolor="#9B0000">
@@ -81,7 +86,7 @@ if($step == 0)
             4.1.0
           </td>
           <td bgcolor="#3B0000">
-            <font color="<? echo pdlif($settings[phpversion] >= 410,"green","red"); ?>"><? echo phpversion(); ?></font>
+            <font color="<?php echo pdlif($settings['phpversion'] >= 410,"green","red"); ?>"><?php echo htmlspecialchars(phpversion()); ?></font>
           </td>
         </tr>
         <tr>
@@ -92,7 +97,7 @@ if($step == 0)
             3.23.20
           </td>
           <td bgcolor="#2E0000">
-            <font color="<? echo pdlif($settings[mysqlversion] >= 32320,"green","red"); ?>"><? echo $mysqlversion[1]; ?></font>
+            <font color="<?php echo pdlif($settings['mysqlversion'] >= 32320,"green","red"); ?>"><?php echo htmlspecialchars($mysqlversion[1]); ?></font>
           </td>
         </tr>
         <tr>
@@ -103,8 +108,8 @@ if($step == 0)
             2 - optional
           </td>
           <td bgcolor="#3B0000">
-            <font color="<? if($settings[gdversion] == 2) echo "green"; elseif($settings[gdversion] == 1) echo "orange"; else echo "red"; ?>">
-            <? if($settings[gdversion] == 2) echo "2.x"; elseif($settings[gdversion] == 1) echo "1.x"; else echo "nicht installiert"; ?>
+            <font color="<?php if($settings['gdversion'] == 2) echo "green"; elseif($settings['gdversion'] == 1) echo "orange"; else echo "red"; ?>">
+            <?php if($settings['gdversion'] == 2) echo "2.x"; elseif($settings['gdversion'] == 1) echo "1.x"; else echo "nicht installiert"; ?>
             </font>
           </td>
         </tr>
@@ -116,25 +121,25 @@ if($step == 0)
             aktiviert - optional
           </td>
           <td bgcolor="#2E0000">
-            <?
+            <?php
             if(function_exists("ftp_connect")) $ftp = 1;
             else $ftp = 0;
             ?>
-            <font color="<? echo pdlif($ftp == 1,"green","red"); ?>">
-            <? echo pdlif($ftp == 1,"aktiviert","deaktiviert"); ?>
+            <font color="<?php echo pdlif($ftp == 1,"green","red"); ?>">
+            <?php echo pdlif($ftp == 1,"aktiviert","deaktiviert"); ?>
             </font>
           </td>
         </tr>
         <tr>
           <td bgcolor="#3B0000">
-            upload_max_filesize (für Screenshot/Datei Upload)
+            upload_max_filesize (fï¿½r Screenshot/Datei Upload)
           </td>
           <td bgcolor="#3B0000">
             > 0
           </td>
           <td bgcolor="#3B0000">
-            <font color="<? echo pdlif(get_cfg_var("upload_max_filesize") > 0,"green","red"); ?>">
-            <? echo get_cfg_var("upload_max_filesize"); ?>
+            <font color="<?php echo pdlif(get_cfg_var("upload_max_filesize") > 0,"green","red"); ?>">
+            <?php echo htmlspecialchars(get_cfg_var("upload_max_filesize")); ?>
             </font>
           </td>
         </tr>
@@ -146,8 +151,8 @@ if($step == 0)
             Ja
           </td>
           <td bgcolor="#2E0000">
-            <font color="<? echo pdlif(is_writable("pdl-gfx/screens"),"green","red"); ?>">
-            <? echo pdlif(is_writable("pdl-gfx/screens"),"Ja","Nein"); ?>
+            <font color="<?php echo pdlif(is_writable("pdl-gfx/screens"),"green","red"); ?>">
+            <?php echo pdlif(is_writable("pdl-gfx/screens"),"Ja","Nein"); ?>
             </font>
           </td>
         </tr>
@@ -159,8 +164,8 @@ if($step == 0)
             Ja
           </td>
           <td bgcolor="#3B0000">
-            <font color="<? echo pdlif(is_writable("pdl-gfx/smilies"),"green","red"); ?>">
-            <? echo pdlif(is_writable("pdl-gfx/smilies"),"Ja","Nein"); ?>
+            <font color="<?php echo pdlif(is_writable("pdl-gfx/smilies"),"green","red"); ?>">
+            <?php echo pdlif(is_writable("pdl-gfx/smilies"),"Ja","Nein"); ?>
             </font>
           </td>
         </tr>
@@ -174,7 +179,7 @@ if($step == 0)
   </tr>
 </table>
 </form>
-  <?
+  <?php
  }
 if($step == 1)
  {
@@ -189,7 +194,7 @@ if($step == 1)
   echo "<br>Tabellen und Standardkonfiguration erzeugt.";
   ?>
 <br><br>
-<form action="<? echo $PHP_SELF; ?>?step=2" method="post">
+<form action="<?php echo htmlspecialchars($PHP_SELF); ?>?step=2" method="post">
 <table border="0" cellpadding="0" cellspacing="0" width="350">
   <tr>
     <td bgcolor="#9B0000">
@@ -217,7 +222,7 @@ if($step == 1)
         </tr>
         <tr>
           <td bgcolor="#3B0000">
-            Bestätigung
+            Bestï¿½tigung
           </td>
           <td bgcolor="#3B0000">
             <input type="password" name="pw_neu2" size="30">
@@ -233,23 +238,24 @@ if($step == 1)
   </tr>
 </table>
 </form>
-  <?
+  <?php
  }
 if($step == 2)
  {
   if(($pw_neu == $pw_neu2) && $pw_neu)
    {
-    $db_handler->sql_query("INSERT INTO $sql_table[user] (nick,passwort,ugroup_id, lastactive) VALUES ('$nick','".md5($pw_neu)."','1','".time()."')");
+    $nick_escaped = $db_handler->sql_escape_string($nick);
+    $db_handler->sql_query("INSERT INTO " . $sql_table['user'] . " (nick,passwort,ugroup_id, lastactive) VALUES ('" . $nick_escaped . "','" . md5($pw_neu) . "','1','" . time() . "')");
     ?>
 <br><br>
 <b>Die Installation ist hiermit abgeschlossen.</b><br>
-Sie können sich nun ins <a href="pdl-admin/">Admin Interface</a> einloggen.
-Dort müssen sie zuerst die Einstellungen unter Settings ändern und die Templates anpassen.<br>
-Und nicht vergessen diese Installationsdatei zu löschen!
-    <?
+Sie kï¿½nnen sich nun ins <a href="pdl-admin/">Admin Interface</a> einloggen.
+Dort mï¿½ssen sie zuerst die Einstellungen unter Settings ï¿½ndern und die Templates anpassen.<br>
+Und nicht vergessen diese Installationsdatei zu lï¿½schen!
+    <?php
    }
   else
-   { echo "<br>Passwort stimmt nicht mit Bestätigung überein oder wurde garnicht ausgefüllt.<br><a href=\"javascript:history.back()\">Zurück</a>"; }
+   { echo "<br>Passwort stimmt nicht mit Bestï¿½tigung ï¿½berein oder wurde garnicht ausgefï¿½llt.<br><a href=\"javascript:history.back()\">Zurï¿½ck</a>"; }
  }
 
 $rendertime2=microtime();
@@ -262,7 +268,7 @@ $rendertime=round($rendertime,3);
         </tr>
         <tr>
           <td bgcolor="#5F0000" align="center">
-            Renderzeit: <? echo $rendertime; ?>s; <? echo $db_handler->querys; ?> SQL Anfragen
+            Renderzeit: <?php echo htmlspecialchars($rendertime); ?>s; <?php echo htmlspecialchars($db_handler->querys); ?> SQL Anfragen
           </td>
         </tr>
       </table>

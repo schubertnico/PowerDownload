@@ -10,12 +10,12 @@ if($user_rights['deluser'] == "Y")
  {
   if($submit == 1)
    {
-    $checkgod = $db_handler->sql_fetch_array($db_handler->sql_query("SELECT * FROM " . $sql_table['user'] . " WHERE user_id=" . sql_escape_int($user_id)));
+    $checkgod = $db_handler->sql_fetch_array($db_handler->sql_query("SELECT * FROM " . $sql_table['user'] . " WHERE user_id=" . $db_handler->sql_escape_int($user_id)));
     if($checkgod['ugroup_id'] == 1)
      { echo "<br>User ist ein Godadmin und darf nicht gelöscht werden."; }
     else
      {
-      $db_handler->sql_query("DELETE FROM " . $sql_table['user'] . " WHERE user_id=" . sql_escape_int($user_id));
+      $db_handler->sql_query("DELETE FROM " . $sql_table['user'] . " WHERE user_id=" . $db_handler->sql_escape_int($user_id));
       echo "<br>done...";
      }
    }
@@ -36,7 +36,7 @@ if($user_rights['deluser'] == "Y")
         if(!$page) $page = 1;
         $temp1=$page * 25 - 25;
         $limit=$temp1.",25";
-        $user_res = $db_handler->sql_query("SELECT " . $sql_table['user'] . ".nick, " . $sql_table['user'] . ".user_id, " . $sql_table['usergroup'] . ".name AS ugroup_name FROM " . $sql_table['user'] . "," . $sql_table['usergroup'] . " WHERE " . $sql_table['usergroup'] . ".ugroup_id=" . $sql_table['user'] . ".ugroup_id AND " . $sql_table['usergroup'] . ".ugroup_id!='1' AND " . $sql_table['user'] . ".user_id!=" . sql_escape_int($user_details['user_id']) . " ORDER BY " . $sql_table['user'] . ".nick ASC LIMIT $limit");
+        $user_res = $db_handler->sql_query("SELECT " . $sql_table['user'] . ".nick, " . $sql_table['user'] . ".user_id, " . $sql_table['usergroup'] . ".name AS ugroup_name FROM " . $sql_table['user'] . "," . $sql_table['usergroup'] . " WHERE " . $sql_table['usergroup'] . ".ugroup_id=" . $sql_table['user'] . ".ugroup_id AND " . $sql_table['usergroup'] . ".ugroup_id!='1' AND " . $sql_table['user'] . ".user_id!=" . $db_handler->sql_escape_int($user_details['user_id']) . " ORDER BY " . $sql_table['user'] . ".nick ASC LIMIT $limit");
         while($user_row = $db_handler->sql_fetch_array($user_res))
          {
           $alt = alt_switch();
@@ -49,7 +49,7 @@ if($user_rights['deluser'] == "Y")
         <?php } ?>
         <tr>
           <td bgcolor="<?php echo htmlspecialchars($template['footer_bg']); ?>" align="center">
-            <?php echo seiten($db_handler->sql_num_rows($db_handler->sql_query("SELECT " . $sql_table['user'] . ".nick, " . $sql_table['user'] . ".user_id, " . $sql_table['usergroup'] . ".name AS ugroup_name FROM " . $sql_table['user'] . "," . $sql_table['usergroup'] . " WHERE " . $sql_table['usergroup'] . ".ugroup_id=" . $sql_table['user'] . ".ugroup_id AND " . $sql_table['usergroup'] . ".ugroup_id!='1' AND " . $sql_table['user'] . ".user_id!=" . sql_escape_int($user_details['user_id']))),25,"","deluser.php?"); ?>
+            <?php echo seiten($db_handler->sql_num_rows($db_handler->sql_query("SELECT " . $sql_table['user'] . ".nick, " . $sql_table['user'] . ".user_id, " . $sql_table['usergroup'] . ".name AS ugroup_name FROM " . $sql_table['user'] . "," . $sql_table['usergroup'] . " WHERE " . $sql_table['usergroup'] . ".ugroup_id=" . $sql_table['user'] . ".ugroup_id AND " . $sql_table['usergroup'] . ".ugroup_id!='1' AND " . $sql_table['user'] . ".user_id!=" . $db_handler->sql_escape_int($user_details['user_id']))),25,"","deluser.php?"); ?>
             <?php if($db_handler->sql_num_rows($user_res) == 0) echo "Es sind keine löschbaren User vorhanden."; ?>
             &nbsp;
           </td>

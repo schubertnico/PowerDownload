@@ -15,7 +15,7 @@ if($user_rights['delfiles'] == "Y")
   else
    {
     echo makedialog("Release löschen?","
-         <input type=\"hidden\" name=\"release_id\" value=\"" . htmlspecialchars($release_id) . "\">
+         <input type=\"hidden\" name=\"release_id\" value=\"" . htmlspecialchars((string) $release_id) . "\">
          Beim löschen eines Releases werden alle zugehörigen Kommentare, Files und Screens
          gelöscht. Wollen sie den Release wirklich löschen?","  Ja  ","delrelease.php");
    }
