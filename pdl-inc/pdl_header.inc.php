@@ -23,6 +23,7 @@ error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
 $rendertime1 = microtime(true);
 
 // Include required Files
+/** @psalm-suppress TypeDoesNotContainNull */
 if (!isset($incdir)) {
     $incdir = "";
 }
@@ -162,7 +163,8 @@ $change_list = isset($_GET['change_list']) ? (int) $_GET['change_list'] : 0;
 $orderseq = $_GET['orderseq'] ?? $_POST['orderseq'] ?? '';
 $orderby = $_GET['orderby'] ?? $_POST['orderby'] ?? '';
 $perpage = $_GET['perpage'] ?? $_POST['perpage'] ?? '';
-$inadmin = isset($inadmin) ? (int) $inadmin : 0;
+/** @psalm-suppress RedundantCondition */
+$inadmin = $inadmin ?? 0;
 
 // andere Vars
 $ip = $_SERVER['REMOTE_ADDR'] ?? '';

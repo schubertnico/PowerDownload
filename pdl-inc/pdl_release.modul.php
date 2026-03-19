@@ -27,7 +27,7 @@ $release_row = $db_handler->sql_fetch_array($db_handler->sql_query("SELECT * FRO
 
 if (!$release_row) {
     echo "Release nicht gefunden.";
-} elseif (($release_row['released'] ?? '') == "N") {
+} elseif ($release_row['released'] === "N") {
     echo "Der Release ist zwar vorhanden aber versteckt und kann deswegen nicht angesehen werden.";
 } else {
     // Views erhöhen

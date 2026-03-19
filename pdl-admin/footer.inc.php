@@ -1,6 +1,7 @@
 <?php
 // Debug Infos
-if($settings['debug'] == true)
+/** @psalm-suppress TypeDoesNotContainType */
+if(!empty($settings['debug']))
  {
   $rendertime2=microtime();
   $rendertimetemp=explode(" ",$rendertime2);

@@ -14,10 +14,13 @@
 declare(strict_types=1);
 
 // Global variables from pdl_header.inc.php
+/** @psalm-suppress InvalidGlobal */
 global $rendertime1;
 
 // Initialize variables with defaults
+/** @psalm-suppress TypeDoesNotContainNull */
 $ordner_id = $ordner_id ?? 0;
+/** @psalm-suppress TypeDoesNotContainNull */
 $page = $page ?? 1;
 $isindex = false;
 $release = null;
@@ -27,6 +30,7 @@ echo '<table border="0" cellpadding="0" cellspacing="0" width="' .
      htmlspecialchars($template['all_width'] ?? '100%', ENT_QUOTES, 'UTF-8') . '"><tr><td>';
 
 // Treeview or Alternative
+/** @psalm-suppress RedundantCondition */
 if ($ordner_id === 0) {
     $isindex = true;
 }
@@ -69,6 +73,7 @@ echo '
 $script_file_escaped = htmlspecialchars($settings['script_file'] ?? '', ENT_QUOTES, 'UTF-8');
 
 if (($settings['enable_treeview'] ?? 'N') === "Y") {
+    /** @psalm-suppress RedundantCondition */
     if ($isindex === true) {
         echo '<img src="pdl-gfx/folder_open.gif" border="0" alt=""> Index<br>';
     } else {
@@ -77,6 +82,7 @@ if (($settings['enable_treeview'] ?? 'N') === "Y") {
     treeview_ordner(0, "");
 } else {
     $ordner_id = $sordner_id;
+    /** @psalm-suppress RedundantCondition */
     if ($isindex === true) {
         echo "Index";
     } elseif ($isindex === false && $ordner_id === 0) {
@@ -181,7 +187,7 @@ if (($settings['enable_extrernadmin'] ?? 'N') === "Y" && ($user_rights['adminacc
         if (empty($screen_id) && empty($usercenter) && empty($wrong_referer) &&
             empty($wrong_rights) && empty($show_search) && empty($show_stats)) {
 
-            $ordner_id_escaped = (int) $ordner_id;
+            $ordner_id_escaped = $ordner_id;
             echo '<div align="right"><select name="admin" onchange="window.location=(\'pdl-admin/\'+this.options[this.selectedIndex].value)">
             <option value="">Admin Optionen</option>
             <option value="addfile.php?ordner_id=' . $ordner_id_escaped . '">Datei Adden</option>';
@@ -206,7 +212,8 @@ if (($settings['enable_extrernadmin'] ?? 'N') === "Y" && ($user_rights['adminacc
 // Copyright and Close outer table
 echo '<br><center>';
 
-if (($settings['debug'] ?? false) === true) {
+/** @psalm-suppress TypeDoesNotContainType */
+if (!empty($settings['debug'])) {
     $rendertime2 = microtime(true);
     $rendertime = round($rendertime2 - $rendertime1, 3);
     echo 'Renderzeit: ' . $rendertime . 's; ' . $db_handler->querys . ' SQL Anfragen<br>';

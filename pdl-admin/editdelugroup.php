@@ -25,9 +25,9 @@ if($user_rights['edituser'] == "Y" && $user_rights['deluser'] == "Y")
       if($delete == 1)
        {
         $dodelete = true;
-        for($i = 0; $i < count($protected); $i++)
+        foreach($protected as $prot_id)
          {
-          if($protected[$i] == $eugroup_id)
+          if($prot_id == $eugroup_id)
            {
             $dodelete = false;
             break;
@@ -97,9 +97,9 @@ if($user_rights['edituser'] == "Y" && $user_rights['deluser'] == "Y")
         </tr>";
        }
       $dodelete = true;
-      for($i = 0; $i < count($protected); $i++)
+      foreach($protected as $prot_id)
        {
-        if($protected[$i] == $ugroup_row['ugroup_id'])
+        if($prot_id == $ugroup_row['ugroup_id'])
          {
           $dodelete = false;
           break;

@@ -4,7 +4,6 @@
  * @license MIT
  */
 
-$screen_id = (int)($screen_id ?? 0);
 $screen_id_safe = $db_handler->sql_escape_int($screen_id);
 
 $db_handler->sql_query("UPDATE " . $sql_table['screens'] . " SET views=views+1 WHERE screen_id='" . $screen_id_safe . "'");

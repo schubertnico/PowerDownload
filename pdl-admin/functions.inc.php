@@ -48,7 +48,7 @@ function menu_close(): void
 
 function pdlif(bool $bedingung, string $true, string $false): string
  {
-  if($bedingung == 1) return $true;
+  if($bedingung) return $true;
   else return $false;
  }
 

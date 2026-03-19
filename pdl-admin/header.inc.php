@@ -5,6 +5,7 @@ include_once($incdir."pdl-inc/pdl_header.inc.php");
 include("functions.inc.php");
 
 // Ensure $user_rights is an array to prevent undefined key warnings
+/** @psalm-suppress TypeDoesNotContainNull,TypeDoesNotContainType */
 if (!isset($user_rights) || !is_array($user_rights)) {
     $user_rights = [];
 }

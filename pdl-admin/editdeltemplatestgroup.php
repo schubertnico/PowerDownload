@@ -65,9 +65,9 @@ if($user_rights['god'] == "Y")
             <input type=\"hidden\" name=\"tgroup[".$tgroup_count."][tgroup_id]\" value=\"".htmlspecialchars($tgroup_row['tgroup_id'])."\">
             <input type=\"text\" name=\"tgroup[".$tgroup_count."][name]\" value=\"".htmlspecialchars($tgroup_row['name'])."\" size=\"35\">";
     $dodelete = true;
-    for($i = 0; $i < count($prot_tgroups); $i++)
+    foreach($prot_tgroups as $prot_tgroup)
      {
-      if($prot_tgroups[$i] == $tgroup_row['tgroup_id'])
+      if($prot_tgroup == $tgroup_row['tgroup_id'])
        {
         $dodelete = false;
         break;
@@ -96,9 +96,9 @@ if($user_rights['god'] == "Y")
             <input type=\"hidden\" name=\"templates[".$templates_count."][template_id]\" value=\"".htmlspecialchars($templates_row['template_id'])."\">
             <input type=\"text\" name=\"templates[".$templates_count."][name]\" value=\"".htmlspecialchars($templates_row['name'])."\" size=\"35\">";
       $dodelete = true;
-      for($i = 0; $i < count($prot_templates); $i++)
+      foreach($prot_templates as $prot_template)
        {
-        if($prot_templates[$i] == $templates_row['variablenname'])
+        if($prot_template == $templates_row['variablenname'])
          {
           $dodelete = false;
           break;

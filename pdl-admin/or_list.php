@@ -19,7 +19,7 @@ function treeview_admin($ordner, $head)
             " . $head . "<a href=\"or_list.php?ordner_id=" . htmlspecialchars($treeview_row['ordner_id']) . "\">" . htmlspecialchars($treeview_row['name']) . "</a>
           </td>
           <td bgcolor=\"" . htmlspecialchars($alt) . "\">
-            " . htmlspecialchars($releases) . "
+            " . htmlspecialchars((string)$releases) . "
           </td>
           <td bgcolor=\"" . htmlspecialchars($alt) . "\">
             <a href=\"addrelease.php?ordner_id=" . htmlspecialchars($treeview_row['ordner_id']) . "\">Release hinzufügen</a>
@@ -71,7 +71,7 @@ if($user_rights['editdirs'] == "Y" || $user_rights['deldirs'] == "Y" || $user_ri
           <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
             <?php
             $releases = $db_handler->sql_num_rows($db_handler->sql_query("SELECT * FROM " . $sql_table['release'] . " WHERE ordner_id='0'"));
-            echo htmlspecialchars($releases);
+            echo htmlspecialchars((string)$releases);
             ?>
           </td>
           <td bgcolor="<?php echo htmlspecialchars($alt); ?>">

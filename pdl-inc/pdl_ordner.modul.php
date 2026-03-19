@@ -18,7 +18,7 @@ function sub(int $ordner_id): void
 }
 } // end function_exists
 
-$ordner_id_safe = $db_handler->sql_escape_int($ordner_id ?? 0);
+$ordner_id_safe = $db_handler->sql_escape_int($ordner_id);
 $files_check = $db_handler->sql_num_rows($db_handler->sql_query("SELECT release_id FROM " . $sql_table['release'] . " WHERE ordner_id='" . $ordner_id_safe . "' AND released='Y'"));
 $ordner_check = $db_handler->sql_num_rows($db_handler->sql_query("SELECT ordner_id FROM " . $sql_table['ordner'] . " WHERE sordner_id='" . $ordner_id_safe . "'"));
 
@@ -44,14 +44,13 @@ if ($files_check == 0 && $ordner_check == 0) {
         echo replace($template['ordner_box'] ?? '', ['rows' => $ordner_rows]);
     }
     if ($files_check != 0) {
-        $page = (int)($page ?? 1);
         if ($page < 1) $page = 1;
         $perpage = (int)($settings['perpage'] ?? 10);
         $temp1 = $page * $perpage - $perpage;
         $limit = $temp1 . "," . $perpage;
         $total = $db_handler->sql_num_rows($db_handler->sql_query("SELECT * FROM " . $sql_table['release'] . " WHERE ordner_id='" . $ordner_id_safe . "'"));
 
-        echo "<center>" . seiten($total, $perpage, "&ordner_id=" . (int)($ordner_id ?? 0), $settings['script_file'] ?? '') . "</center>";
+        echo "<center>" . seiten($total, $perpage, "&ordner_id=" . $ordner_id, $settings['script_file'] ?? '') . "</center>";
         echo "<form action=\"" . htmlspecialchars($settings['script_file'] ?? '') . "change_list=1\" method=\"post\">";
 
         $release_rows = "";

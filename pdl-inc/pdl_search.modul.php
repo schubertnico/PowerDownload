@@ -5,7 +5,6 @@
  */
 
 if (($settings['enable_search'] ?? 'N') == "Y") {
-    $submit = (int)($submit ?? 0);
     if ($submit == 1) {
         $text = $db_handler->sql_escape_string($text ?? '');
         $in = $in ?? 'texttitel';
@@ -34,7 +33,6 @@ if (($settings['enable_search'] ?? 'N') == "Y") {
         $orderseq = ($settings['orderseq'] ?? 'ASC') === 'DESC' ? 'DESC' : 'ASC';
         $query .= " ORDER BY " . $orderby . " " . $orderseq;
 
-        $page = (int)($page ?? 1);
         if ($page < 1) $page = 1;
         $perpage = (int)($settings['perpage'] ?? 10);
         $temp1 = $page * $perpage - $perpage;

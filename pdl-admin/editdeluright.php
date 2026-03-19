@@ -15,9 +15,9 @@ if($user_rights['god'] == "Y")
       if($rights[$i]['delete'] == 1)
        {
         $dodelete = true;
-        for($j = 0; $j < count($protected); $j++)
+        foreach($protected as $prot_id)
          {
-          if($protected[$j] == $rights[$i]['right_id'])
+          if($prot_id == $rights[$i]['right_id'])
            {
             $dodelete = false;
             break;
@@ -89,9 +89,9 @@ if($user_rights['god'] == "Y")
           </td>
         </tr>";
     $dodelete = true;
-    for($i = 0; $i < count($protected); $i++)
+    foreach($protected as $prot_id)
      {
-      if($protected[$i] == $rights_row['right_id'])
+      if($prot_id == $rights_row['right_id'])
        {
         $dodelete = false;
         break;

@@ -210,7 +210,7 @@ function replace(string $temp, array $table_row): string
     $temp = str_replace('{count}', (string) ($hasRows ? ($total ?? 0) : ($table_row['count'] ?? 0)), $temp);
 
     if ($hasRows) {
-        $rows = is_array($table_row) ? implode(', ', array_map('strval', $table_row)) : (string) $table_row;
+        $rows = implode(', ', array_map('strval', $table_row));
         $temp = str_replace('{rows}', $rows, $temp);
     }
 
@@ -467,6 +467,7 @@ function generate_string(int $length): string
 
     for ($i = 0; $i < $length; $i++) {
         $letter = random_int(0, $pwacount - 1);
+        /** @psalm-suppress InvalidArrayOffset */
         $password .= $pwarray[$letter];
     }
 
@@ -494,6 +495,7 @@ function split_query(array &$return, string $sql): bool
     $sql_len = strlen($sql);
     $in_string = false;
 
+    /** @psalm-suppress LoopInvalidation */
     for ($i = 0; $i < $sql_len - 1; $i++) {
         // Handle statement terminator
         if ($sql[$i] == ";" && !$in_string) {

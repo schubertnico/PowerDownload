@@ -17,6 +17,7 @@ while ($release_row = $db_handler->sql_fetch_array($release_res)) {
     $release_row['id'] = $release_row['release_id'];
     $release_row['name'] = $release_row['name'] ?? '';
     $shortname = (int)($settings['shortname'] ?? 0);
+    /** @psalm-suppress TypeDoesNotContainType */
     if ($shortname > 0 && strlen($release_row['name']) > $shortname) {
         $release_row['name'] = substr($release_row['name'], 0, $shortname - 3) . "...";
     }

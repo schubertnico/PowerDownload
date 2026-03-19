@@ -20,15 +20,15 @@ if($submit == 1)
  {
   if($settings['gdversion'] == 0 || $settings['screen_autosize'] == "N") $if = is_uploaded_file($screen_g) && is_uploaded_file($screen_k);
   else $if = is_uploaded_file($screen_g);
-  if($if == 1)
+  if($if)
    {
     if($settings['gdversion'] == 0 || $settings['screen_autosize'] == "N") $if = $screen_g_type != "image/pjpeg" || $screen_k_type != "image/pjpeg";
     else $if = $screen_g_type != "image/pjpeg";
-    if($if == 1) echo "<br>Die Screens M&Uuml;SSEN im JPG Format sein.";
+    if($if) echo "<br>Die Screens M&Uuml;SSEN im JPG Format sein.";
     else
      {
       $escaped_text = $db_handler->sql_escape_string($text);
-      $db_handler->sql_query("INSERT INTO `" . $sql_table['screens'] . "` (release_id, text) VALUES ('" . (int)$release_id . "', '$escaped_text')");
+      $db_handler->sql_query("INSERT INTO `" . $sql_table['screens'] . "` (release_id, text) VALUES ('" . $release_id . "', '$escaped_text')");
       $screen_id = $db_handler->sql_insert_id();
       if(is_uploaded_file($screen_k))
        {

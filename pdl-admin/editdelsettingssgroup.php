@@ -67,9 +67,9 @@ if($user_rights['god'] == "Y")
             <input type=\"hidden\" name=\"sgroup[".$sgroup_count."][sgroup_id]\" value=\"".htmlspecialchars($sgroup_row['sgroup_id'])."\">
             <input type=\"text\" name=\"sgroup[".$sgroup_count."][name]\" value=\"".htmlspecialchars($sgroup_row['name'])."\" size=\"35\">";
     $dodelete = true;
-    for($i = 0; $i < count($prot_sgroups); $i++)
+    foreach($prot_sgroups as $prot_sgroup)
      {
-      if($prot_sgroups[$i] == $sgroup_row['sgroup_id'])
+      if($prot_sgroup == $sgroup_row['sgroup_id'])
        {
         $dodelete = false;
         break;
@@ -98,9 +98,9 @@ if($user_rights['god'] == "Y")
             <input type=\"hidden\" name=\"setting[".$setting_count."][settings_id]\" value=\"".htmlspecialchars($settings_row['settings_id'])."\">
             <input type=\"text\" name=\"setting[".$setting_count."][name]\" value=\"".htmlspecialchars($settings_row['name'])."\" size=\"35\">";
       $dodelete = true;
-      for($i = 0; $i < count($prot_settings); $i++)
+      foreach($prot_settings as $prot_setting)
        {
-        if($prot_settings[$i] == $settings_row['variablenname'])
+        if($prot_setting == $settings_row['variablenname'])
          {
           $dodelete = false;
           break;

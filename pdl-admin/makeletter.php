@@ -54,10 +54,10 @@ if($user_rights['writeletter'] == "Y")
       $datum = mktime(0,0,0,(int)$datum[1],(int)$datum[0],(int)$datum[2]);
      }
 
-    $dls_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['release'] . " WHERE time>'" . $db_handler->sql_escape_string($datum) . "' ORDER BY time ASC");
+    $dls_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['release'] . " WHERE time>'" . $db_handler->sql_escape_string((string)$datum) . "' ORDER BY time ASC");
 
     $text = "Download Letter vom ".date("d.m.Y").".\n";
-    $text.= "Seit dem ".date("d.m.Y",$datum)." wurden ".$db_handler->sql_num_rows($dls_res)." Downloads hinzugefügt.\n\n";
+    $text.= "Seit dem ".date("d.m.Y",(int)$datum)." wurden ".$db_handler->sql_num_rows($dls_res)." Downloads hinzugefügt.\n\n";
 
     while($dls_row = $db_handler->sql_fetch_array($dls_res))
      {
@@ -133,7 +133,7 @@ function loc(anfang)
         <tr>
           <td bgcolor="<?php echo htmlspecialchars($template['footer_bg']); ?>" colspan="2" align="center">
             <input type="submit" value="Abschicken"> <input type="reset" value="Eingaben löschen"><br>
-            Text mit Übersicht der Downloads seit <input type="text" name="anfang" value="<?php echo htmlspecialchars(date("d.m.Y", $datum)); ?>" size="8">
+            Text mit Übersicht der Downloads seit <input type="text" name="anfang" value="<?php echo htmlspecialchars(date("d.m.Y", (int)$datum)); ?>" size="8">
             &nbsp;<button onclick="javascript:loc(form.anfang.value)">füllen</button>.
           </td>
         </tr>
