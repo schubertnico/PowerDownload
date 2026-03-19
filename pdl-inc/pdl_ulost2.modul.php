@@ -14,12 +14,12 @@ if ($getuser) {
     $pw_hash_safe = $db_handler->sql_escape_string($pw_hash);
     $db_handler->sql_query("UPDATE " . $sql_table['user'] . " SET passwort='" . $pw_hash_safe . "', remind_code='' WHERE user_id='" . $user_id_safe . "'");
 
-    $message = str_replace("{user}", $getuser['nick'] ?? '', $template['mail_lost2'] ?? '');
+    $message = str_replace("{user}", $getuser['nick'] ?? '', (string) ($template['mail_lost2'] ?? ''));
     $message = str_replace("{new_pw}", $pw_new, $message);
 
     $from_name = $settings['mail_fromname'] ?? 'PowerDownload';
     $from_addr = $settings['mail_fromaddr'] ?? 'noreply@example.com';
-    mail($getuser['email'] ?? '', "Accountdaten", $message, "FROM: " . $from_name . " <" . $from_addr . ">");
+    @mail($getuser['email'] ?? '', "Accountdaten", $message, "FROM: " . $from_name . " <" . $from_addr . ">");
     echo "<center><b>Accountdaten versendet.</b></center>";
 } else {
     echo "<center><b>Kein Benutzer mit diesem Bestaetigungscode gefunden.</b></center>";

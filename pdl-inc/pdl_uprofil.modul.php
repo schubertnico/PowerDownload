@@ -53,7 +53,7 @@ if ($submit == 1) {
     if (!($user_details ?? null)) {
         echo "<center>Sie muessen eingeloggt sein um Ihr Profil zu bearbeiten.</center>";
     } else {
-        $form = str_replace("{email}", htmlspecialchars($user_details['email'] ?? ''), $template['uprofil_form'] ?? '');
+        $form = str_replace("{email}", htmlspecialchars($user_details['email'] ?? ''), (string) ($template['uprofil_form'] ?? ''));
         $get_letter = ($user_details['get_letter'] ?? '') == "Y" ? " checked" : "";
         $form = str_replace("{get_letter}", $get_letter, $form);
         $form = str_replace("{homepage}", htmlspecialchars($user_details['homepage'] ?? ''), $form);

@@ -5,6 +5,7 @@
  */
 
 // Rechnet alle Subordner und Subfiles aus
+if (!function_exists('sub')) {
 function sub(int $ordner_id): void
 {
     global $subfiles, $subdirs, $db_handler, $sql_table;
@@ -15,6 +16,7 @@ function sub(int $ordner_id): void
         sub((int)($sordner_row['ordner_id'] ?? 0));
     }
 }
+} // end function_exists
 
 $ordner_id_safe = $db_handler->sql_escape_int($ordner_id ?? 0);
 $files_check = $db_handler->sql_num_rows($db_handler->sql_query("SELECT release_id FROM " . $sql_table['release'] . " WHERE ordner_id='" . $ordner_id_safe . "' AND released='Y'"));

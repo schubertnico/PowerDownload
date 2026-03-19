@@ -16,7 +16,7 @@ if($user_rights['templates'] == "Y")
    {
     foreach($_POST as $variablenname => $wert)
      {
-      $wert = preg_replace('/&amp;/', '&', preg_replace('/&quot;/',"\"", preg_replace('/&lt;/', '<', preg_replace('/&gt;/', '>', $wert))));
+      $wert = (string) preg_replace('/&amp;/', '&', (string) preg_replace('/&quot;/',"\"", (string) preg_replace('/&lt;/', '<', (string) preg_replace('/&gt;/', '>', $wert))));
       $variablenname_escaped = $db_handler->sql_escape_string($variablenname);
       $wert_escaped = $db_handler->sql_escape_string($wert);
       $db_handler->sql_query("UPDATE `" . $sql_table['template'] . "` SET wert='" . $wert_escaped . "' WHERE variablenname='" . $variablenname_escaped . "'");

@@ -12,7 +12,7 @@ if($settings['debug'] == true)
               </tr>
               <tr>
                 <td bgcolor=\"".htmlspecialchars($template['header_bg'])."\" colspan=\"2\" align=\"center\">
-                  Renderzeit: ".htmlspecialchars((string)$rendertime)."s; ".htmlspecialchars($db_handler->querys)." SQL Anfragen";
+                  Renderzeit: ".htmlspecialchars((string)$rendertime)."s; ".htmlspecialchars((string)$db_handler->querys)." SQL Anfragen";
  } ?>
                 </td>
               </tr>

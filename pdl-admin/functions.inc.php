@@ -120,7 +120,7 @@ function check_gd(): void
    {
     ob_start();
     phpinfo(INFO_MODULES);
-    $phpinfo = strip_tags(ob_get_contents());
+    $phpinfo = strip_tags((string) ob_get_contents());
     ob_end_clean();
     preg_match("/gd version\s*(.*)/i",$phpinfo,$version);
     if(strstr($version[1],"2.")) $settings['gdversion'] = 2;

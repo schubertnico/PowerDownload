@@ -36,13 +36,13 @@ if ($submit == 1) {
         $script_file = htmlspecialchars($settings['script_file'] ?? '');
         echo "<center><b>Anmeldung erfolgreich. Sie koennen sich nun mit den Daten <a href=\"" . $script_file . "usercenter=login\">Einloggen</a>. Sie erhalten auch eine Bestaetigung per Email.</b></center>";
 
-        $message = str_replace("{nick}", $nick, $template['mail_register'] ?? '');
+        $message = str_replace("{nick}", $nick, (string) ($template['mail_register'] ?? ''));
         $message = str_replace("{pw}", $pw_new, $message);
         $message = str_replace("{script_file}", $settings['script_file'] ?? '', $message);
 
         $from_name = $settings['mail_fromname'] ?? 'PowerDownload';
         $from_addr = $settings['mail_fromaddr'] ?? 'noreply@example.com';
-        mail($email, "Anmeldung", $message, "FROM: " . $from_name . " <" . $from_addr . ">");
+        @mail($email, "Anmeldung", $message, "FROM: " . $from_name . " <" . $from_addr . ">");
     }
 } else {
     if ($user_details ?? null) {

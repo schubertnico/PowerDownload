@@ -35,7 +35,7 @@ if (($user_rights['addcomments'] ?? 'N') == "Y" && ($settings['enable_comments']
             $user = "Gast - <a href=\"" . $script_file . "usercenter=login\">Login</a> - <a href=\"" . $script_file . "usercenter=register\">Anmelden</a>";
         }
 
-        $form = str_replace("{html}", $html, $template['comments_form'] ?? '');
+        $form = str_replace("{html}", $html, (string) ($template['comments_form'] ?? ''));
         $form = str_replace("{zensur}", $zensur, $form);
         $form = str_replace("{bbcode}", $bbcode, $form);
         $form = str_replace("{smilies}", $smilies, $form);

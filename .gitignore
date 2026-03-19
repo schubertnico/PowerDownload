@@ -41,6 +41,7 @@ infection-log.txt
 
 # Coverage
 /coverage/
+/coverage-report/
 .coverage
 clover.xml
 coverage.xml

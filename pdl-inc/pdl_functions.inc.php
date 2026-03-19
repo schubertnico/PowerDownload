@@ -282,7 +282,7 @@ function seiten_render_limited(int $currentPage, int $totalPages, int $maxVisibl
     $range = seiten_calc_range($currentPage, $totalPages, $maxVisible);
     $output = '';
 
-    $start = max(1, $currentPage - $range['before']);
+    $start = (int) max(1, $currentPage - $range['before']);
     for ($j = $start; $j < $currentPage; $j++) {
         $output .= seiten_page_link($file, $j, $link, false);
     }

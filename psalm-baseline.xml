@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<files psalm-version="6.5.0@38fc8444edf0cebc9205296ee6e30e906ade783b">
+  <file src="pdl-admin/addscreen.php">
+    <RedundantCast>
+      <code><![CDATA[(int)$release_id]]></code>
+    </RedundantCast>
+    <TypeDoesNotContainType>
+      <code><![CDATA[$if == 1]]></code>
+      <code><![CDATA[$if == 1]]></code>
+    </TypeDoesNotContainType>
+  </file>
+  <file src="pdl-admin/editdelsettingssgroup.php">
+    <InvalidArrayOffset>
+      <code><![CDATA[$prot_settings[$i]]]></code>
+      <code><![CDATA[$prot_sgroups[$i]]]></code>
+    </InvalidArrayOffset>
+  </file>
+  <file src="pdl-admin/editdeltemplatestgroup.php">
+    <InvalidArrayOffset>
+      <code><![CDATA[$prot_templates[$i]]]></code>
+      <code><![CDATA[$prot_tgroups[$i]]]></code>
+    </InvalidArrayOffset>
+  </file>
+  <file src="pdl-admin/editdelugroup.php">
+    <InvalidArrayOffset>
+      <code><![CDATA[$protected[$i]]]></code>
+      <code><![CDATA[$protected[$i]]]></code>
+    </InvalidArrayOffset>
+  </file>
+  <file src="pdl-admin/editdeluright.php">
+    <InvalidArrayOffset>
+      <code><![CDATA[$protected[$i]]]></code>
+      <code><![CDATA[$protected[$j]]]></code>
+    </InvalidArrayOffset>
+  </file>
+  <file src="pdl-admin/footer.inc.php">
+    <TypeDoesNotContainType>
+      <code><![CDATA[$settings['debug'] == true]]></code>
+    </TypeDoesNotContainType>
+  </file>
+  <file src="pdl-admin/functions.inc.php">
+    <TypeDoesNotContainType>
+      <code><![CDATA[$bedingung == 1]]></code>
+    </TypeDoesNotContainType>
+  </file>
+  <file src="pdl-admin/header.inc.php">
+    <TypeDoesNotContainNull>
+      <code><![CDATA[!isset($user_rights)]]></code>
+      <code><![CDATA[!isset($user_rights) || !is_array($user_rights)]]></code>
+    </TypeDoesNotContainNull>
+    <TypeDoesNotContainType>
+      <code><![CDATA[!is_array($user_rights)]]></code>
+      <code><![CDATA[!isset($user_rights) || !is_array($user_rights)]]></code>
+    </TypeDoesNotContainType>
+  </file>
+  <file src="pdl-admin/makeletter.php">
+    <InvalidArgument>
+      <code><![CDATA[$datum]]></code>
+      <code><![CDATA[$datum]]></code>
+    </InvalidArgument>
+  </file>
+  <file src="pdl-admin/or_list.php">
+    <InvalidArgument>
+      <code><![CDATA[$releases]]></code>
+    </InvalidArgument>
+  </file>
+  <file src="pdl-inc/pdl_downloads.inc.php">
+    <InvalidGlobal>
+      <code><![CDATA[global $rendertime1;]]></code>
+    </InvalidGlobal>
+    <RedundantCast>
+      <code><![CDATA[(int) $ordner_id]]></code>
+    </RedundantCast>
+    <RedundantCondition>
+      <code><![CDATA[$isindex === false]]></code>
+      <code><![CDATA[$ordner_id]]></code>
+      <code><![CDATA[$page]]></code>
+    </RedundantCondition>
+    <TypeDoesNotContainNull>
+      <code><![CDATA[0]]></code>
+      <code><![CDATA[1]]></code>
+    </TypeDoesNotContainNull>
+    <TypeDoesNotContainType>
+      <code><![CDATA[($settings['debug'] ?? false) === true]]></code>
+    </TypeDoesNotContainType>
+  </file>
+  <file src="pdl-inc/pdl_flop.inc.php">
+    <TypeDoesNotContainType>
+      <code><![CDATA[$shortname > 0 && strlen($release_row['name']) > $shortname]]></code>
+    </TypeDoesNotContainType>
+  </file>
+  <file src="pdl-inc/pdl_functions.inc.php">
+    <InvalidArrayOffset>
+      <code><![CDATA[$pwarray[$letter]]]></code>
+    </InvalidArrayOffset>
+    <InvalidCast>
+      <code><![CDATA[$table_row]]></code>
+    </InvalidCast>
+    <LoopInvalidation>
+      <code><![CDATA[$i]]></code>
+    </LoopInvalidation>
+    <RedundantCondition>
+      <code><![CDATA[is_array($table_row)]]></code>
+    </RedundantCondition>
+    <TypeDoesNotContainType>
+      <code><![CDATA[(string) $table_row]]></code>
+    </TypeDoesNotContainType>
+  </file>
+  <file src="pdl-inc/pdl_header.inc.php">
+    <RedundantCast>
+      <code><![CDATA[(int) $inadmin]]></code>
+    </RedundantCast>
+    <RedundantCondition>
+      <code><![CDATA[isset($inadmin)]]></code>
+    </RedundantCondition>
+    <TypeDoesNotContainNull>
+      <code><![CDATA[0]]></code>
+      <code><![CDATA[isset($incdir)]]></code>
+    </TypeDoesNotContainNull>
+  </file>
+  <file src="pdl-inc/pdl_latest.inc.php">
+    <TypeDoesNotContainType>
+      <code><![CDATA[$shortname > 0 && strlen($release_row['name']) > $shortname]]></code>
+    </TypeDoesNotContainType>
+  </file>
+  <file src="pdl-inc/pdl_ordner.modul.php">
+    <RedundantCast>
+      <code><![CDATA[(int)($page ?? 1)]]></code>
+    </RedundantCast>
+    <RedundantCondition>
+      <code><![CDATA[$ordner_id]]></code>
+      <code><![CDATA[$page]]></code>
+    </RedundantCondition>
+    <TypeDoesNotContainNull>
+      <code><![CDATA[0]]></code>
+      <code><![CDATA[1]]></code>
+    </TypeDoesNotContainNull>
+  </file>
+  <file src="pdl-inc/pdl_rated.inc.php">
+    <TypeDoesNotContainType>
+      <code><![CDATA[$shortname > 0 && strlen($release_row['name']) > $shortname]]></code>
+    </TypeDoesNotContainType>
+  </file>
+  <file src="pdl-inc/pdl_release.modul.php">
+    <RedundantCondition>
+      <code><![CDATA['']]></code>
+      <code><![CDATA['']]></code>
+    </RedundantCondition>
+  </file>
+  <file src="pdl-inc/pdl_search.modul.php">
+    <RedundantCast>
+      <code><![CDATA[(int)($page ?? 1)]]></code>
+      <code><![CDATA[(int)($submit ?? 0)]]></code>
+    </RedundantCast>
+    <RedundantCondition>
+      <code><![CDATA[$page]]></code>
+      <code><![CDATA[$submit]]></code>
+    </RedundantCondition>
+    <TypeDoesNotContainNull>
+      <code><![CDATA[0]]></code>
+      <code><![CDATA[1]]></code>
+    </TypeDoesNotContainNull>
+  </file>
+  <file src="pdl-inc/pdl_showscreen.modul.php">
+    <RedundantCast>
+      <code><![CDATA[(int)($screen_id ?? 0)]]></code>
+    </RedundantCast>
+    <RedundantCondition>
+      <code><![CDATA[$screen_id]]></code>
+    </RedundantCondition>
+    <TypeDoesNotContainNull>
+      <code><![CDATA[0]]></code>
+    </TypeDoesNotContainNull>
+    <TypeDoesNotContainType>
+      <code><![CDATA[0]]></code>
+    </TypeDoesNotContainType>
+  </file>
+  <file src="pdl-inc/pdl_top.inc.php">
+    <TypeDoesNotContainType>
+      <code><![CDATA[$shortname > 0 && strlen($release_row['name']) > $shortname]]></code>
+    </TypeDoesNotContainType>
+  </file>
+</files>

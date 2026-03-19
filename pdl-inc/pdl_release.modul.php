@@ -96,7 +96,7 @@ if (!$release_row) {
         $release_row['vote_form'] = "<br>Sie haben keine Berechtigung den Download zu bewerten.";
     }
 
-    $template['file_detail'] = str_replace("{total_size}", size($total_size), $template['file_detail'] ?? '');
+    $template['file_detail'] = str_replace("{total_size}", size($total_size), (string) ($template['file_detail'] ?? ''));
     $template['file_detail'] = str_replace("{total_traffic}", size($total_traffic), $template['file_detail']);
     $template['file_detail'] = str_replace("{total_downloads}", (string)$total_downloads, $template['file_detail']);
     $template['file_detail'] = str_replace("{total_files}", (string)$total_files, $template['file_detail']);
@@ -145,7 +145,7 @@ if (!$release_row) {
         }
     }
     $release_row['screens'] = $screens;
-    echo replace($template['file_detail'] ?? '', $release_row);
+    echo replace((string) ($template['file_detail'] ?? ''), $release_row);
     echo "</form>
     " . ($template['own_footer'] ?? '') . "<br><br>";
 

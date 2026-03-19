@@ -11,8 +11,6 @@
 
 declare(strict_types=1);
 
-use RuntimeException;
-
 class pdl_db_class
 {
     public string $config_sql_server = "localhost";
@@ -29,7 +27,7 @@ class pdl_db_class
 
         mysqli_report(MYSQLI_REPORT_OFF);
 
-        $connection = mysqli_connect(
+        $connection = @mysqli_connect(
             $host,
             $this->config_sql_user,
             $this->config_sql_password,
@@ -38,7 +36,7 @@ class pdl_db_class
 
         if ($connection === false) {
             $error = mysqli_connect_error() ?? 'Unknown error';
-            throw new RuntimeException("Verbindung zum MySQL Server konnte nicht aufgebaut werden: " . $error);
+            throw new \RuntimeException("Verbindung zum MySQL Server konnte nicht aufgebaut werden: " . $error);
         }
 
         $this->handler = $connection;

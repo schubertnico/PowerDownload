@@ -32,7 +32,7 @@ $traffic_formatted = size($traffic);
 $durch_traffic_formatted = size($durch_traffic);
 $durch_downloads = round($durch_downloads, 1);
 
-$stats = str_replace("{files}", (string)$files, $template['stats'] ?? '');
+$stats = str_replace("{files}", (string)$files, (string) ($template['stats'] ?? ''));
 $stats = str_replace("{size}", $size_formatted, $stats);
 $stats = str_replace("{downloads}", (string)$downloads, $stats);
 $stats = str_replace("{traffic}", $traffic_formatted, $stats);

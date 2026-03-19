@@ -214,13 +214,13 @@ if ($login == 1 && $nick !== '' && $pw !== '') {
     $check_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['user'] . " WHERE nick='" . $nick_escaped . "' AND passwort='" . $pw_hash . "'");
     if ($db_handler->sql_num_rows($check_res) == 1) {
         $login_temp = $db_handler->sql_fetch_array($check_res);
-        setcookie("login_id", (string) $login_temp['user_id'], [
+        setcookie("login_id", (string) ($login_temp['user_id'] ?? ''), [
             'expires' => time() + 8760 * 3600,
             'path' => '/',
             'httponly' => true,
             'samesite' => 'Strict'
         ]);
-        setcookie("login_pw", $login_temp['passwort'], [
+        setcookie("login_pw", (string) ($login_temp['passwort'] ?? ''), [
             'expires' => time() + 8760 * 3600,
             'path' => '/',
             'httponly' => true,
