@@ -24,6 +24,7 @@ if ($vote == 1 && $iplocked == 0 && $vote_id > 0 && $vote_id <= 10) {
 
 // Release Daten auslesen
 $release_row = $db_handler->sql_fetch_array($db_handler->sql_query("SELECT * FROM " . $sql_table['release'] . " WHERE release_id='" . $release_id_safe . "'"));
+$release_exists = (bool) $release_row;
 
 if (!$release_row) {
     echo "Release nicht gefunden.";

@@ -9,7 +9,7 @@ CREATE TABLE ". $sql_table['comments'] ." (
   time int(14) NOT NULL default '0',
   PRIMARY KEY  (comment_id),
   KEY release_id (release_id)
-) TYPE=MyISAM;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 # --------------------------------------------------------
 
@@ -24,7 +24,7 @@ CREATE TABLE ". $sql_table['files'] ." (
   mirror int(9) NOT NULL default '0',
   PRIMARY KEY  (file_id),
   KEY release_id (release_id)
-) TYPE=MyISAM;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 # --------------------------------------------------------
 
@@ -34,8 +34,8 @@ CREATE TABLE ". $sql_table['iplock'] ." (
   time int(14) NOT NULL default '0',
   file_id int(9) NOT NULL default '0',
   user_id int(9) NOT NULL default '0',
-  art enum('comment','vote') NOT NULL default 'comment'
-) TYPE=MyISAM;
+  art enum('comment','vote','login') NOT NULL default 'comment'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 # --------------------------------------------------------
 
@@ -47,7 +47,7 @@ CREATE TABLE ". $sql_table['ordner'] ." (
   text text NOT NULL,
   PRIMARY KEY  (ordner_id),
   KEY sordner_id (sordner_id)
-) TYPE=MyISAM;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 # --------------------------------------------------------
 
@@ -71,7 +71,7 @@ CREATE TABLE ". $sql_table['release'] ." (
   PRIMARY KEY  (release_id),
   KEY ordner_id (ordner_id),
   KEY released (released)
-) TYPE=MyISAM;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 # --------------------------------------------------------
 
@@ -83,7 +83,7 @@ CREATE TABLE ". $sql_table['replacements'] ." (
   type enum('s','g','b') NOT NULL default 's',
   PRIMARY KEY  (rep_id),
   KEY type (type)
-) TYPE=MyISAM;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 # --------------------------------------------------------
 
@@ -96,7 +96,7 @@ CREATE TABLE ". $sql_table['rights'] ." (
   reihenfolge tinyint(2) NOT NULL default '0',
   PRIMARY KEY  (right_id),
   UNIQUE KEY variablenname (variablenname)
-) TYPE=MyISAM;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 # --------------------------------------------------------
 
@@ -108,7 +108,7 @@ CREATE TABLE ". $sql_table['screens'] ." (
   text varchar(255) NOT NULL default '',
   PRIMARY KEY  (screen_id),
   KEY release_id (release_id)
-) TYPE=MyISAM;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 # --------------------------------------------------------
 
@@ -125,7 +125,7 @@ CREATE TABLE ". $sql_table['settings'] ." (
   PRIMARY KEY  (settings_id),
   UNIQUE KEY variablenname (variablenname),
   KEY sgroup_id (sgroup_id)
-) TYPE=MyISAM;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 # --------------------------------------------------------
 
@@ -135,7 +135,7 @@ CREATE TABLE ". $sql_table['settingsgroup'] ." (
   name varchar(128) NOT NULL default '',
   reihenfolge smallint(3) NOT NULL default '0',
   PRIMARY KEY  (sgroup_id)
-) TYPE=MyISAM;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 # --------------------------------------------------------
 
@@ -152,7 +152,7 @@ CREATE TABLE ". $sql_table['template'] ." (
   PRIMARY KEY  (template_id),
   UNIQUE KEY variablenname (variablenname),
   KEY tgroup_id (tgroup_id)
-) TYPE=MyISAM;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 # --------------------------------------------------------
 
@@ -162,7 +162,7 @@ CREATE TABLE ". $sql_table['templategroup'] ." (
   name varchar(128) NOT NULL default '',
   reihenfolge tinyint(2) NOT NULL default '0',
   PRIMARY KEY  (tgroup_id)
-) TYPE=MyISAM;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 # --------------------------------------------------------
 
@@ -178,11 +178,13 @@ CREATE TABLE ". $sql_table['user'] ." (
   signatur text NOT NULL,
   ugroup_id int(9) NOT NULL default '0',
   remind_code varchar(128) NOT NULL default '',
+  remind_expires int(14) NOT NULL default '0',
   lastactive int(14) NOT NULL default '0',
+  session_token varchar(64) NOT NULL default '',
   PRIMARY KEY  (user_id),
   UNIQUE KEY nick (nick,email),
   KEY ugroup_id (ugroup_id)
-) TYPE=MyISAM;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 # --------------------------------------------------------
 
@@ -207,7 +209,7 @@ CREATE TABLE ". $sql_table['usergroup'] ." (
   templates enum('Y','N') NOT NULL default 'Y',
   god enum('Y','N') NOT NULL default 'Y',
   PRIMARY KEY  (ugroup_id)
-) TYPE=MyISAM;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 # --------------------------------------------------------
 

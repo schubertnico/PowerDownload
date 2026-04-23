@@ -5,60 +5,97 @@
  */
 
 $submit = (int)($submit ?? 0);
+$script_file = htmlspecialchars($settings['script_file'] ?? '');
+
+if (!($user_details ?? null)) {
+    echo "<center>Sie müssen eingeloggt sein um Ihr Profil zu bearbeiten.</center>";
+    return;
+}
+
+$errors = [];
 
 if ($submit == 1) {
-    $pw_old = $pw_old ?? '';
-    $pw_new = $pw_new ?? '';
-    $pw_new2 = $pw_new2 ?? '';
-    $email = $db_handler->sql_escape_string($email ?? '');
-    $homepage = $db_handler->sql_escape_string($homepage ?? '');
-    $icq = $db_handler->sql_escape_int($icq ?? 0);
-    $get_letter = ($get_letter ?? '') == "Y" ? "Y" : "N";
+    if (!csrf_verify($csrf_token ?? null)) {
+        $errors[] = "Sicherheits-Token ungültig.";
+    }
 
-    // Check old password - support both MD5 (legacy) and password_hash
-    $stored_password = $user_details['passwort'] ?? '';
+    $pw_old_raw = (string) ($pw_old ?? '');
+    $pw_new_raw = (string) ($pw_new ?? '');
+    $pw_new2_raw = (string) ($pw_new2 ?? '');
+    $email_raw = (string) ($email ?? '');
+    $homepage_raw = (string) ($homepage ?? '');
+    $icq_raw = (int) ($icq ?? 0);
+    $get_letter_raw = ($get_letter ?? '') == "Y" ? "Y" : "N";
+
+    if ($email_raw === '' || !filter_var($email_raw, FILTER_VALIDATE_EMAIL)) {
+        $errors[] = "Die E-Mail-Adresse ist ungültig.";
+    }
+
+    // Altes Passwort prüfen (bcrypt oder legacy MD5)
+    $stored_password = (string) ($user_details['passwort'] ?? '');
     $password_valid = false;
-    if (password_get_info($stored_password)['algo'] !== null && password_get_info($stored_password)['algo'] !== 0) {
-        $password_valid = password_verify($pw_old, $stored_password);
-    } else {
-        $password_valid = (md5($pw_old) === $stored_password);
+    $info = password_get_info($stored_password);
+    if (($info['algo'] ?? null) !== null && ($info['algo'] ?? 0) !== 0) {
+        $password_valid = password_verify($pw_old_raw, $stored_password);
+    } elseif (strlen($stored_password) === 32 && ctype_xdigit($stored_password)) {
+        $password_valid = hash_equals($stored_password, md5($pw_old_raw));
     }
 
-    if ($password_valid) {
-        if ($pw_new) {
-            if ($pw_new == $pw_new2) {
-                $pw_hash = password_hash($pw_new, PASSWORD_DEFAULT);
-                $pw_hash_safe = $db_handler->sql_escape_string($pw_hash);
-                if ($homepage && !preg_match("!^https?://!", $homepage)) {
-                    $homepage = "http://" . $homepage;
-                }
-                $user_id_safe = $db_handler->sql_escape_int($user_details['user_id'] ?? 0);
-                $db_handler->sql_query("UPDATE " . $sql_table['user'] . " SET email='" . $email . "', get_letter='" . $get_letter . "', homepage='" . $homepage . "', icq='" . $icq . "', passwort='" . $pw_hash_safe . "' WHERE user_id='" . $user_id_safe . "'");
-                echo "<center><b>Profil erfolgreich geaendert. Da das Passwort geaendert wurde muessen sie sich neu <a href=\"" . htmlspecialchars($settings['script_file'] ?? '') . "usercenter=login\">Einloggen</a>.</b></center>";
-            } else {
-                echo "<center><b>Neues Passwort stimmt nicht mit der Bestaetigung ueberein.</b></center>";
-            }
-        } else {
-            if ($homepage && !preg_match("!^https?://!", $homepage)) {
-                $homepage = "http://" . $homepage;
-            }
-            $user_id_safe = $db_handler->sql_escape_int($user_details['user_id'] ?? 0);
-            $db_handler->sql_query("UPDATE " . $sql_table['user'] . " SET email='" . $email . "', get_letter='" . $get_letter . "', homepage='" . $homepage . "', icq='" . $icq . "' WHERE user_id='" . $user_id_safe . "'");
-            echo "<center><b>Profil erfolgreich geaendert.</b></center>";
-        }
-    } else {
-        echo "<center><b>Altes Passwort ist falsch.</b></center>";
+    if (!$password_valid) {
+        $errors[] = "Altes Passwort ist falsch.";
     }
-} else {
-    if (!($user_details ?? null)) {
-        echo "<center>Sie muessen eingeloggt sein um Ihr Profil zu bearbeiten.</center>";
-    } else {
-        $form = str_replace("{email}", htmlspecialchars($user_details['email'] ?? ''), (string) ($template['uprofil_form'] ?? ''));
-        $get_letter = ($user_details['get_letter'] ?? '') == "Y" ? " checked" : "";
-        $form = str_replace("{get_letter}", $get_letter, $form);
-        $form = str_replace("{homepage}", htmlspecialchars($user_details['homepage'] ?? ''), $form);
-        $icq = (int)($user_details['icq'] ?? 0);
-        $form = str_replace("{icq}", $icq > 0 ? (string)$icq : "", $form);
-        echo "<form action=\"" . htmlspecialchars($settings['script_file'] ?? '') . "usercenter=profil&submit=1\" method=\"post\">" . replace($form, []) . "</form>";
+
+    if ($pw_new_raw !== '' && $pw_new_raw !== $pw_new2_raw) {
+        $errors[] = "Neues Passwort stimmt nicht mit der Bestätigung überein.";
+    }
+
+    if ($pw_new_raw !== '' && strlen($pw_new_raw) < 8) {
+        $errors[] = "Neues Passwort muss mindestens 8 Zeichen lang sein.";
+    }
+
+    if (!$errors) {
+        $homepage_normalized = '';
+        if ($homepage_raw !== '') {
+            $candidate = $homepage_raw;
+            if (!preg_match("!^https?://!i", $candidate)) {
+                $candidate = "http://" . $candidate;
+            }
+            if (filter_var($candidate, FILTER_VALIDATE_URL) && preg_match("!^https?://!i", $candidate)) {
+                $homepage_normalized = $candidate;
+            }
+        }
+
+        $email_safe = $db_handler->sql_escape_string($email_raw);
+        $homepage_safe = $db_handler->sql_escape_string($homepage_normalized);
+        $user_id_safe = $db_handler->sql_escape_int($user_details['user_id'] ?? 0);
+
+        if ($pw_new_raw !== '') {
+            $pw_hash = password_hash($pw_new_raw, PASSWORD_DEFAULT);
+            $pw_hash_safe = $db_handler->sql_escape_string($pw_hash);
+            $db_handler->sql_query("UPDATE " . $sql_table['user'] . " SET email='" . $email_safe . "', get_letter='" . $get_letter_raw . "', homepage='" . $homepage_safe . "', icq='" . (int) $icq_raw . "', passwort='" . $pw_hash_safe . "', session_token='' WHERE user_id='" . $user_id_safe . "'");
+            echo '<center><b>Profil erfolgreich geändert. Da das Passwort geändert wurde, bitte erneut <a href="' . $script_file . 'usercenter=login">Einloggen</a>.</b></center>';
+            return;
+        }
+        $db_handler->sql_query("UPDATE " . $sql_table['user'] . " SET email='" . $email_safe . "', get_letter='" . $get_letter_raw . "', homepage='" . $homepage_safe . "', icq='" . (int) $icq_raw . "' WHERE user_id='" . $user_id_safe . "'");
+        echo "<center><b>Profil erfolgreich geändert.</b></center>";
+        return;
     }
 }
+
+if ($errors) {
+    echo '<div style="color:#c00;text-align:center;margin:10px"><ul style="display:inline-block;text-align:left">';
+    foreach ($errors as $err) {
+        echo "<li>" . htmlspecialchars($err) . "</li>";
+    }
+    echo '</ul></div>';
+}
+
+$form = (string) ($template['uprofil_form'] ?? '');
+$form = str_replace("{email}", htmlspecialchars($user_details['email'] ?? '', ENT_QUOTES, 'UTF-8'), $form);
+$checked_val = ($user_details['get_letter'] ?? '') == "Y" ? " checked" : "";
+$form = str_replace("{get_letter}", $checked_val, $form);
+$form = str_replace("{homepage}", htmlspecialchars($user_details['homepage'] ?? '', ENT_QUOTES, 'UTF-8'), $form);
+$icq_val = (int)($user_details['icq'] ?? 0);
+$form = str_replace("{icq}", $icq_val > 0 ? (string)$icq_val : "", $form);
+
+echo '<form action="' . $script_file . 'usercenter=profil&submit=1" method="post">' . csrf_input() . replace($form, []) . '</form>';

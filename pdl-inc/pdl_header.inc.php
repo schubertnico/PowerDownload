@@ -30,6 +30,7 @@ if (!isset($incdir)) {
 require($incdir . "pdl-inc/pdl_config.inc.php");
 require($incdir . "pdl-inc/pdl_db_class_" . strtolower($config_sql_type) . ".inc.php");
 require($incdir . "pdl-inc/pdl_functions.inc.php");
+require($incdir . "pdl-inc/pdl_csrf.inc.php");
 
 // Initialize SQL Class
 $db_handler = new pdl_db_class();
@@ -163,41 +164,74 @@ $change_list = isset($_GET['change_list']) ? (int) $_GET['change_list'] : 0;
 $orderseq = $_GET['orderseq'] ?? $_POST['orderseq'] ?? '';
 $orderby = $_GET['orderby'] ?? $_POST['orderby'] ?? '';
 $perpage = $_GET['perpage'] ?? $_POST['perpage'] ?? '';
+
+// User-Center-Felder (Register, Profil, Lost, Comments)
+$email = $_POST['email'] ?? $_GET['email'] ?? '';
+$pw_old = $_POST['pw_old'] ?? '';
+$pw_new = $_POST['pw_new'] ?? '';
+$pw_new2 = $_POST['pw_new2'] ?? '';
+$homepage = $_POST['homepage'] ?? '';
+$icq = isset($_POST['icq']) ? (int) $_POST['icq'] : 0;
+$get_letter = $_POST['get_letter'] ?? '';
+$titel = $_POST['titel'] ?? '';
+$text = $_POST['text'] ?? '';
+$remind_code = $_GET['remind_code'] ?? $_POST['remind_code'] ?? '';
+$csrf_token = $_POST['csrf_token'] ?? $_GET['csrf_token'] ?? '';
+
 /** @psalm-suppress RedundantCondition */
 $inadmin = $inadmin ?? 0;
 
 // andere Vars
 $ip = $_SERVER['REMOTE_ADDR'] ?? '';
 
+// Cookie-Sicherheits-Defaults (Secure nur bei HTTPS, sonst Browser löscht Cookie sofort)
+$cookie_secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+$cookie_opts = [
+    'expires' => time() + 8760 * 3600,
+    'path' => '/',
+    'httponly' => true,
+    'secure' => $cookie_secure,
+    'samesite' => 'Lax',
+];
+$cookie_clear = [
+    'expires' => time() - 3600,
+    'path' => '/',
+    'httponly' => true,
+    'secure' => $cookie_secure,
+    'samesite' => 'Lax',
+];
+
+// Session für CSRF/Login-Status starten
+if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'httponly' => true,
+        'secure' => $cookie_secure,
+        'samesite' => 'Lax',
+    ]);
+    session_start();
+}
+
 // Sicherheitslücke schließen:
 $user_details = null;
 $ugroup_id = 0;
 $user_rights = [];
 
-// Check Cookie
+// Check Cookie (Session-Token-basiert statt Password-Hash)
 $login_id = $_COOKIE['login_id'] ?? '';
-$login_pw = $_COOKIE['login_pw'] ?? '';
+$login_token = $_COOKIE['login_token'] ?? '';
 
-if ($login_id !== '' && $login_pw !== '') {
-    $login_id_escaped = $db_handler->sql_escape_string($login_id);
-    $login_pw_escaped = $db_handler->sql_escape_string($login_pw);
-    $check_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['user'] . " WHERE user_id='" . $login_id_escaped . "' AND passwort='" . $login_pw_escaped . "'");
+if ($login_id !== '' && $login_token !== '') {
+    $login_id_escaped = $db_handler->sql_escape_int($login_id);
+    $login_token_escaped = $db_handler->sql_escape_string($login_token);
+    $check_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['user'] . " WHERE user_id='" . $login_id_escaped . "' AND session_token='" . $login_token_escaped . "' AND session_token != ''");
     $check = $db_handler->sql_num_rows($check_res);
     if ($check == 1) {
         $user_details = $db_handler->sql_fetch_array($check_res);
     } else {
-        setcookie("login_id", "", [
-            'expires' => time() + 8760 * 3600,
-            'path' => '/',
-            'httponly' => true,
-            'samesite' => 'Strict'
-        ]);
-        setcookie("login_pw", "", [
-            'expires' => time() + 8760 * 3600,
-            'path' => '/',
-            'httponly' => true,
-            'samesite' => 'Strict'
-        ]);
+        setcookie("login_id", "", $cookie_clear);
+        setcookie("login_token", "", $cookie_clear);
     }
 }
 
@@ -211,23 +245,55 @@ $user_rights = $db_handler->sql_fetch_array($rights_res) ?? [];
 
 // Login
 if ($login == 1 && $nick !== '' && $pw !== '') {
-    $pw_hash = md5($pw);
+    // Rate-Limit: Max 5 Fehlversuche pro IP in 15 Minuten
+    $ip_escaped = $db_handler->sql_escape_string($ip);
+    $limit_since = time() - 900;
+    $failed_res = $db_handler->sql_query("SELECT COUNT(*) AS c FROM " . $sql_table['iplock'] . " WHERE ip='" . $ip_escaped . "' AND art='login' AND time>" . $limit_since);
+    $failed_row = $db_handler->sql_fetch_array($failed_res);
+    $failed_count = (int) ($failed_row['c'] ?? 0);
+
+    if ($failed_count >= 5) {
+        header("Location: " . $settings['script_file'] . "usercenter=login&login_error=2");
+        exit;
+    }
+
     $nick_escaped = $db_handler->sql_escape_string($nick);
-    $check_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['user'] . " WHERE nick='" . $nick_escaped . "' AND passwort='" . $pw_hash . "'");
-    if ($db_handler->sql_num_rows($check_res) == 1) {
-        $login_temp = $db_handler->sql_fetch_array($check_res);
-        setcookie("login_id", (string) ($login_temp['user_id'] ?? ''), [
-            'expires' => time() + 8760 * 3600,
-            'path' => '/',
-            'httponly' => true,
-            'samesite' => 'Strict'
-        ]);
-        setcookie("login_pw", (string) ($login_temp['passwort'] ?? ''), [
-            'expires' => time() + 8760 * 3600,
-            'path' => '/',
-            'httponly' => true,
-            'samesite' => 'Strict'
-        ]);
+    $check_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['user'] . " WHERE nick='" . $nick_escaped . "'");
+    $login_temp = $db_handler->sql_num_rows($check_res) == 1 ? $db_handler->sql_fetch_array($check_res) : null;
+
+    $password_ok = false;
+    if ($login_temp) {
+        $stored = (string) ($login_temp['passwort'] ?? '');
+        $info = password_get_info($stored);
+        if (($info['algo'] ?? null) !== null && ($info['algo'] ?? 0) !== 0) {
+            // Moderner Hash
+            $password_ok = password_verify($pw, $stored);
+        } elseif (strlen($stored) === 32 && ctype_xdigit($stored)) {
+            // Legacy MD5 - nach erfolgreichem Vergleich auf bcrypt migrieren
+            if (hash_equals($stored, md5($pw))) {
+                $password_ok = true;
+                $new_hash = password_hash($pw, PASSWORD_DEFAULT);
+                $new_hash_safe = $db_handler->sql_escape_string($new_hash);
+                $user_id_safe = $db_handler->sql_escape_int($login_temp['user_id'] ?? 0);
+                $db_handler->sql_query("UPDATE " . $sql_table['user'] . " SET passwort='" . $new_hash_safe . "' WHERE user_id='" . $user_id_safe . "'");
+            }
+        }
+    }
+
+    if ($password_ok && $login_temp) {
+        // Rate-Limit-Reset für diese IP
+        $db_handler->sql_query("DELETE FROM " . $sql_table['iplock'] . " WHERE ip='" . $ip_escaped . "' AND art='login'");
+
+        // Session-Token generieren und persistieren
+        $session_token = bin2hex(random_bytes(32));
+        $session_token_safe = $db_handler->sql_escape_string($session_token);
+        $user_id_safe = $db_handler->sql_escape_int($login_temp['user_id'] ?? 0);
+        $db_handler->sql_query("UPDATE " . $sql_table['user'] . " SET session_token='" . $session_token_safe . "', lastactive='" . time() . "' WHERE user_id='" . $user_id_safe . "'");
+
+        session_regenerate_id(true);
+        setcookie("login_id", (string) ($login_temp['user_id'] ?? ''), $cookie_opts);
+        setcookie("login_token", $session_token, $cookie_opts);
+
         if (basename($_SERVER['PHP_SELF'] ?? '') == "index.php") {
             header("Location: index.php");
         } else {
@@ -235,24 +301,25 @@ if ($login == 1 && $nick !== '' && $pw !== '') {
         }
         exit;
     } else {
-        $login_error = true;
+        // Fehlversuch loggen
+        $db_handler->sql_query("INSERT INTO " . $sql_table['iplock'] . " (ip,time,file_id,user_id,art) VALUES ('" . $ip_escaped . "','" . time() . "',0,0,'login')");
+        header("Location: " . $settings['script_file'] . "usercenter=login&login_error=1");
+        exit;
     }
 }
 
 // Logout
 if ($logout == 1) {
-    setcookie("login_id", "", [
-        'expires' => time() + 8760 * 3600,
-        'path' => '/',
-        'httponly' => true,
-        'samesite' => 'Strict'
-    ]);
-    setcookie("login_pw", "", [
-        'expires' => time() + 8760 * 3600,
-        'path' => '/',
-        'httponly' => true,
-        'samesite' => 'Strict'
-    ]);
+    // Session-Token in DB löschen, damit Cookie auf anderen Geräten ungültig wird
+    if ($user_details) {
+        $user_id_safe = $db_handler->sql_escape_int($user_details['user_id'] ?? 0);
+        $db_handler->sql_query("UPDATE " . $sql_table['user'] . " SET session_token='' WHERE user_id='" . $user_id_safe . "'");
+    }
+    setcookie("login_id", "", $cookie_clear);
+    setcookie("login_token", "", $cookie_clear);
+    // Alten (legacy) Cookie ebenfalls löschen, falls noch gesetzt
+    setcookie("login_pw", "", $cookie_clear);
+    session_destroy();
     if (basename($_SERVER['PHP_SELF'] ?? '') == "index.php") {
         header("Location: index.php");
     } else {

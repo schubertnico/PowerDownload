@@ -45,7 +45,16 @@ if ($files_check == 0 && $ordner_check == 0) {
     }
     if ($files_check != 0) {
         if ($page < 1) $page = 1;
-        $perpage = (int)($settings['perpage'] ?? 10);
+
+        // perpage: URL hat Vorrang, dann Settings, Whitelist: 5..200
+        $perpage_candidate = 0;
+        if (isset($_GET['perpage']) || isset($_POST['perpage'])) {
+            $perpage_candidate = (int)($_GET['perpage'] ?? $_POST['perpage'] ?? 0);
+        }
+        if ($perpage_candidate < 5 || $perpage_candidate > 200) {
+            $perpage_candidate = (int)($settings['perpage'] ?? 10);
+        }
+        $perpage = $perpage_candidate > 0 ? $perpage_candidate : 10;
         $temp1 = $page * $perpage - $perpage;
         $limit = $temp1 . "," . $perpage;
         $total = $db_handler->sql_num_rows($db_handler->sql_query("SELECT * FROM " . $sql_table['release'] . " WHERE ordner_id='" . $ordner_id_safe . "'"));
@@ -54,8 +63,15 @@ if ($files_check == 0 && $ordner_check == 0) {
         echo "<form action=\"" . htmlspecialchars($settings['script_file'] ?? '') . "change_list=1\" method=\"post\">";
 
         $release_rows = "";
-        $orderby = $db_handler->sql_escape_string($settings['orderby'] ?? 'name');
-        $orderseq = ($settings['orderseq'] ?? 'ASC') === 'DESC' ? 'DESC' : 'ASC';
+
+        // orderby: nur Whitelist erlauben (verhindert SQLi, ignoriert manipulierte Settings)
+        $orderby_whitelist = ['name', 'time', 'views', 'votes', 'voted'];
+        $orderby_candidate = (string)($_GET['orderby'] ?? $_POST['orderby'] ?? ($settings['orderby'] ?? 'name'));
+        $orderby = in_array($orderby_candidate, $orderby_whitelist, true) ? $orderby_candidate : 'name';
+
+        $orderseq_candidate = strtoupper((string)($_GET['orderseq'] ?? $_POST['orderseq'] ?? ($settings['orderseq'] ?? 'ASC')));
+        $orderseq = $orderseq_candidate === 'DESC' ? 'DESC' : 'ASC';
+
         $files_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['release'] . " WHERE ordner_id='" . $ordner_id_safe . "' AND released='Y' ORDER BY " . $orderby . " " . $orderseq . " LIMIT " . $limit);
         while ($files_row = $db_handler->sql_fetch_array($files_res)) {
             $release_id_safe = $db_handler->sql_escape_int($files_row['release_id'] ?? 0);

@@ -165,7 +165,7 @@ if (!empty($screen_id)) {
 
 // Admin Links
 if (($settings['enable_extrernadmin'] ?? 'N') === "Y" && ($user_rights['adminaccess'] ?? 'N') === "Y") {
-    if (!empty($release_id) && empty($screen_id)) {
+    if (!empty($release_id) && empty($screen_id) && !empty($release_exists)) {
         if (($user_rights['editfiles'] ?? 'N') === "Y" && ($user_rights['delfiles'] ?? 'N') === "Y") {
             echo '<div align="right"><select name="admin" onchange="window.location=(\'pdl-admin/\'+this.options[this.selectedIndex].value)">
             <option value="">Admin Optionen</option>';
