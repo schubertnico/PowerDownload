@@ -1,68 +1,218 @@
+# =====================================================================
+# PowerDownload - .gitignore
+# Halte sensible / lokale / generierte Dateien aus dem Repo fern.
+# =====================================================================
+
+# ---------------------------------------------------------------------
 # Dependencies
+# ---------------------------------------------------------------------
 /vendor/
+/node_modules/
+/bower_components/
 
-# Logs & Reports
-/logs/*.log
-/logs/*.html
-/logs/*.xml
-/logs/coverage-xml/
+# composer.lock IST committed → reproducible installs auf Live-Server
+# (NICHT ignorieren!)
 
-# Backup
-/backup/
-
-# IDE
-/.idea/
-*.iml
-.vscode/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-Desktop.ini
-
-# Composer
+# Composer-Hilfsdateien
 composer.phar
-composer.lock
+auth.json
 
-# PHP Tools - Cache Files
-.php-cs-fixer.cache
-.phpunit.cache/
-.phpunit.result.cache
-.psalm/
-psalm.baseline.xml
-phpstan-baseline.neon
+# ---------------------------------------------------------------------
+# Logs & Reports
+# ---------------------------------------------------------------------
+*.log
+/logs/*
+!/logs/.gitkeep
+error_log
+access_log
 
-# Infection
-infection.log
-infection-log.txt
-
-# Coverage
+# ---------------------------------------------------------------------
+# Coverage & Tests
+# ---------------------------------------------------------------------
 /coverage/
 /coverage-report/
+/coverage-xml/
 .coverage
 clover.xml
 coverage.xml
+junit.xml
+/tests/_output/
+/tests/coverage/
+/tests/output/
+.phpunit.cache/
+.phpunit.result.cache
 
-# Temporary Files
+# ---------------------------------------------------------------------
+# PHP Tools - Cache & Baseline
+# ---------------------------------------------------------------------
+.php-cs-fixer.cache
+.phpstan.cache/
+.psalm/
+.psalm-cache/
+.rector-cache/
+.rector/cache/
+psalm.baseline.xml
+phpstan-baseline.neon
+
+# ---------------------------------------------------------------------
+# Infection Mutation Tests
+# ---------------------------------------------------------------------
+infection.log
+infection-log.txt
+/infection-coverage/
+
+# ---------------------------------------------------------------------
+# Backup-Dateien (Editor / Merge-Konflikte / manuelle Sicherungen)
+# ---------------------------------------------------------------------
+*.bak
+*.backup
+*.old
+*.orig
+*.original
+*.rej
+*.previous
+*~
+.~lock.*
+*.swp
+*.swo
+
+# ---------------------------------------------------------------------
+# Temporäre Dateien
+# ---------------------------------------------------------------------
 *.cache
 *.tmp
-*.bak
+*.temp
+.tmp/
+.cache/
 
-# Environment
+# ---------------------------------------------------------------------
+# IDE / Editor
+# ---------------------------------------------------------------------
+/.idea/
+*.iml
+.vscode/
+.history/
+.fleet/
+.zed/
+*.sublime-workspace
+*.sublime-project
+.phpactor.json
+.phpstorm.meta.php
+nbproject/
+.project
+.buildpath
+.settings/
+
+# ---------------------------------------------------------------------
+# AI-Tools / Assistant Workspace
+# ---------------------------------------------------------------------
+/.claude/
+/.cursor/
+/.aider*
+/.continue/
+
+# ---------------------------------------------------------------------
+# Operating System
+# ---------------------------------------------------------------------
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+desktop.ini
+$RECYCLE.BIN/
+"System Volume Information"
+
+# Linux
+.Trash-*
+.nfs*
+
+# ---------------------------------------------------------------------
+# Environment & Secrets
+# ---------------------------------------------------------------------
 .env
 .env.local
 .env.*.local
+.env.production
+.env.staging
 
-# Docker
+# Lokale Konfigurations-Overrides (NIE in Repo!)
+*.local
+*.local.php
+phpunit.xml.local
+phpstan.neon.local
+psalm.local.xml
+.htaccess.local
+pdl-inc/pdl_config.local.inc.php
+pdl-inc/pdl_config.prod.inc.php
+pdl-inc/pdl_config.live.inc.php
+
+# Zertifikate, Schlüssel, Credentials
+*.key
+*.pem
+*.crt
+*.cer
+*.p12
+*.pfx
+*.pem.txt
+secrets.php
+credentials.php
+credentials.json
+
+# ---------------------------------------------------------------------
+# Datenbank-Dumps / Backups (sollen NICHT auf Live-Server)
+# ---------------------------------------------------------------------
+*.sql.gz
+*.sql.bz2
+*.sql.zip
+*.sql.tar
+*.dump
+dump.sql
+mysqldump.sql
+backup.sql
+*.bak.sql
+/db-backups/
+/dumps/
+/backup/
+
+# ---------------------------------------------------------------------
+# Build-Artefakte
+# ---------------------------------------------------------------------
+/build/
+/dist/
+/public/build/
+/_site/
+
+# ---------------------------------------------------------------------
+# Docker (Daten-Volumes nicht in Repo)
+# ---------------------------------------------------------------------
 .docker/mysql-data/
+.docker/data/
+.docker/.env
 
-# Screenshots & Uploads (user content)
-/pdl-gfx/screens/
-/pdl-gfx/uploads/
+# ---------------------------------------------------------------------
+# PowerDownload - User-generierte Inhalte
+# ---------------------------------------------------------------------
+# Screenshots, die User hochladen (nur Verzeichnis tracken, kein Inhalt)
+/pdl-gfx/screens/*
+!/pdl-gfx/screens/.gitkeep
+/pdl-gfx/uploads/*
+!/pdl-gfx/uploads/.gitkeep
 
-# Local tools and tasks
+# Wartungsmodus-Marker
+.maintenance
+
+# ---------------------------------------------------------------------
+# Lokale Hilfs-/Aufgabendateien
+# ---------------------------------------------------------------------
 /tools/
 /todos/
+TODO.local.md
+NOTES.local.md
