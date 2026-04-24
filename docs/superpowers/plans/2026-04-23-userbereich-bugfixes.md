@@ -177,13 +177,14 @@
 - [ ] **Step 1:** `filter_var($homepage, FILTER_VALIDATE_URL)`; nur `http(s)://` akzeptieren.
 - [ ] **Step 2:** Commit `fix: validate homepage URL (BUG-026)`
 
-## Task 17: change_list Dead-Code entfernen (BUG-029)
+## Task 17: change_list (BUG-029) — GESCHLOSSEN (Fehlanalyse, 2026-04-23)
 
-**Files:**
-- Modify: `pdl-inc/pdl_header.inc.php` (Variable entfernen)
+**Ergebnis:** Kein Dead-Code. `$change_list` ist aktives Feature „individuelles Listen":
+Form-Submits aus `pdl_ordner.modul.php` und `pdl_search.modul.php` (Action
+`downloads.php?change_list=1`) setzen in `pdl_header.inc.php` den Cookie `pdl_list`
+mit den User-Sortier-/Pagination-Preferences. Keine Code-Änderung notwendig.
 
-- [ ] **Step 1:** `$change_list = …` Zeile entfernen.
-- [ ] **Step 2:** Commit `chore: remove unused change_list variable (BUG-029)`
+- [x] **Analyse abgeschlossen** — Details siehe `docs/2026-04-23-Userbereichs-bugs.md` BUG-029.
 
 ## Task 18: Startseite Info-Boxen wieder sichtbar (BUG-011)
 

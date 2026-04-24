@@ -532,8 +532,15 @@ Format je Eintrag:
 - **Schweregrad**: niedrig.
 - **Konsole / Stacktrace**: n/a.
 - **Netzwerkhinweise**: n/a.
-- **Status**: Offen
-- **Nicht beheben**
+- **Status**: GESCHLOSSEN (Fehlanalyse) — 2026-04-23
+- **Analyse-Ergebnis**: `$change_list` ist KEIN Dead-Code, sondern aktives Feature „individuelles Listen" (User-Listing-Preferences via Cookie).
+  - Extraktion in `pdl-inc/pdl_header.inc.php:163`
+  - Verarbeitung in `pdl-inc/pdl_header.inc.php:366-376`: Setzt Cookie `pdl_list` (orderseq + orderby + perpage, getrennt durch `###`, 1 Jahr Lifetime, HttpOnly, SameSite=Strict) und redirected via `HTTP_REFERER`.
+  - Cookie wird in `pdl-inc/pdl_header.inc.php:378-384` gelesen und in `$settings['orderseq']`, `$settings['orderby']`, `$settings['perpage']` übernommen.
+  - Form wird erzeugt in `pdl-inc/pdl_header.inc.php:390-404` (Variable `$list`), per `{list}`-Placeholder in Templates gerendert (`pdl-inc/pdl_functions.inc.php:170`).
+  - Form-Actions: `pdl-inc/pdl_ordner.modul.php:63` (Ordner-Ansicht) und `pdl-inc/pdl_search.modul.php:47` (Suchergebnis-Ansicht) — beide POST auf `downloads.php?change_list=1`.
+  - Form-Inputs: `<select name="orderby">`, `<select name="orderseq">`, `<input type="text" name="perpage">`, `<input type="submit" value="GO">` — alle funktionsfähig.
+- **Ursprung der Fehlanalyse**: Der ursprüngliche Grep im ersten Audit hatte vermutlich `$change_list` gesucht, übersah aber die String-Fundstellen `change_list=1` in den Form-Actions (die nicht als PHP-Variable stehen).
 
 ---
 
