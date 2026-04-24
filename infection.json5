@@ -1,0 +1,45 @@
+{
+    // Infection Mutation Testing Configuration for PowerDownload
+    //
+    // REQUIREMENTS: Code coverage extension required (pcov, xdebug, or phpdbg)
+    //   - Recommended: composer require --dev pcov/clobber && php -d pcov.enabled=1
+    //   - Alternative: Enable Xdebug with coverage mode
+    //   - Or use: phpdbg -qrr vendor/bin/infection
+    //
+    // LIMITATION: Infection v0.32 only generates mutations for class methods,
+    //   NOT for standalone functions. Files like pdl_functions.inc.php with
+    //   global functions will show 0 mutations. Only pdl_db_class_mysql.inc.php
+    //   (which contains a class) will have mutations generated.
+    //   Run with: INFECTION_ALLOW_XDEBUG=1 php vendor/bin/infection --with-uncovered
+    //
+    "$schema": "https://raw.githubusercontent.com/infection/infection/0.29.0/resources/schema.json",
+    "source": {
+        "directories": [
+            "pdl-inc"
+        ],
+        "excludes": [
+            "pdl_config.inc.php"
+        ]
+    },
+    "logs": {
+        "text": "logs/infection.log",
+        "html": "logs/infection.html",
+        "summary": "logs/infection-summary.log"
+    },
+    "mutators": {
+        "@default": true,
+        // Disable some mutators that create too many false positives in legacy code
+        "Concat": false,
+        "ConcatOperandRemoval": false
+    },
+    "phpUnit": {
+        "configDir": ".",
+        "customPath": "vendor/bin/phpunit"
+    },
+    "testFramework": "phpunit",
+    "bootstrap": "vendor/autoload.php",
+    "initialTestsPhpOptions": "-d memory_limit=256M",
+    "timeout": 10,
+    "minMsi": 0,
+    "minCoveredMsi": 0
+}

@@ -1,0 +1,73 @@
+name: powerdownload
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: powerdownload_web
+    ports:
+      - "8092:80"
+    volumes:
+      - ../:/var/www/html
+      - ../logs:/var/www/html/logs
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - APACHE_RUN_USER=www-data
+      - APACHE_RUN_GROUP=www-data
+    networks:
+      - powerdownload_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  db:
+    image: mysql:8.0
+    container_name: powerdownload_db
+    ports:
+      - "3319:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: pdl3
+      MYSQL_USER: pdl_user
+      MYSQL_PASSWORD: pdl_password
+    volumes:
+      - powerdownload_mysql_data:/var/lib/mysql
+    networks:
+      - powerdownload_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: powerdownload_phpmyadmin
+    ports:
+      - "8094:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: root
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - powerdownload_network
+    restart: unless-stopped
+
+networks:
+  powerdownload_network:
+    driver: bridge
+
+volumes:
+  powerdownload_mysql_data:

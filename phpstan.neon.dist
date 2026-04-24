@@ -1,0 +1,35 @@
+parameters:
+    level: 8
+    paths:
+        - .
+    excludePaths:
+        - vendor
+        - .docker
+        - logs
+        - .idea
+        - tests
+        - tools
+        - rector.php
+        - install_303.php
+        - update_301to303.php
+        - update_224to303.php
+        - phpstan-bootstrap.php
+        - pdl-admin/ftp_browser.php
+        - pdl-admin/ftp_upload.php
+    scanFiles:
+        - phpstan-bootstrap.php
+    phpVersion: 80400
+    reportUnmatchedIgnoredErrors: false
+    treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+        # Global variables from includes (legacy pattern)
+        - identifier: variable.undefined
+        # Legacy functions without type declarations
+        - identifier: missingType.return
+        - identifier: missingType.parameter
+        - identifier: missingType.iterableValue
+        # False positives for identical comparisons in legacy code
+        - identifier: identical.alwaysTrue
+        - identifier: identical.alwaysFalse
+        # Already narrowed type checks (legacy defensive code)
+        - identifier: function.alreadyNarrowedType

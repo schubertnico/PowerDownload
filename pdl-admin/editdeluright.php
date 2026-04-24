@@ -1,0 +1,127 @@
+<?php
+include("header.inc.php");
+
+$submit = isset($_GET['submit']) ? (int)$_GET['submit'] : 0;
+$rights = isset($_POST['rights']) ? $_POST['rights'] : array();
+
+$protected = array(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16);
+if($user_rights['god'] == "Y")
+ {
+  if($submit == 1)
+   {
+    for($i = 0; $i < count($rights); $i++)
+     {
+      $db_handler->sql_query("UPDATE ".$sql_table['rights']." SET name='".$db_handler->sql_escape_string($rights[$i]['name'])."', bez='".$db_handler->sql_escape_string($rights[$i]['bez'])."', reihenfolge='".$db_handler->sql_escape_int($rights[$i]['reihenfolge'])."' WHERE right_id='".$db_handler->sql_escape_int($rights[$i]['right_id'])."'");
+      if($rights[$i]['delete'] == 1)
+       {
+        $dodelete = true;
+        foreach($protected as $prot_id)
+         {
+          if($prot_id == $rights[$i]['right_id'])
+           {
+            $dodelete = false;
+            break;
+           }
+         }
+        if($dodelete == true)
+         {
+          $db_handler->sql_query("ALTER TABLE ".$sql_table['usergroup']." DROP ".$db_handler->sql_escape_string($rights[$i]['variablenname']));
+          $db_handler->sql_query("DELETE FROM ".$sql_table['rights']." WHERE right_id='".$db_handler->sql_escape_int($rights[$i]['right_id'])."'");
+         }
+       }
+     }
+    echo "Rechte geändert";
+   }
+  echo "
+<br>
+<form action=\"editdeluright.php?submit=1\" method=\"post\">
+<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"80%\">
+  <tr>
+    <td bgcolor=\"".htmlspecialchars($template['table_border'])."\">
+      <table border=\"0\" cellpadding=\"3\" cellspacing=\"1\" width=\"100%\">
+        <tr>
+          <td bgcolor=\"".htmlspecialchars($template['header_bg'])."\" align=\"center\" colspan=\"2\">
+            <b>Rechte ändern/löschen</b>
+          </td>
+        </tr>";
+  $rights_count = -1;
+  $rights_res = $db_handler->sql_query("SELECT * FROM ".$sql_table['rights']." ORDER BY reihenfolge ASC");
+  while($rights_row = $db_handler->sql_fetch_array($rights_res))
+   {
+    $rights_count++;
+    echo "    <tr>
+          <td bgcolor=\"".htmlspecialchars($template['footer_bg'])."\">
+            <input type=\"text\" name=\"rights[".$rights_count."][reihenfolge]\" value=\"".htmlspecialchars($rights_row['reihenfolge'])."\" size=\"1\">
+          </td>
+          <td bgcolor=\"".htmlspecialchars($template['footer_bg'])."\">
+            <input type=\"hidden\" name=\"rights[".$rights_count."][right_id]\" value=\"".htmlspecialchars($rights_row['right_id'])."\">
+            <b>".htmlspecialchars($rights_row['name'])."</b>
+          </td>
+        </tr>";
+    $alt = alt_switch();
+    echo "    <tr>
+          <td bgcolor=\"".htmlspecialchars($alt)."\">
+            <b>Name</b><br>
+            Name des Rechtes
+          </td>
+          <td bgcolor=\"".htmlspecialchars($alt)."\">
+            <input type=\"text\" name=\"rights[".$rights_count."][name]\" value=\"".htmlspecialchars($rights_row['name'])."\" size=\"35\">
+          </td>
+        </tr>";
+    $alt = alt_switch();
+    echo "    <tr>
+          <td bgcolor=\"".htmlspecialchars($alt)."\">
+            <b>Beschreibung</b><br>
+            kleine Beschreibung
+          </td>
+          <td bgcolor=\"".htmlspecialchars($alt)."\">
+            <textarea name=\"rights[".$rights_count."][bez]\" cols=\"60\" rows=\"3\">".htmlspecialchars($rights_row['bez'])."</textarea>
+          </td>
+        </tr>";
+    $alt = alt_switch();
+    echo "    <tr>
+          <td bgcolor=\"".htmlspecialchars($alt)."\">
+            <b>Variablenname</b>
+          </td>
+          <td bgcolor=\"".htmlspecialchars($alt)."\">
+            <input type=\"hidden\" name=\"rights[".$rights_count."][variablenname]\" value=\"".htmlspecialchars($rights_row['variablenname'])."\">
+            ".htmlspecialchars($rights_row['variablenname'])." (kann nicht geändert werden)
+          </td>
+        </tr>";
+    $dodelete = true;
+    foreach($protected as $prot_id)
+     {
+      if($prot_id == $rights_row['right_id'])
+       {
+        $dodelete = false;
+        break;
+       }
+     }
+    if($dodelete == true)
+     {
+      $alt = alt_switch();
+      echo "    <tr>
+          <td bgcolor=\"".htmlspecialchars($alt)."\">
+            <b>Löschen?</b><br>
+            Soll das Recht gelöscht werden?
+          </td>
+          <td bgcolor=\"".htmlspecialchars($alt)."\">
+            <input type=\"checkbox\" name=\"rights[".$rights_count."][delete]\" value=\"1\">
+          </td>
+        </tr>";
+     }
+   }
+  echo "
+      </table>
+    </td>
+  </tr>
+</table>
+<br><br>
+<input type=\"submit\" value=\"Userrecht ändern\">
+</form>
+";
+ }
+else
+ { echo "Sie haben keine Berechtigung diese Seite zu sehen"; }
+include("footer.inc.php");
+?>

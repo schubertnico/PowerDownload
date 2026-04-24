@@ -1,0 +1,68 @@
+# Dependencies
+/vendor/
+
+# Logs & Reports
+/logs/*.log
+/logs/*.html
+/logs/*.xml
+/logs/coverage-xml/
+
+# Backup
+/backup/
+
+# IDE
+/.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Composer
+composer.phar
+composer.lock
+
+# PHP Tools - Cache Files
+.php-cs-fixer.cache
+.phpunit.cache/
+.phpunit.result.cache
+.psalm/
+psalm.baseline.xml
+phpstan-baseline.neon
+
+# Infection
+infection.log
+infection-log.txt
+
+# Coverage
+/coverage/
+/coverage-report/
+.coverage
+clover.xml
+coverage.xml
+
+# Temporary Files
+*.cache
+*.tmp
+*.bak
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Docker
+.docker/mysql-data/
+
+# Screenshots & Uploads (user content)
+/pdl-gfx/screens/
+/pdl-gfx/uploads/
+
+# Local tools and tasks
+/tools/
+/todos/
