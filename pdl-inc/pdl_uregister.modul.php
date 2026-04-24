@@ -117,4 +117,9 @@ $form = str_replace('{homepage}', htmlspecialchars($values['homepage'], ENT_QUOT
 $form = str_replace('{icq}', htmlspecialchars($values['icq'], ENT_QUOTES, 'UTF-8'), $form);
 $form = str_replace('{get_letter}', $values['get_letter'] === 'Y' ? ' checked' : '', $form);
 
-echo '<form action="' . $script_file . 'usercenter=register&submit=1" method="post">' . csrf_input() . replace($form, []) . '</form>';
+echo '<form action="downloads.php" method="post">';
+echo csrf_input();
+echo '<input type="hidden" name="usercenter" value="register">';
+echo '<input type="hidden" name="submit" value="1">';
+echo replace($form, []);
+echo '</form>';

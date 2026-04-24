@@ -70,8 +70,10 @@ if ($errors) {
 
 $remind_code_html = htmlspecialchars($remind_code_raw, ENT_QUOTES, 'UTF-8');
 echo '<center><h3>Neues Passwort setzen</h3></center>';
-echo '<form method="post" action="' . $script_file . 'usercenter=lost2&submit=1">';
+echo '<form method="post" action="downloads.php">';
 echo csrf_input();
+echo '<input type="hidden" name="usercenter" value="lost2">';
+echo '<input type="hidden" name="submit" value="1">';
 echo '<input type="hidden" name="remind_code" value="' . $remind_code_html . '">';
 echo '<table align="center"><tr><td><label for="pw_new">Neues Passwort:</label></td><td><input type="password" id="pw_new" name="pw_new" required minlength="8"></td></tr>';
 echo '<tr><td><label for="pw_new2">Bestätigung:</label></td><td><input type="password" id="pw_new2" name="pw_new2" required minlength="8"></td></tr>';

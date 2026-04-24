@@ -98,4 +98,9 @@ $form = str_replace("{homepage}", htmlspecialchars($user_details['homepage'] ?? 
 $icq_val = (int)($user_details['icq'] ?? 0);
 $form = str_replace("{icq}", $icq_val > 0 ? (string)$icq_val : "", $form);
 
-echo '<form action="' . $script_file . 'usercenter=profil&submit=1" method="post">' . csrf_input() . replace($form, []) . '</form>';
+echo '<form action="downloads.php" method="post">';
+echo csrf_input();
+echo '<input type="hidden" name="usercenter" value="profil">';
+echo '<input type="hidden" name="submit" value="1">';
+echo replace($form, []);
+echo '</form>';

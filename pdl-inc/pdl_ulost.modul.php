@@ -38,4 +38,9 @@ if ($submit == 1) {
     return;
 }
 
-echo '<form name="lost" method="post" action="' . $script_file . 'usercenter=lost&submit=1">' . csrf_input() . replace($template['ulost_form'] ?? '', []) . '</form>';
+echo '<form name="lost" method="post" action="downloads.php">';
+echo csrf_input();
+echo '<input type="hidden" name="usercenter" value="lost">';
+echo '<input type="hidden" name="submit" value="1">';
+echo replace($template['ulost_form'] ?? '', []);
+echo '</form>';

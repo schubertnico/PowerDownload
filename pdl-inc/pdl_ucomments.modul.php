@@ -65,4 +65,10 @@ $form = str_replace("{smilies}", $smilies_on, $form);
 $form = str_replace("{glossar}", $glossar, $form);
 $form = str_replace("{user}", $user, $form);
 
-echo '<form action="' . $script_file . 'usercenter=comments&submit=1&release_id=' . $release_id . '" method="post">' . csrf_input() . replace($form, []) . '</form>';
+echo '<form action="downloads.php" method="post">';
+echo csrf_input();
+echo '<input type="hidden" name="usercenter" value="comments">';
+echo '<input type="hidden" name="submit" value="1">';
+echo '<input type="hidden" name="release_id" value="' . (int) $release_id . '">';
+echo replace($form, []);
+echo '</form>';

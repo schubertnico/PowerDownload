@@ -35,7 +35,9 @@ if (!$release_row) {
     $db_handler->sql_query("UPDATE " . $sql_table['release'] . " SET views=views+1 WHERE release_id='" . $release_id_safe . "'");
 
     // Release ausgeben
-    echo "<form action=\"" . htmlspecialchars($settings['script_file'] ?? '') . "release_id=" . $release_id . "&vote=1\" method=\"post\">";
+    echo '<form action="downloads.php" method="post">';
+    echo '<input type="hidden" name="release_id" value="' . (int) $release_id . '">';
+    echo '<input type="hidden" name="vote" value="1">';
 
     $files_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['files'] . " WHERE release_id='" . $release_id_safe . "'");
     // Hack: erste Datei in das Release Template mit einbeziehen
