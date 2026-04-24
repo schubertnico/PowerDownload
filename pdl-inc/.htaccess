@@ -1,0 +1,25 @@
+# =====================================================================
+# pdl-inc/.htaccess — Defense in Depth
+#
+# Dieses Verzeichnis enthält ausschließlich Includes/Module, die NUR
+# über pdl_header.inc.php / pdl_downloads.inc.php aus downloads.php
+# eingebunden werden. Direkte HTTP-Aufrufe sind unzulässig.
+#
+# Bereits in der Webroot-.htaccess geblockt; hier zusätzliche Sicherung
+# falls eine Subseite installiert wird, in der die Webroot-Regeln nicht
+# greifen.
+# =====================================================================
+
+# Apache 2.4
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+
+# Apache 2.2 Fallback
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
+
+# Verzeichnis-Listing aus
+Options -Indexes

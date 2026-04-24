@@ -1,0 +1,160 @@
+# =====================================================================
+# PowerDownload - Apache Hardening (.htaccess)
+#
+# Webroot-Konfiguration. Schützt sensible Verzeichnisse, Konfigurations-,
+# Tooling- und Setup-Dateien vor direktem Web-Zugriff.
+#
+# Hinweise:
+# - "AllowOverride All" muss in der Apache-Server- bzw. VHost-Konfiguration
+#   für den Document-Root aktiviert sein, damit diese Datei wirkt.
+# - Bei mod_php / FPM ggf. die "<IfModule …>"-Blocks anpassen.
+# =====================================================================
+
+
+# ---------------------------------------------------------------------
+# 0) Default-Charset & Verzeichnis-Listings deaktivieren
+# ---------------------------------------------------------------------
+AddDefaultCharset UTF-8
+Options -Indexes -MultiViews +FollowSymLinks
+ServerSignature Off
+DirectoryIndex index.php downloads.php
+
+
+# ---------------------------------------------------------------------
+# 1) Sicherheits-Header (HTTP)
+# ---------------------------------------------------------------------
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+    # HSTS nur aktivieren, wenn die Seite ausschließlich über HTTPS läuft
+    # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+    # Cache-Static-Assets
+    <FilesMatch "\.(gif|jpe?g|png|svg|webp|ico|css|js|woff2?)$">
+        Header set Cache-Control "public, max-age=2592000"
+    </FilesMatch>
+
+    # Sensible Antworten nicht cachen
+    <FilesMatch "\.(php|html?)$">
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+    </FilesMatch>
+
+    # PHP-Version verbergen (zusätzlich zu expose_php)
+    Header always unset X-Powered-By
+</IfModule>
+
+
+# ---------------------------------------------------------------------
+# 2) Verzeichnisse vor direktem Web-Zugriff schützen
+# ---------------------------------------------------------------------
+RewriteEngine On
+
+# Hidden-Verzeichnisse (.git, .docker, .idea, .claude, .vscode, .github)
+RewriteRule (^|/)\.(?!well-known)([^./]+)(/|$) - [F,L]
+
+# Komplett blockierte Verzeichnisse
+RewriteRule ^(\.docker|\.git|\.idea|\.claude|\.vscode|\.github|coverage-report|docs|logs|node_modules|tests|todos|tools|vendor)(/|$) - [F,L]
+
+# pdl-inc darf nicht direkt aufgerufen werden (Includes only)
+RewriteRule ^pdl-inc(/|$) - [F,L]
+
+# Backups/Archive
+RewriteRule \.(bak|backup|old|orig|previous|rej|swp|swo|sql|sql\.gz|sql\.bz2|dump|tar|tar\.gz|tgz|zip|7z|rar)$ - [F,L]
+
+# Block HTTP TRACE / TRACK
+RewriteCond %{REQUEST_METHOD} ^(TRACE|TRACK)$
+RewriteRule .* - [F,L]
+
+
+# ---------------------------------------------------------------------
+# 3) Sensible Dateien per FilesMatch zusätzlich blockieren
+# ---------------------------------------------------------------------
+
+# Composer / Node / PHP-Tools / Static-Analysis
+<FilesMatch "^(composer\.(json|lock|phar)|package(-lock)?\.json|yarn\.lock|auth\.json|infection\.json5|phpunit\.xml(\.dist)?|phpstan\.neon(\.dist)?|psalm\.xml(\.dist)?|psalm-baseline\.xml|phpstan-baseline\.neon|phpmd\.xml|rector\.php|phpstan-bootstrap\.php|\.php-cs-fixer\.dist\.php|\.php-cs-fixer\.cache)$">
+    Require all denied
+</FilesMatch>
+
+# Dotfiles und Editor-/OS-Reste
+<FilesMatch "^(\.env(\..*)?|\.htaccess|\.htpasswd|\.gitignore|\.gitattributes|\.editorconfig|\.DS_Store|Thumbs\.db|desktop\.ini|.*~)$">
+    Require all denied
+</FilesMatch>
+
+# Setup- / Update-Scripts: nach erfolgreicher Installation am besten
+# vom Server löschen. Solange sie noch da sind: per .htaccess sperren.
+# Wenn du sie temporär brauchst, einzelne Zeile auskommentieren.
+<FilesMatch "^(install_.*\.php|setup\.php|update_.*\.php|install_querys\.inc)$">
+    Require all denied
+</FilesMatch>
+
+# Include-Dateien & Module nicht direkt aufrufbar
+<FilesMatch "\.(inc|inc\.php|module\.php|modul\.php)$">
+    Require all denied
+</FilesMatch>
+
+# Konfigurations-Overrides (lokale Configs auf dem Server)
+<FilesMatch "(\.local|\.local\.php|\.prod\.inc\.php|\.live\.inc\.php)$">
+    Require all denied
+</FilesMatch>
+
+# Logs, Coverage-Reports, Dumps
+<FilesMatch "\.(log|cache|coverage|coveragehtml)$">
+    Require all denied
+</FilesMatch>
+
+# Markdown / Klartext-Dokumentation, README-HTML, Changelog,
+# Lizenztext  → optional verfügbar lassen (auskommentieren) oder sperren:
+<FilesMatch "^(README\.(md|html|txt)|readme\.txt|Changelog\.txt|LICENSE)$">
+    Require all denied
+</FilesMatch>
+
+# Geheimnis-/Schlüssel-Dateien
+<FilesMatch "\.(key|pem|crt|cer|p12|pfx)$">
+    Require all denied
+</FilesMatch>
+
+
+# ---------------------------------------------------------------------
+# 4) PHP-Hardening (nur wirksam, wenn PHP als Apache-Modul läuft)
+# ---------------------------------------------------------------------
+<IfModule mod_php.c>
+    php_flag display_errors Off
+    php_flag display_startup_errors Off
+    php_flag expose_php Off
+    php_flag allow_url_fopen Off
+    php_flag allow_url_include Off
+    php_flag session.cookie_httponly On
+    php_flag session.cookie_secure On
+    php_value session.cookie_samesite "Lax"
+    php_value session.use_strict_mode 1
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag display_errors Off
+    php_flag display_startup_errors Off
+    php_flag expose_php Off
+    php_flag allow_url_fopen Off
+    php_flag allow_url_include Off
+    php_flag session.cookie_httponly On
+    php_flag session.cookie_secure On
+    php_value session.cookie_samesite "Lax"
+    php_value session.use_strict_mode 1
+</IfModule>
+
+
+# ---------------------------------------------------------------------
+# 5) Komprimierung
+# ---------------------------------------------------------------------
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/javascript application/json image/svg+xml
+</IfModule>
+
+
+# ---------------------------------------------------------------------
+# 6) Standard-Errordokumente (optional)
+# ---------------------------------------------------------------------
+# ErrorDocument 403 /downloads.php
+# ErrorDocument 404 /downloads.php

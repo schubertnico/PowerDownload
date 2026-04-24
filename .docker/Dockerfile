@@ -17,8 +17,11 @@ RUN apt-get update && apt-get install -y \
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Enable Apache mod_rewrite
-RUN a2enmod rewrite
+# Enable Apache modules required by .htaccess hardening
+RUN a2enmod rewrite headers deflate
+
+# Allow .htaccess overrides for the document root
+RUN sed -ri 's!AllowOverride None!AllowOverride All!g' /etc/apache2/apache2.conf
 
 # Copy custom PHP configuration
 COPY php.ini /usr/local/etc/php/conf.d/custom.ini

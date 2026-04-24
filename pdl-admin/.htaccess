@@ -1,0 +1,37 @@
+# =====================================================================
+# pdl-admin/.htaccess
+#
+# Admin-Panel — die *.php-Dateien werden direkt aufgerufen, daher hier
+# nur Hardening:
+#   - Verzeichnis-Listing aus
+#   - .inc.php / footer / header Includes blockieren
+#   - Backup-/Konfig-Dateien sperren
+#   - Optional: HTTP-Basic-Auth zusätzlich aktivieren (auskommentiert)
+# =====================================================================
+
+Options -Indexes -MultiViews
+
+# Include-Dateien direkt blocken (header.inc.php, footer.inc.php,
+# functions.inc.php sind reine Includes für admin-Skripte)
+<FilesMatch "\.(inc|inc\.php)$">
+    Require all denied
+</FilesMatch>
+
+# Konfigurations-/Backup-Reste
+<FilesMatch "\.(bak|backup|old|orig|previous|swp|swo|log|sql|sql\.gz|dump|cache)$">
+    Require all denied
+</FilesMatch>
+
+# Dotfiles
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# Optionale zusätzliche Absicherung über HTTP-Basic-Auth.
+# Bei Bedarf .htpasswd anlegen (z. B. via "htpasswd -c /var/secure/.htpasswd admin")
+# und die folgenden Zeilen aktivieren:
+#
+# AuthType Basic
+# AuthName "PowerDownload Admin"
+# AuthUserFile /var/secure/.htpasswd
+# Require valid-user
