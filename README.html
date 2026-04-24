@@ -8,7 +8,7 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
             line-height: 1.6;
-            max-width: 900px;
+            max-width: 960px;
             margin: 0 auto;
             padding: 20px;
             color: #333;
@@ -47,8 +47,9 @@
         }
         th, td {
             border: 1px solid #bdc3c7;
-            padding: 12px;
+            padding: 10px;
             text-align: left;
+            vertical-align: top;
         }
         th {
             background: #3498db;
@@ -68,7 +69,14 @@
             padding-left: 25px;
         }
         li {
-            margin: 8px 0;
+            margin: 6px 0;
+        }
+        .quickstart {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
         }
         .note {
             background: #fff3cd;
@@ -76,246 +84,281 @@
             padding: 15px;
             margin: 20px 0;
         }
-        .success {
-            background: #d4edda;
-            border-left: 4px solid #28a745;
-            padding: 15px;
+        .contact {
+            background: #ecf0f1;
+            border-left: 4px solid #2c3e50;
+            padding: 15px 20px;
             margin: 20px 0;
+            border-radius: 4px;
         }
+        .contact ul { list-style: none; padding-left: 0; }
     </style>
 </head>
 <body>
     <h1>PowerDownload</h1>
 
-    <p><strong>PowerDownload</strong> ist ein PHP-basiertes Download-Management-System, ursprünglich entwickelt von PowerScripts (2001-2002). Diese Version wurde vollständig auf <strong>PHP 8.4</strong> migriert und enthält wichtige Sicherheitsverbesserungen.</p>
+    <p><strong>PowerDownload</strong> ist ein PHP-basiertes Download-Management-System mit Ordnerstruktur, Benutzerverwaltung, Bewertungs- und Kommentarsystem. Das Projekt wurde 2001/2002 von <strong>PowerScripts</strong> veröffentlicht und 2025/2026 vollständig auf <strong>PHP 8.4</strong> sowie <strong>MySQL 8</strong> modernisiert. Alle Userbereichs-Funktionen (Registrierung, Login, Profil, Passwort-Reset, Kommentare) wurden überarbeitet, mit <code>password_hash</code>/<code>password_verify</code>, Session-Tokens, CSRF-Schutz und Rate-Limit ausgestattet.</p>
 
-    <h2>Repository</h2>
     <ul>
-        <li><strong>Git-Repository</strong>: <a href="https://github.com/schubertnico/PowerDownload">https://github.com/schubertnico/PowerDownload</a></li>
+        <li>Projektseite: <a href="https://www.powerscripts.org">https://www.powerscripts.org</a></li>
+        <li>Projektbereich: <a href="https://www.powerscripts.org/projects-6.html">https://www.powerscripts.org/projects-6.html</a></li>
+        <li>GitHub: <a href="https://github.com/schubertnico/PowerDownload">https://github.com/schubertnico/PowerDownload</a></li>
     </ul>
 
-    <h2>Funktionen</h2>
+    <h2>Schnellstart (Docker)</h2>
+
+    <div class="quickstart">
+        <p>Voraussetzung: Docker + Docker Compose installiert.</p>
+        <pre><code>git clone https://github.com/schubertnico/PowerDownload.git
+cd PowerDownload
+docker compose -f .docker/docker-compose.yml up -d --build</code></pre>
+        <p><strong>Anwendung öffnen:</strong> <a href="http://localhost:8092">http://localhost:8092</a><br>
+        <strong>phpMyAdmin:</strong> <a href="http://localhost:8094">http://localhost:8094</a> (User <code>root</code>, Passwort <code>root</code>)</p>
+        <p><strong>Standard-Admin-Login:</strong> <code>admin</code> / <code>admin123</code> (wird beim Login automatisch von MD5 auf bcrypt migriert).</p>
+    </div>
+
+    <p>Status prüfen, Logs verfolgen, stoppen:</p>
+    <pre><code>docker compose -f .docker/docker-compose.yml ps
+docker compose -f .docker/docker-compose.yml logs -f web
+docker compose -f .docker/docker-compose.yml down</code></pre>
+
+    <h2>Funktionsumfang</h2>
     <ul>
-        <li>Verwaltung von Downloads mit Ordnerstruktur</li>
-        <li>Benutzerregistrierung und Login-System</li>
-        <li>Bewertungssystem für Downloads</li>
-        <li>Screenshot-Upload und -Anzeige</li>
-        <li>BBCode-Unterstützung in Kommentaren</li>
-        <li>Template-System für individuelle Anpassungen</li>
-        <li>Admin-Panel zur Verwaltung</li>
+        <li>Verwaltung von <strong>Downloads</strong> und <strong>Releases</strong> in einer hierarchischen Ordnerstruktur</li>
+        <li><strong>Benutzerregistrierung</strong> mit E-Mail-Validierung und CSRF-Schutz</li>
+        <li><strong>Login</strong> mit <code>password_verify</code> und transparenter MD5→bcrypt-Migration für Bestandsuser</li>
+        <li><strong>Session-Token-basierte Authentifizierung</strong> (kein Passwort-Hash mehr im Cookie)</li>
+        <li><strong>Rate-Limit</strong> für Login-Versuche (5 Fehlschläge / 15 min / IP)</li>
+        <li><strong>Passwort-Vergessen-Flow</strong> mit zeitlich begrenztem Reset-Link (60 min TTL)</li>
+        <li><strong>Bewertungssystem</strong> (1–10) mit IP-Lock gegen Mehrfachvotes</li>
+        <li><strong>Kommentar-System</strong> mit BBCode, Smilies, Glossar, Bad-Words-Filter</li>
+        <li><strong>Screenshot-Upload</strong> und -Anzeige je Release</li>
+        <li><strong>Template-System</strong> mit DB-basierten Vorlagen (Boxen, Forms, Mails)</li>
+        <li><strong>Admin-Panel</strong> mit Rechte-System, Usergruppen, Ordnern, Releases, Templates</li>
+        <li><strong>Statistik-Widget</strong> mit Top/Flop/Latest/Rated-Listen</li>
     </ul>
 
     <h2>Systemanforderungen</h2>
-    <ul>
-        <li>PHP 8.4 oder höher</li>
-        <li>MySQL 8.0 oder höher</li>
-        <li>Apache mit mod_rewrite (oder Nginx)</li>
-        <li>GD-Library für Screenshot-Verarbeitung</li>
-    </ul>
-
-    <h2>Setup</h2>
-
-    <h3>Mit Docker (empfohlen)</h3>
-    <ol>
-        <li><strong>Repository klonen</strong>:
-            <pre><code>git clone https://github.com/schubertnico/PowerDownload.git
-cd PowerDownload</code></pre>
-        </li>
-        <li><strong>Docker-Container bauen und starten</strong>:
-            <pre><code>docker compose -f .docker/docker-compose.yml build
-docker compose -f .docker/docker-compose.yml up -d</code></pre>
-        </li>
-        <li><strong>Status prüfen</strong>:
-            <pre><code>docker compose -f .docker/docker-compose.yml ps</code></pre>
-        </li>
-        <li><strong>Anwendung aufrufen</strong>:
-            <ul>
-                <li>Webseite: <a href="http://localhost:8092">http://localhost:8092</a></li>
-                <li>phpMyAdmin: <a href="http://localhost:8094">http://localhost:8094</a></li>
-            </ul>
-        </li>
-    </ol>
-
-    <h3>Manuelles Setup</h3>
-    <ol>
-        <li>Dateien auf den Webserver kopieren</li>
-        <li>Datenbank erstellen und <code>install_303.php</code> ausführen</li>
-        <li>Konfiguration in <code>pdl-inc/pdl_config.inc.php</code> anpassen</li>
-    </ol>
-
-    <h2>Start</h2>
-    <p>Nach dem Docker-Start:</p>
-    <pre><code># Container-Status prüfen
-docker compose -f .docker/docker-compose.yml ps
-
-# Logs anzeigen
-docker compose -f .docker/docker-compose.yml logs -f web
-
-# PHP-Fehlerlog prüfen
-cat logs/php-error.log</code></pre>
-
-    <h2>Nutzung</h2>
-    <ol>
-        <li><strong>Admin-Panel</strong>: Navigiere zu <code>/pdl-admin/</code> und melde dich an</li>
-        <li><strong>Downloads verwalten</strong>: Ordner und Releases im Admin-Panel erstellen</li>
-        <li><strong>Benutzer verwalten</strong>: Benutzergruppen und Rechte konfigurieren</li>
-    </ol>
-
-    <h2>Ports</h2>
     <table>
-        <thead>
-            <tr>
-                <th>Service</th>
-                <th>Port</th>
-                <th>Beschreibung</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Web</td>
-                <td>8092</td>
-                <td>Apache Webserver</td>
-            </tr>
-            <tr>
-                <td>MySQL</td>
-                <td>3318</td>
-                <td>Datenbank</td>
-            </tr>
-            <tr>
-                <td>phpMyAdmin</td>
-                <td>8094</td>
-                <td>Datenbank-Verwaltung</td>
-            </tr>
-        </tbody>
+        <tr><th>Komponente</th><th>Version</th></tr>
+        <tr><td>PHP</td><td>8.4 (mit <code>mysqli</code>, <code>gd</code>, <code>mbstring</code>)</td></tr>
+        <tr><td>MySQL/MariaDB</td><td>MySQL 8.0 oder MariaDB 10.6+ (InnoDB)</td></tr>
+        <tr><td>Webserver</td><td>Apache 2.4+ mit <code>mod_rewrite</code> oder Nginx</td></tr>
+        <tr><td>Browser</td><td>Aktuelle Versionen von Chrome, Firefox, Safari, Edge</td></tr>
+        <tr><td>Composer</td><td>2.x (nur für Entwicklung)</td></tr>
     </table>
 
-    <h2>Prüfen, ob es läuft</h2>
-    <pre><code># Container-Status
-docker compose -f .docker/docker-compose.yml ps
+    <h2>Installation</h2>
 
-# Sollte "Up" für alle Services zeigen:
-# - powerdownload_web
-# - powerdownload_db
-# - powerdownload_phpmyadmin
+    <h3>Variante A — Docker (empfohlen)</h3>
+    <p>Siehe Schnellstart oben. Die mitgelieferte Compose-Datei startet:</p>
+    <ul>
+        <li><code>powerdownload_web</code> (Apache + PHP 8.4) auf Port <strong>8092</strong></li>
+        <li><code>powerdownload_db</code> (MySQL 8.0) auf Port <strong>3319</strong></li>
+        <li><code>powerdownload_phpmyadmin</code> (phpMyAdmin) auf Port <strong>8094</strong></li>
+    </ul>
 
-# Health-Check
-curl -I http://localhost:8092
+    <h3>Variante B — Manuelles Setup auf eigenem Webserver</h3>
+    <ol>
+        <li>Repository klonen oder ZIP entpacken und Dateien auf den Webserver hochladen.</li>
+        <li>MySQL-Datenbank anlegen (UTF-8 / <code>utf8mb4</code>, InnoDB).</li>
+        <li>Verbindungsdaten in <code>pdl-inc/pdl_config.inc.php</code> eintragen:
+            <pre><code>$config_sql_server   = 'localhost';
+$config_sql_user     = 'pdl_user';
+$config_sql_password = 'pdl_password';
+$config_sql_database = 'pdl3';</code></pre>
+        </li>
+        <li>Setup-Skript im Browser aufrufen: <code>https://example.org/install_303.php</code></li>
+        <li>Nach erfolgreicher Installation <code>install_303.php</code> und <code>update_*.php</code> <strong>löschen</strong>.</li>
+        <li>Schreibrechte für Screenshots/Smilies setzen: <code>pdl-gfx/screens/</code> und <code>pdl-gfx/smilies/</code> → <code>chmod 0775</code>.</li>
+        <li>Konfigurationen im Admin-Panel anpassen (Pfade, Mail-Absender, Settings).</li>
+    </ol>
 
-# PHP-Version prüfen
-docker exec powerdownload_web php -v
+    <h3>Update von älterer Version</h3>
+    <ul>
+        <li>Aus 2.2.4 → 3.0.x: <code>update_224to303.php</code></li>
+        <li>Aus 3.0.1 → 3.0.3: <code>update_301to303.php</code></li>
+    </ul>
+    <p>Update-Skripte nach Lauf entfernen.</p>
 
-# PHP-Fehlerlog
-docker exec powerdownload_web cat /var/www/html/logs/php-error.log</code></pre>
+    <h2>Verzeichnisstruktur</h2>
+    <pre><code>PowerDownload/
+├── .docker/                  Docker-Compose, Dockerfile, php.ini
+├── docs/                     Audit-Berichte, Bug-/Improvement-Listen, Migrationen
+├── pdl-admin/                Admin-Panel
+├── pdl-gfx/                  Grafiken, Smilies, Screenshots
+├── pdl-inc/                  Kern-Module
+│   ├── pdl_header.inc.php    Bootstrap, Session, Auth, Rate-Limit
+│   ├── pdl_csrf.inc.php      CSRF-Helper
+│   ├── pdl_db_class_*.inc.php Datenbank-Abstraktion
+│   ├── pdl_functions.inc.php Hilfsfunktionen
+│   ├── pdl_downloads.inc.php Routing der Module
+│   ├── pdl_*.modul.php       User-Center-Module
+│   └── pdl_*.inc.php         Widgets (stats, top, flop, latest, rated)
+├── tests/                    PHPUnit-Tests + Mocks
+├── tools/                    Hilfsskripte
+├── vendor/                   Composer-Abhängigkeiten
+├── downloads.php             Front-Controller
+├── index.php                 Redirect → downloads.php
+├── install_303.php           Initiale Installation
+├── update_*.php              Migrationen
+├── composer.json             PHP-Abhängigkeiten + Scripts
+├── phpunit.xml               Test-Konfiguration
+├── phpstan.neon.dist         Static-Analysis-Konfiguration
+└── README.md / .html / readme.txt</code></pre>
+
+    <h2>Routing-Übersicht</h2>
+    <table>
+        <tr><th>Route</th><th>Modul</th></tr>
+        <tr><td><code>/downloads.php</code></td><td>Wurzel-Ordner-Liste</td></tr>
+        <tr><td><code>/downloads.php?ordner_id=N</code></td><td>Ordner-Inhalt</td></tr>
+        <tr><td><code>/downloads.php?release_id=N</code></td><td>Release-Detail</td></tr>
+        <tr><td><code>/downloads.php?screen_id=N</code></td><td>Screenshot-Anzeige</td></tr>
+        <tr><td><code>/downloads.php?show_search=1</code></td><td>Suche</td></tr>
+        <tr><td><code>/downloads.php?show_stats=1</code></td><td>Server- &amp; DB-Statistik</td></tr>
+        <tr><td><code>/downloads.php?usercenter=login</code></td><td>Login-Formular</td></tr>
+        <tr><td><code>/downloads.php?usercenter=register</code></td><td>Registrierung</td></tr>
+        <tr><td><code>/downloads.php?usercenter=profil</code></td><td>Profil bearbeiten</td></tr>
+        <tr><td><code>/downloads.php?usercenter=lost</code></td><td>Passwort vergessen</td></tr>
+        <tr><td><code>/downloads.php?usercenter=lost2&amp;remind_code=…</code></td><td>Passwort neu setzen</td></tr>
+        <tr><td><code>/downloads.php?usercenter=comments&amp;release_id=N</code></td><td>Kommentar zu Release</td></tr>
+        <tr><td><code>/downloads.php?logout=1</code></td><td>Logout</td></tr>
+        <tr><td><code>/pdl-admin/</code></td><td>Admin-Panel (rechtegeschützt)</td></tr>
+    </table>
+    <p>Alle Form-Submits gehen an <code>downloads.php</code> mit den Steuerparametern als Hidden-Inputs (kein Query-String im Action-Attribut).</p>
+
+    <h2>Sicherheit</h2>
+    <ul>
+        <li><strong><code>password_hash</code> / <code>password_verify</code></strong> mit <code>PASSWORD_DEFAULT</code> (bcrypt).</li>
+        <li><strong>Transparente Migration</strong> alter MD5-Hashes nach erfolgreichem Login.</li>
+        <li><strong>Session-Token im Cookie</strong> (statt Passwort-Hash); Token in <code>pdl3_user.session_token</code>.</li>
+        <li><strong><code>session_regenerate_id</code></strong> nach Login.</li>
+        <li><strong>Cookie-Flags:</strong> <code>HttpOnly</code>, <code>SameSite=Lax</code>, <code>Secure</code> (automatisch bei HTTPS).</li>
+        <li><strong>CSRF-Schutz</strong> auf allen POST-Endpunkten via <code>csrf_token()</code> / <code>csrf_verify()</code>.</li>
+        <li><strong>Rate-Limit</strong> für Login: 5 Fehlversuche pro IP / 15 min, persistiert in <code>pdl3_iplock</code>.</li>
+        <li><strong>User-Enumeration verhindert:</strong> generische Antwort bei Passwort-vergessen.</li>
+        <li><strong>Server-Validierung</strong> für E-Mail (<code>FILTER_VALIDATE_EMAIL</code>) und Homepage (<code>FILTER_VALIDATE_URL</code>, Whitelist <code>http</code>/<code>https</code>).</li>
+        <li><strong>Path-Traversal-Schutz</strong> bei Modul-Includes (Whitelist statt direkte File-Inclusion).</li>
+        <li><strong><code>utf8mb4</code></strong> als Datenbank-Charset.</li>
+    </ul>
 
     <h2>Entwicklung</h2>
 
-    <h3>Composer-Abhängigkeiten installieren</h3>
+    <h3>Komponenten installieren</h3>
     <pre><code>docker exec powerdownload_web composer install</code></pre>
 
-    <h3>PHPStan ausführen</h3>
-    <pre><code>docker exec powerdownload_web composer run phpstan</code></pre>
+    <h3>Test-Suite</h3>
+    <pre><code>docker exec powerdownload_web composer phpunit</code></pre>
 
-    <h3>Rector ausführen</h3>
-    <pre><code># Dry-Run (zeigt Änderungen, wendet sie nicht an)
-docker exec powerdownload_web composer run rector
+    <h3>Static Analysis</h3>
+    <pre><code>docker exec powerdownload_web composer phpstan
+docker exec powerdownload_web composer psalm
+docker exec powerdownload_web composer phpmd</code></pre>
 
-# Änderungen anwenden
-docker exec powerdownload_web composer run rector:fix</code></pre>
+    <h3>Code-Style</h3>
+    <pre><code>docker exec powerdownload_web composer cs        # Prüfen (Dry-Run)
+docker exec powerdownload_web composer cs:fix    # Automatisch fixen</code></pre>
 
-    <h2>Änderungen / Migration auf PHP 8.4</h2>
+    <h3>Rector (Refactoring)</h3>
+    <pre><code>docker exec powerdownload_web composer rector       # Dry-Run
+docker exec powerdownload_web composer rector:fix   # Anwenden</code></pre>
 
-    <h3>PHP 8.4 Kompatibilitätsänderungen</h3>
+    <h3>Quality-Bundle (alle Static-Analyse-Tools)</h3>
+    <pre><code>docker exec powerdownload_web composer quality</code></pre>
+
+    <h2>Konfiguration im Admin-Panel</h2>
     <ul>
-        <li><strong>Short Open Tags</strong>: <code>&lt;?</code> durch <code>&lt;?php</code> ersetzt</li>
-        <li><strong><code>var</code> Keyword</strong>: Durch <code>public</code> mit Typ-Deklarationen ersetzt</li>
-        <li><strong>mysqli-Funktionen</strong>: Parameter-Reihenfolge korrigiert
-            <ul>
-                <li><code>mysqli_pconnect()</code> entfernt (existiert nicht in PHP 8+)</li>
-                <li><code>mysqli_select_db($db, $handler)</code> → <code>mysqli_select_db($handler, $db)</code></li>
-                <li><code>mysqli_query($query, $handler)</code> → <code>mysqli_query($handler, $query)</code></li>
-                <li><code>mysqli_escape_string($str)</code> → <code>mysqli_real_escape_string($handler, $str)</code></li>
-            </ul>
-        </li>
-        <li><strong><code>$HTTP_*_VARS</code></strong>: Entfernt (existieren nicht mehr)</li>
-        <li><strong><code>register_globals</code></strong>: Workaround entfernt</li>
-        <li><strong><code>srand()</code></strong>: Entfernt (veraltet)</li>
-        <li><strong><code>rand()</code></strong>: Durch <code>random_int()</code> ersetzt</li>
-        <li><strong><code>strstr()</code></strong>: Teilweise durch <code>str_contains()</code> ersetzt</li>
-        <li><strong>Variablen-Initialisierung</strong>: Alle Variablen werden vor Verwendung initialisiert</li>
-        <li><strong>Typ-Deklarationen</strong>: <code>declare(strict_types=1)</code> und Typ-Hints hinzugefügt</li>
+        <li><strong>Settings:</strong> über <code>$settings['&lt;name&gt;']</code> abrufbar.</li>
+        <li><strong>Templates:</strong> über <code>$template['&lt;name&gt;']</code>; HTML-Schnipsel mit <code>{platzhalter}</code>.</li>
+        <li><strong>Rechte:</strong> über <code>$user_rights['&lt;name&gt;']</code> pro Benutzergruppe.</li>
+        <li><strong>User:</strong> über <code>$user_details[...]</code> – leer = nicht eingeloggt.</li>
     </ul>
 
-    <h3>Sicherheitsverbesserungen</h3>
+    <table>
+        <tr><th>Setting</th><th>Bedeutung</th></tr>
+        <tr><td><code>script_file</code></td><td>URL-Präfix der Hauptseite</td></tr>
+        <tr><td><code>enable_comments</code></td><td>Y/N – Kommentare global aktivieren</td></tr>
+        <tr><td><code>bb_code</code></td><td>Y/N – BBCode in Kommentaren erlauben</td></tr>
+        <tr><td><code>smilies</code></td><td>Y/N – Smilies in Kommentaren</td></tr>
+        <tr><td><code>mail_fromname</code></td><td>Absender-Name für System-Mails</td></tr>
+        <tr><td><code>mail_fromaddr</code></td><td>Absender-Adresse für System-Mails</td></tr>
+        <tr><td><code>dlspeed</code></td><td>Geschätzte Download-Geschwindigkeit (kB/s)</td></tr>
+        <tr><td><code>perpage</code></td><td>Standard-Anzahl Releases pro Seite</td></tr>
+        <tr><td><code>orderby</code> / <code>orderseq</code></td><td>Standard-Sortierung in Ordnerlisten</td></tr>
+    </table>
+
+    <h2>Datenbank-Schema (Auszug)</h2>
+    <table>
+        <tr><th>Tabelle</th><th>Zweck</th></tr>
+        <tr><td><code>pdl3_user</code></td><td>Benutzer (inkl. <code>passwort</code>, <code>session_token</code>, <code>remind_code</code>, <code>remind_expires</code>)</td></tr>
+        <tr><td><code>pdl3_usergroup</code></td><td>Benutzergruppen + Rechte</td></tr>
+        <tr><td><code>pdl3_ordner</code></td><td>Ordner-Hierarchie</td></tr>
+        <tr><td><code>pdl3_release</code></td><td>Releases (Downloads)</td></tr>
+        <tr><td><code>pdl3_files</code></td><td>Einzelne Dateien je Release</td></tr>
+        <tr><td><code>pdl3_screens</code></td><td>Screenshots je Release</td></tr>
+        <tr><td><code>pdl3_comments</code></td><td>Benutzer-Kommentare</td></tr>
+        <tr><td><code>pdl3_iplock</code></td><td>IP-Lock für Voting + Login-Rate-Limit</td></tr>
+        <tr><td><code>pdl3_settings</code></td><td>Konfigurations-Werte</td></tr>
+        <tr><td><code>pdl3_template</code></td><td>HTML-Templates</td></tr>
+        <tr><td><code>pdl3_rights</code></td><td>Rechte-Definitionen</td></tr>
+    </table>
+
+    <h2>Ports (Docker)</h2>
+    <table>
+        <tr><th>Service</th><th>Port</th><th>Beschreibung</th></tr>
+        <tr><td>Web</td><td>8092</td><td>Apache + PHP</td></tr>
+        <tr><td>MySQL</td><td>3319</td><td>Datenbank-Hostport</td></tr>
+        <tr><td>phpMyAdmin</td><td>8094</td><td>Datenbank-Verwaltung</td></tr>
+    </table>
+
+    <h2>Troubleshooting</h2>
     <ul>
-        <li><strong>SQL Injection</strong>: Input-Escaping mit <code>sql_escape_string()</code> und <code>sql_escape_int()</code></li>
-        <li><strong>XSS-Schutz</strong>: <code>htmlspecialchars()</code> für alle Ausgaben</li>
-        <li><strong>Path Traversal</strong>: Whitelist für Include-Module implementiert</li>
-        <li><strong>Sichere Cookies</strong>: <code>HttpOnly</code>, <code>Secure</code> und <code>SameSite=Strict</code> Flags</li>
-        <li><strong><code>extract()</code> entfernt</strong>: Gefährliche Superglobal-Extraktion entfernt</li>
-        <li><strong>UTF-8</strong>: Zeichensatz auf <code>utf8mb4</code> gesetzt</li>
+        <li><strong>„Database not initialized"</strong> → <code>install_303.php</code> aufrufen oder Compose-Stack mit <code>--force-recreate</code> neu starten.</li>
+        <li><strong>Login schlägt mit Bestandsuser fehl</strong> → Passwort über „Passwort vergessen" zurücksetzen; alte MD5-Hashes werden beim ersten erfolgreichen Login automatisch migriert.</li>
+        <li><strong>„Zu viele Fehlversuche"</strong> → Rate-Limit erreicht; in MySQL <code>DELETE FROM pdl3_iplock WHERE ip='&lt;IP&gt;' AND art='login';</code> oder 15 Minuten warten.</li>
+        <li><strong>Mailversand schlägt fehl</strong> → Im Container ist <code>sendmail</code> nicht installiert; in Produktion einen MTA bereitstellen oder <code>mail()</code> durch externen Mailer ersetzen. Fehler werden mit <code>error_log()</code> protokolliert.</li>
+        <li><strong>Leere Info-Boxen auf Startseite</strong> → DB-Templates wurden 2026-04 ergänzt; bei alten Installationen <code>docs/superpowers/plans/2026-04-23-seed-templates.sql</code> einspielen.</li>
+        <li><strong>Schema-Inkonsistenz nach Update</strong> → Spalten <code>session_token</code>, <code>remind_expires</code>, <code>signatur (NULL)</code> in <code>pdl3_user</code> und <code>addcomments</code> in <code>pdl3_usergroup</code> prüfen, ggf. per <code>ALTER TABLE</code> ergänzen.</li>
     </ul>
 
-    <h3>Strukturelle Änderungen</h3>
+    <h2>Audit &amp; Dokumentation</h2>
+    <p>Im Verzeichnis <code>docs/</code>:</p>
     <ul>
-        <li>MIT-Lizenz hinzugefügt</li>
-        <li>Lizenz-Header in allen PHP-Dateien</li>
-        <li>Docker-Konfiguration für PHP 8.4</li>
-        <li>Composer-Setup mit PHPStan und Rector</li>
-        <li>Moderne Coding-Standards</li>
-    </ul>
-
-    <h3>Geänderte Dateien</h3>
-    <ul>
-        <li><code>downloads.php</code> - Short Open Tags korrigiert, HTML modernisiert</li>
-        <li><code>pdl-inc/pdl_config.inc.php</code> - Typ-Deklarationen, Array-Syntax</li>
-        <li><code>pdl-inc/pdl_db_class_mysql.inc.php</code> - Komplett überarbeitet</li>
-        <li><code>pdl-inc/pdl_header.inc.php</code> - Komplett überarbeitet</li>
-        <li><code>pdl-inc/pdl_functions.inc.php</code> - Komplett überarbeitet</li>
-        <li><code>pdl-inc/pdl_downloads.inc.php</code> - Sicherheitsfixes, Path Traversal</li>
-        <li><code>pdl-admin/header.inc.php</code> - XSS-Schutz, HTML5</li>
-        <li><code>pdl-admin/functions.inc.php</code> - Typ-Deklarationen, str_contains()</li>
-    </ul>
-
-    <h3>Neue Dateien</h3>
-    <ul>
-        <li><code>.docker/Dockerfile</code> - PHP 8.4 Docker-Image</li>
-        <li><code>.docker/docker-compose.yml</code> - Docker-Compose Konfiguration</li>
-        <li><code>.docker/php.ini</code> - PHP-Konfiguration</li>
-        <li><code>composer.json</code> - Composer-Setup</li>
-        <li><code>phpstan.neon.dist</code> - PHPStan-Konfiguration</li>
-        <li><code>rector.php</code> - Rector-Konfiguration</li>
-        <li><code>LICENSE</code> - MIT-Lizenz</li>
-        <li><code>README.md</code> - Markdown-Dokumentation</li>
-        <li><code>README.html</code> - Diese HTML-Dokumentation</li>
-        <li><code>logs/.gitkeep</code> - Log-Verzeichnis</li>
+        <li><code>2026-04-23-Userbereichs-bugs.md</code> – vollständige Bug-Liste des Userbereichs</li>
+        <li><code>2026-04-23-Userbereichs-improvements.md</code> – Verbesserungsvorschläge</li>
+        <li><code>2026-04-23-Userbereichs-test-coverage.md</code> – Testabdeckung &amp; Routenmatrix</li>
+        <li><code>2026-04-23-Userbereichs-abschlussbericht.md</code> – Management-Zusammenfassung</li>
+        <li><code>superpowers/plans/2026-04-23-userbereich-bugfixes.md</code> – Implementierungsplan der Fixes</li>
+        <li><code>superpowers/plans/2026-04-23-seed-templates.sql</code> – idempotente Migration für fehlende Templates</li>
     </ul>
 
     <h2>Lizenz</h2>
-    <p>Dieses Projekt steht unter der <strong>MIT-Lizenz</strong>. Siehe <a href="LICENSE">LICENSE</a> für Details.</p>
+    <p>Dieses Projekt steht unter der <strong>MIT-Lizenz</strong> – siehe <a href="LICENSE">LICENSE</a>.</p>
+    <pre><code>MIT License
 
-    <div class="success">
-        <strong>MIT License</strong><br><br>
-        Copyright (c) 2001-2002 PowerScripts<br>
-        Copyright (c) 2025 Nico Schubert<br><br>
-        Permission is hereby granted, free of charge, to any person obtaining a copy
-        of this software and associated documentation files (the "Software"), to deal
-        in the Software without restriction, including without limitation the rights
-        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-        copies of the Software, and to permit persons to whom the Software is
-        furnished to do so, subject to the following conditions:<br><br>
-        The above copyright notice and this permission notice shall be included in all
-        copies or substantial portions of the Software.
-    </div>
+Copyright (c) 2001-2002 PowerScripts
+Copyright (c) 2025-2026 Nico Schubert</code></pre>
 
     <h2>Credits</h2>
     <ul>
-        <li><strong>Original</strong>: PowerScripts (2001-2002)</li>
-        <li><strong>PHP 8.4 Migration</strong>: Nico Schubert (2025)</li>
+        <li><strong>Original-Entwicklung:</strong> PowerScripts (2001–2002)</li>
+        <li><strong>PHP 8.4 Migration &amp; Modernisierung:</strong> Nico Schubert (2025–2026)</li>
     </ul>
 
-    <hr>
-    <p style="text-align: center; color: #7f8c8d;">
-        PowerDownload v3.0.3-php84 &copy; 2001-2002 PowerScripts, 2025 Nico Schubert
-    </p>
+    <h2>Kontakt</h2>
+    <div class="contact">
+        <p><strong>SchubertMedia</strong><br>
+        Inhaber: Nico Schubert<br>
+        Stauffenbergallee 57<br>
+        99085 Erfurt<br>
+        Deutschland</p>
+
+        <ul>
+            <li><strong>Telefon:</strong> +49 (0) 3612 3002247 (Mo.–Fr. 9–12 und 13–18 Uhr)</li>
+            <li><strong>Telefax:</strong> +49 (0) 3612 3004636</li>
+            <li><strong>E-Mail:</strong> <a href="mailto:info@schubertmedia.de">info@schubertmedia.de</a></li>
+            <li><strong>Web:</strong> <a href="https://www.powerscripts.org">https://www.powerscripts.org</a></li>
+        </ul>
+    </div>
 </body>
 </html>
