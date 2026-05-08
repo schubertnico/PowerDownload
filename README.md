@@ -1,5 +1,10 @@
 # PowerDownload
 
+[![PHP](https://img.shields.io/badge/PHP-8.4-8892BF.svg?style=flat-square)](https://www.php.net/)
+[![tests](https://img.shields.io/badge/tests-244%2F258%20passing-yellow.svg?style=flat-square)](tests/)
+[![coverage](https://img.shields.io/badge/coverage-84%25-yellowgreen.svg?style=flat-square)](coverage.xml)
+[![license](https://img.shields.io/badge/license-MIT-yellow.svg?style=flat-square)](LICENSE)
+
 **PowerDownload** ist ein PHP-basiertes Download-Management-System mit Ordnerstruktur, Benutzerverwaltung, Bewertungs- und Kommentarsystem. Das Projekt wurde 2001/2002 von **PowerScripts** veröffentlicht und 2025/2026 vollständig auf **PHP 8.4** sowie **MySQL 8** modernisiert. Alle Userbereichs-Funktionen (Registrierung, Login, Profil, Passwort-Reset, Kommentare) wurden überarbeitet, mit `password_hash`/`password_verify`, Session-Tokens, CSRF-Schutz und Rate-Limit ausgestattet.
 
 - Projektseite: <https://www.powerscripts.org>
