@@ -2,116 +2,113 @@
 include("header.inc.php");
 if($user_rights['adminaccess'] == "Y")
  {
+    pdl_admin_breadcrumb([
+        ['title' => 'Admin-Center', 'href' => 'index.php'],
+        ['title' => 'Vorlagen und Ersetzungen'],
+        ['title' => 'Ersetzungen anzeigen'],
+    ]);
+    echo '<h1 class="h3 pdl-page-title">Ersetzungen anzeigen</h1>';
 ?>
-<br><br>
-<table border="0" cellpadding="0" cellspacing="0" width="65%">
-  <tr>
-    <td bgcolor="<?php echo htmlspecialchars($template['table_border']); ?>">
-      <table border="0" cellpadding="3" cellspacing="1" width="100%">
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($template['header_bg']); ?>" colspan="2" align="center">
-            <b>Zensur</b>
-          </td>
-        </tr>
-        <?php $alt = alt_switch(); ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>" colspan="2" align="center">
-            Zensiert werden folgende W&ouml;rter:
-          </td>
-        </tr>
+<div class="alert alert-info" role="alert">
+    <strong>Was sind Ersetzungen?</strong>
+    Ersetzungen (auf Englisch: <em>Replacements</em>) sind Regeln, mit denen
+    bestimmte Textstellen in Releases und Kommentaren automatisch umgewandelt
+    werden. Es gibt drei Arten:
+    <ul class="mb-2">
+        <li><strong>Zensur</strong>: Diese Wörter werden in öffentlichen Texten unkenntlich gemacht.</li>
+        <li><strong>Smilies</strong>: Kurzcodes wie <code>:)</code> werden durch kleine Bilder ersetzt.</li>
+        <li><strong>Glossar</strong>: Begriffe werden durch eine andere Schreibweise oder einen Link ersetzt.</li>
+    </ul>
+    <a class="btn btn-primary btn-sm me-2" href="addreplacement.php"><strong>Neue Ersetzung hinzufügen</strong></a>
+    <a class="btn btn-outline-light btn-sm" href="delreplacement.php">Ersetzungen löschen</a>
+</div>
+
+<section class="card pdl-card mb-4">
+    <header class="card-header d-flex align-items-center justify-content-between">
+        <h2 class="h5 mb-0">Zensur</h2>
+        <a class="btn btn-outline-light btn-sm" href="addreplacement.php?type=b">+ Zensur-Eintrag hinzufügen</a>
+    </header>
+    <div class="card-body">
+        <p class="mb-3 form-text">Folgende Wörter werden in öffentlichen Texten zensiert:</p>
+        <ul class="list-group list-group-flush">
         <?php
         $badwords_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['replacements'] . " WHERE type='b' ORDER BY old ASC");
-        while($badwords_row = $db_handler->sql_fetch_array($badwords_res))
-         {
-          $alt = alt_switch();
+        $bw_count = 0;
+        while($badwords_row = $db_handler->sql_fetch_array($badwords_res)) {
+            $bw_count++;
+            echo '<li class="list-group-item bg-transparent text-body">' . htmlspecialchars($badwords_row['old']) . '</li>';
+        }
+        if ($bw_count == 0) {
+            echo '<li class="list-group-item bg-transparent text-muted">Keine Einträge bisher. <a href="addreplacement.php?type=b" class="alert-link">Jetzt einen Zensur-Eintrag hinzufügen</a>.</li>';
+        }
         ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>" colspan="2" align="center">
-            <?php echo htmlspecialchars($badwords_row['old']); ?>
-          </td>
-        </tr>
-        <?php
-         }
-        ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($template['header_bg']); ?>" colspan="2" align="center">
-            <b>Smilies</b>
-          </td>
-        </tr>
-        <?php $alt = alt_switch(); ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>" align="center">
-            Smiliecode
-          </td>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>" align="center">
-            Smiliebild
-          </td>
-        </tr>
-        <?php
-        $smilies_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['replacements'] . " WHERE type='s' ORDER BY LENGTH(old) DESC");
-        while($smilies_row = $db_handler->sql_fetch_array($smilies_res))
-         {
-          $alt = alt_switch();
-        ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>" align="center">
-            <?php echo htmlspecialchars($smilies_row['old']); ?>
-          </td>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>" align="center">
+        </ul>
+    </div>
+</section>
+
+<section class="card pdl-card mb-4">
+    <header class="card-header d-flex align-items-center justify-content-between">
+        <h2 class="h5 mb-0">Smilies</h2>
+        <a class="btn btn-outline-light btn-sm" href="addreplacement.php?type=s">+ Smilie hinzufügen</a>
+    </header>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover mb-0 align-middle">
+            <thead><tr><th scope="col">Code</th><th scope="col">Bild</th></tr></thead>
+            <tbody>
             <?php
-            if(preg_match("/http:\/\//siU",$smilies_row['neu']))
-             { echo "<img src=\"" . htmlspecialchars($smilies_row['neu']) . "\" border=\"0\">"; }
-            else
-             { echo "<img src=\"../" . htmlspecialchars($smilies_row['neu']) . "\" border=\"0\">"; }
+            $smilies_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['replacements'] . " WHERE type='s' ORDER BY LENGTH(old) DESC");
+            $sm_count = 0;
+            while($smilies_row = $db_handler->sql_fetch_array($smilies_res)) {
+                $sm_count++;
             ?>
-          </td>
-        </tr>
-        <?php
-         }
-        ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($template['header_bg']); ?>" colspan="2" align="center">
-            <b>Glossar</b>
-          </td>
-        </tr>
-        <?php $alt = alt_switch(); ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>" align="center">
-            Vorher
-          </td>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>" align="center">
-            Nachher
-          </td>
-        </tr>
-        <?php
-        $glossary_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['replacements'] . " WHERE type='g' ORDER BY LENGTH(old) DESC");
-        while($glossary_row = $db_handler->sql_fetch_array($glossary_res))
-         {
-          $alt = alt_switch();
-        ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>" align="center">
-            <?php echo htmlspecialchars($glossary_row['old']); ?>
-          </td>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>" align="center">
-            <?php echo htmlspecialchars($glossary_row['neu']); ?>
-          </td>
-        </tr>
-        <?php
-         }
-        ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($template['footer_bg']); ?>" colspan="2">
-            &nbsp;
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
+                <tr>
+                    <td><code><?php echo htmlspecialchars($smilies_row['old']); ?></code></td>
+                    <td>
+                    <?php
+                    if(preg_match("/http:\/\//siU",$smilies_row['neu']))
+                     { echo '<img src="' . htmlspecialchars($smilies_row['neu']) . '" alt="">'; }
+                    else
+                     { echo '<img src="../' . htmlspecialchars($smilies_row['neu']) . '" alt="">'; }
+                    ?>
+                    </td>
+                </tr>
+            <?php } if ($sm_count == 0) { ?>
+                <tr><td colspan="2" class="text-muted text-center">Keine Einträge bisher. <a href="addreplacement.php?type=s" class="alert-link">Jetzt ein Smilie hinzufügen</a>.</td></tr>
+            <?php } ?>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="card pdl-card mb-4">
+    <header class="card-header d-flex align-items-center justify-content-between">
+        <h2 class="h5 mb-0">Glossar</h2>
+        <a class="btn btn-outline-light btn-sm" href="addreplacement.php?type=g">+ Glossar-Eintrag hinzufügen</a>
+    </header>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover mb-0 align-middle">
+            <thead><tr><th scope="col">Vorher</th><th scope="col">Nachher</th></tr></thead>
+            <tbody>
+            <?php
+            $glossary_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['replacements'] . " WHERE type='g' ORDER BY LENGTH(old) DESC");
+            $gl_count = 0;
+            while($glossary_row = $db_handler->sql_fetch_array($glossary_res)) {
+                $gl_count++;
+            ?>
+                <tr>
+                    <td><?php echo htmlspecialchars($glossary_row['old']); ?></td>
+                    <td><?php echo htmlspecialchars($glossary_row['neu']); ?></td>
+                </tr>
+            <?php } if ($gl_count == 0) { ?>
+                <tr><td colspan="2" class="text-muted text-center">Keine Einträge bisher. <a href="addreplacement.php?type=g" class="alert-link">Jetzt einen Glossar-Eintrag hinzufügen</a>.</td></tr>
+            <?php } ?>
+            </tbody>
+        </table>
+    </div>
+</section>
 <?php
  }
 else
- { echo "Sie haben keine Berechtigung diese Seite zu sehen"; }
+ { echo pdl_admin_alert('warning', 'Sie haben keine Berechtigung diese Seite zu sehen.'); }
 include("footer.inc.php");
 ?>

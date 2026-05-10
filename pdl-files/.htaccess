@@ -1,0 +1,20 @@
+# Datei-Uploads aus dem Admin-Bereich.
+#
+# Hier liegen vom Admin hochgeladene Download-Dateien.
+# Aus Sicherheitsgründen darf der Webserver hier keinerlei serverseitigen
+# Code ausführen. Dateien werden nur als statische Downloads ausgeliefert.
+
+# PHP-Ausführung in jedem Fall deaktivieren (Apache <= 2.4 und Apache >= 2.4).
+<FilesMatch "\.(php|php3|php4|php5|php7|php8|phtml|phps|phar|pl|py|cgi|sh|bat|cmd|asp|aspx)$">
+    Require all denied
+</FilesMatch>
+
+# Schutz gegen versteckte System-Dateien.
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+Options -ExecCGI -Indexes -MultiViews
+AddType text/plain .php .phtml .phps .phar .pl .py .cgi .sh .bat .cmd
+
+# Verzeichnis-Index unterdrücken, falls Apache trotzdem listen wollte.
+IndexIgnore *
