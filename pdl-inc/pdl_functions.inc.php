@@ -217,7 +217,7 @@ function replace(string $temp, array $table_row): string
     return $temp;
 }
 
-// Macht aus einer Userid den User mit Nick/ICQ/Homepage
+// Macht aus einer Userid den User mit Nick/Homepage
 function user(int $user_id): string
 {
     global $users, $inadmin;
@@ -229,11 +229,6 @@ function user(int $user_id): string
     $email = $users[$user_id]['email'] ?? '';
     $nick = htmlspecialchars($users[$user_id]['nick'] ?? '', ENT_QUOTES, 'UTF-8');
     $user = '<a href="mailto:' . $email . '">' . $nick . '</a>';
-
-    $icq = (int) ($users[$user_id]['icq'] ?? 0);
-    if ($icq > 0) {
-        $user .= ' <a href="https://icq.im/' . $icq . '"><img src="pdl-gfx/icq.gif" border="0" alt="ICQ"></a>';
-    }
 
     $homepage = $users[$user_id]['homepage'] ?? '';
     if ($homepage) {
@@ -526,20 +521,43 @@ function ascii_encode(string $string): string
 }
 
 // Treeview für Select-Dropdown
-function treeview_select(int $ordner, string $head): string
+// $selected: optional vorausgewählter ordner_id; wenn 0 (Index) wird nichts vorausgewählt.
+function treeview_select(int $ordner, string $head, int $selected = 0): string
 {
-    global $db_handler, $sql_table;
+    global $db_handler, $sql_table, $pdl_treeview_cache;
 
+    if (!isset($pdl_treeview_cache) || !is_array($pdl_treeview_cache)) {
+        $pdl_treeview_cache = [];
+        $res = $db_handler->sql_query(
+            "SELECT ordner_id, sordner_id, name FROM " . $sql_table['ordner'] . " ORDER BY name ASC"
+        );
+        while ($row = $db_handler->sql_fetch_array($res)) {
+            $parent = (int) $row['sordner_id'];
+            $pdl_treeview_cache[$parent][] = [
+                'ordner_id' => (int) $row['ordner_id'],
+                'name' => (string) ($row['name'] ?? ''),
+            ];
+        }
+    }
+
+    $children = $pdl_treeview_cache[$ordner] ?? [];
     $output = '';
-    $ordner_escaped = $db_handler->sql_escape_int($ordner);
-    $treeview_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['ordner'] . " WHERE sordner_id='" . $ordner_escaped . "'");
-
-    while ($treeview_row = $db_handler->sql_fetch_array($treeview_res)) {
-        $row_ordner_id = (int) $treeview_row['ordner_id'];
-        $row_name = htmlspecialchars($treeview_row['name'] ?? '', ENT_QUOTES, 'UTF-8');
-        $output .= '<option value="' . $row_ordner_id . '">' . $head . $row_name . '</option>';
-        $output .= treeview_select($row_ordner_id, $head . "-");
+    foreach ($children as $child) {
+        $rowId = (int) $child['ordner_id'];
+        $rowName = htmlspecialchars($child['name'], ENT_QUOTES, 'UTF-8');
+        $selAttr = ($selected !== 0 && $selected === $rowId) ? ' selected' : '';
+        $output .= '<option value="' . $rowId . '"' . $selAttr . '>' . $head . $rowName . '</option>';
+        $output .= treeview_select($rowId, $head . "-", $selected);
     }
 
     return $output;
+}
+
+/**
+ * Setzt den internen Cache von treeview_select zurück (für Tests / mehrfache Edit-Forms).
+ */
+function treeview_select_reset_cache(): void
+{
+    global $pdl_treeview_cache;
+    $pdl_treeview_cache = null;
 }

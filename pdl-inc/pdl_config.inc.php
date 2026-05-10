@@ -35,4 +35,5 @@ $sql_table = [
     'templategroup' => "pdl3_templategroup",
     'user' => "pdl3_user",
     'usergroup' => "pdl3_usergroup",
+    'admin_log' => "pdl3_admin_log",
 ];

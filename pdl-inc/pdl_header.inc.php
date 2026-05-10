@@ -31,6 +31,9 @@ require($incdir . "pdl-inc/pdl_config.inc.php");
 require($incdir . "pdl-inc/pdl_db_class_" . strtolower($config_sql_type) . ".inc.php");
 require($incdir . "pdl-inc/pdl_functions.inc.php");
 require($incdir . "pdl-inc/pdl_csrf.inc.php");
+require($incdir . "pdl-inc/pdl_admin_validation.inc.php");
+require($incdir . "pdl-inc/pdl_admin_audit.inc.php");
+require_once($incdir . "pdl-inc/pdl_layout.inc.php");
 
 // Initialize SQL Class
 $db_handler = new pdl_db_class();
@@ -59,28 +62,31 @@ try {
 } catch (mysqli_sql_exception|Exception $e) {
     // Database not initialized - show friendly error
     http_response_code(503);
+    $setup_link = ($incdir === '' ? '' : $incdir) . 'setup.php';
     echo '<!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PowerDownload - Setup erforderlich</title>
-    <style>
-        body { background: #1a1a1a; color: #fff; font-family: Arial, sans-serif; padding: 50px; text-align: center; }
-        .box { background: #2a2a2a; border: 2px solid #9B0000; padding: 30px; max-width: 500px; margin: 0 auto; border-radius: 8px; }
-        h1 { color: #ff6b6b; }
-        a { color: #4dabf7; }
-        code { background: #333; padding: 2px 8px; border-radius: 4px; }
-    </style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-    <div class="box">
-        <h1>Setup erforderlich</h1>
-        <p>Die Datenbank-Tabellen wurden noch nicht erstellt.</p>
-        <p>Bitte führe zuerst das Setup aus:</p>
-        <p><a href="setup.php"><strong>setup.php aufrufen</strong></a></p>
-        <hr style="border-color:#444;margin:20px 0;">
-        <p><small>Fehler: ' . htmlspecialchars($e->getMessage()) . '</small></p>
-    </div>
+<body class="bg-dark text-light min-vh-100 d-flex align-items-center justify-content-center p-3">
+    <main class="container" style="max-width: 540px;">
+        <div class="card bg-secondary-subtle text-dark shadow">
+            <div class="card-header bg-danger text-white">
+                <h1 class="h4 mb-0">Setup erforderlich</h1>
+            </div>
+            <div class="card-body">
+                <p class="mb-3">Die Datenbank-Tabellen wurden noch nicht erstellt.</p>
+                <p class="mb-3">Bitte fuehre zuerst das Setup aus:</p>
+                <p class="mb-3"><a class="btn btn-danger" href="' . htmlspecialchars($setup_link, ENT_QUOTES, 'UTF-8') . '">setup.php aufrufen</a></p>
+                <hr>
+                <p class="small text-muted mb-0">Fehler: ' . htmlspecialchars($e->getMessage()) . '</p>
+            </div>
+        </div>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>';
     exit;
@@ -115,7 +121,6 @@ while ($users_row = $db_handler->sql_fetch_array($users_res)) {
     $user_id = $users_row['user_id'];
     $users[$user_id]['nick'] = $users_row['nick'];
     $users[$user_id]['email'] = ascii_encode($users_row['email']);
-    $users[$user_id]['icq'] = $users_row['icq'];
     $users[$user_id]['homepage'] = $users_row['homepage'];
 }
 
@@ -171,7 +176,6 @@ $pw_old = $_POST['pw_old'] ?? '';
 $pw_new = $_POST['pw_new'] ?? '';
 $pw_new2 = $_POST['pw_new2'] ?? '';
 $homepage = $_POST['homepage'] ?? '';
-$icq = isset($_POST['icq']) ? (int) $_POST['icq'] : 0;
 $get_letter = $_POST['get_letter'] ?? '';
 $titel = $_POST['titel'] ?? '';
 $text = $_POST['text'] ?? '';
