@@ -69,13 +69,15 @@ class FunctionsHelperTest extends TestCase
     }
 
     #[Test]
-    public function userShowsIcqWhenSet(): void
+    public function userDoesNotShowIcqAfterRemoval(): void
     {
+        // BUG-029: ICQ-Anbindung wurde entfernt. Auch wenn das Datenbankfeld
+        // vorhanden ist, darf user() keine ICQ-Verlinkung mehr ausgeben.
         global $users;
         $users[1] = ['nick' => 'TestUser', 'email' => 'test@test.com', 'icq' => 12345, 'homepage' => ''];
         $result = user(1);
-        $this->assertStringContainsString('icq.im/12345', $result);
-        $this->assertStringContainsString('icq.gif', $result);
+        $this->assertStringNotContainsString('icq.im', $result);
+        $this->assertStringNotContainsString('icq.gif', $result);
     }
 
     #[Test]
@@ -111,13 +113,15 @@ class FunctionsHelperTest extends TestCase
     }
 
     #[Test]
-    public function userShowsIcqAndHomepage(): void
+    public function userShowsHomepageEvenWhenIcqLegacyValuePresent(): void
     {
+        // BUG-029: ICQ wurde entfernt. Homepage muss weiterhin angezeigt werden,
+        // auch wenn der Datensatz noch ein altes ICQ-Feld enthält.
         global $users, $inadmin;
         $inadmin = 0;
         $users[1] = ['nick' => 'FullUser', 'email' => 'full@test.com', 'icq' => 99999, 'homepage' => 'https://full.com'];
         $result = user(1);
-        $this->assertStringContainsString('icq.im/99999', $result);
+        $this->assertStringNotContainsString('icq.im', $result);
         $this->assertStringContainsString('https://full.com', $result);
         $this->assertStringContainsString('FullUser', $result);
     }
@@ -931,6 +935,7 @@ class FunctionsHelperTest extends TestCase
     public function treeviewSelectReturnsEmptyForNoFolders(): void
     {
         global $db_handler, $sql_table;
+        treeview_select_reset_cache();
         $db_handler = new MockDbHandler();
         $db_handler->addResult([]);
         $sql_table = ['ordner' => 'pdl3_ordner'];
@@ -943,13 +948,12 @@ class FunctionsHelperTest extends TestCase
     public function treeviewSelectReturnsOptions(): void
     {
         global $db_handler, $sql_table;
+        treeview_select_reset_cache();
         $db_handler = new MockDbHandler();
         $db_handler->addResult([
-            ['ordner_id' => 1, 'name' => 'Folder1'],
-            ['ordner_id' => 2, 'name' => 'Folder2'],
+            ['ordner_id' => 1, 'sordner_id' => 0, 'name' => 'Folder1'],
+            ['ordner_id' => 2, 'sordner_id' => 0, 'name' => 'Folder2'],
         ]);
-        $db_handler->addResult([]); // recursive for folder 1
-        $db_handler->addResult([]); // recursive for folder 2
         $sql_table = ['ordner' => 'pdl3_ordner'];
 
         $result = treeview_select(0, '');
@@ -961,14 +965,12 @@ class FunctionsHelperTest extends TestCase
     public function treeviewSelectNested(): void
     {
         global $db_handler, $sql_table;
+        treeview_select_reset_cache();
         $db_handler = new MockDbHandler();
         $db_handler->addResult([
-            ['ordner_id' => 1, 'name' => 'Parent'],
+            ['ordner_id' => 1, 'sordner_id' => 0, 'name' => 'Parent'],
+            ['ordner_id' => 2, 'sordner_id' => 1, 'name' => 'Child'],
         ]);
-        $db_handler->addResult([
-            ['ordner_id' => 2, 'name' => 'Child'],
-        ]);
-        $db_handler->addResult([]);
         $sql_table = ['ordner' => 'pdl3_ordner'];
 
         $result = treeview_select(0, '');

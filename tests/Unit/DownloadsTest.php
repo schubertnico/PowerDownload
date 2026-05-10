@@ -100,24 +100,23 @@ class DownloadsTest extends TestCase
     #[Test]
     public function downloadsShowsIndexPage(): void
     {
+        // pdl_downloads.inc.php rendert den Inhaltsbereich (Treeview-Breadcrumb +
+        // Ordner-Modul). Nav/Logo/Footer liegen im Layout-Helper und werden
+        // hier nicht eingebunden.
         global $db_handler, $ordner_id;
         $ordner_id = 0;
         $db_handler = new MockDbHandler();
-        // treeview_ordner not called when enable_treeview=N
-        // ordner module: files_check, ordner_check both empty
         $db_handler->addResult([]);
         $db_handler->addResult([]);
 
         $output = $this->includeDownloads();
 
         $this->assertStringContainsString('Index', $output);
-        $this->assertStringContainsString('Home', $output);
-        $this->assertStringContainsString('Statistik', $output);
-        $this->assertStringContainsString('Suche', $output);
+        $this->assertStringContainsString('Navigationspfad', $output);
     }
 
     #[Test]
-    public function downloadsShowsLoginLinkWhenNotLoggedIn(): void
+    public function downloadsShowsEmptyFolderMessage(): void
     {
         global $db_handler, $user_details;
         $user_details = null;
@@ -127,12 +126,11 @@ class DownloadsTest extends TestCase
 
         $output = $this->includeDownloads();
 
-        $this->assertStringContainsString('Login', $output);
-        $this->assertStringContainsString('Anmelden', $output);
+        $this->assertStringContainsString('Dieser Ordner ist leer', $output);
     }
 
     #[Test]
-    public function downloadsShowsProfilAndLogoutWhenLoggedIn(): void
+    public function downloadsRendersTreeviewBreadcrumbForLoggedInUser(): void
     {
         global $db_handler, $user_details;
         $user_details = ['nick' => 'TestUser', 'user_id' => 1];
@@ -142,23 +140,31 @@ class DownloadsTest extends TestCase
 
         $output = $this->includeDownloads();
 
-        $this->assertStringContainsString('Profil', $output);
-        $this->assertStringContainsString('Logout', $output);
+        $this->assertStringContainsString('aria-current="page"', $output);
+        $this->assertStringContainsString('Index', $output);
     }
 
     #[Test]
     public function downloadsShowsAdminLinkForAdmin(): void
     {
-        global $db_handler, $user_details, $user_rights;
+        // Im inneren Inhalt erscheint der "Admin-Optionen"-Block nur, wenn der
+        // ExternAdmin-Modus aktiviert ist (sonst kommt der Admin-Center-Link
+        // ausschliesslich im Layout-Header).
+        global $db_handler, $user_details, $user_rights, $settings;
         $user_details = ['nick' => 'Admin', 'user_id' => 1];
-        $user_rights['adminaccess'] = 'Y';
+        $user_rights = [
+            'adminaccess' => 'Y', 'editfiles' => 'Y', 'delfiles' => 'Y',
+            'adddirs' => 'Y', 'editdirs' => 'Y', 'deldirs' => 'Y',
+            'download' => 'Y', 'vote' => 'N', 'addcomments' => 'N',
+        ];
+        $settings['enable_extrernadmin'] = 'Y';
         $db_handler = new MockDbHandler();
         $db_handler->addResult([]);
         $db_handler->addResult([]);
 
         $output = $this->includeDownloads();
 
-        $this->assertStringContainsString('Admin Center', $output);
+        $this->assertStringContainsString('Admin-Optionen', $output);
     }
 
     #[Test]
@@ -226,7 +232,8 @@ class DownloadsTest extends TestCase
 
         $output = $this->includeDownloads();
 
-        $this->assertStringContainsString('Server & DB Stats', $output);
+        // HTML-Ausgabe escaped das Ampersand: "Server &amp; DB Stats"
+        $this->assertStringContainsString('Server &amp; DB Stats', $output);
     }
 
     #[Test]
@@ -291,9 +298,9 @@ class DownloadsTest extends TestCase
 
         $output = $this->includeDownloads();
 
-        $this->assertStringContainsString('Renderzeit', $output);
-        $this->assertStringContainsString('SQL Anfragen', $output);
-        $this->assertStringContainsString('PowerDownload', $output);
+        // Im Innenbereich nur die Treeview-Breadcrumb sichtbar; Renderzeit/SQL
+        // liegen im Layout-Footer. Wir prüfen, dass kein Fehler auftritt.
+        $this->assertStringContainsString('Index', $output);
     }
 
     #[Test]
@@ -375,10 +382,10 @@ class DownloadsTest extends TestCase
 
         $output = $this->includeDownloads();
 
-        $this->assertStringContainsString('Admin Optionen', $output);
-        $this->assertStringContainsString('Sub-Ordner Adden', $output);
-        $this->assertStringContainsString('Ordner Editieren', $output);
-        $this->assertStringContainsString('Ordner L', $output);
+        $this->assertStringContainsString('Admin-Optionen', $output);
+        $this->assertStringContainsString('Sub-Ordner hinzufügen', $output);
+        $this->assertStringContainsString('Ordner editieren', $output);
+        $this->assertStringContainsString('Ordner löschen', $output);
     }
 
     #[Test]
@@ -416,9 +423,9 @@ class DownloadsTest extends TestCase
 
         $output = $this->includeDownloads();
 
-        $this->assertStringContainsString('Admin Optionen', $output);
-        $this->assertStringContainsString('Release Editieren', $output);
-        $this->assertStringContainsString('Datei hinzuf', $output);
+        $this->assertStringContainsString('Admin-Optionen', $output);
+        $this->assertStringContainsString('Release editieren', $output);
+        $this->assertStringContainsString('Datei hinzufügen', $output);
     }
 
     #[Test]

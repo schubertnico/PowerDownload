@@ -134,13 +134,13 @@ class StatsModulTest extends TestCase
 
         $output = $this->includeModule('pdl_stats.modul.php');
 
-        $this->assertStringContainsString('Server & DB Stats', $output);
+        $this->assertStringContainsString('Server &amp; DB Stats', $output);
         $this->assertStringContainsString('DB Version', $output);
         $this->assertStringContainsString('8.0.30', $output);
-        $this->assertStringContainsString('DB Groesse', $output);
+        $this->assertStringContainsString('DB Größe', $output);
         $this->assertStringContainsString('Tabellen in der DB', $output);
         $this->assertStringContainsString('2', $output); // 2 tables
-        $this->assertStringContainsString('DB Eintraege', $output);
+        $this->assertStringContainsString('DB Einträge', $output);
         $this->assertStringContainsString('Apache/2.4', $output);
     }
 
@@ -152,7 +152,7 @@ class StatsModulTest extends TestCase
 
         $output = $this->includeModule('pdl_stats.modul.php');
 
-        $this->assertStringContainsString('User & Gruppen', $output);
+        $this->assertStringContainsString('User &amp; Gruppen', $output);
         $this->assertStringContainsString('Admins', $output);
         $this->assertStringContainsString('Users', $output);
     }
@@ -165,7 +165,7 @@ class StatsModulTest extends TestCase
 
         $output = $this->includeModule('pdl_stats.modul.php');
 
-        $this->assertStringContainsString('Top 10 Kommentare Poster', $output);
+        $this->assertStringContainsString('Top 10 Kommentar-Poster', $output);
         $this->assertStringContainsString('Admin', $output);
         $this->assertStringContainsString('15', $output);
     }
@@ -201,7 +201,7 @@ class StatsModulTest extends TestCase
 
         $output = $this->includeModule('pdl_stats.modul.php');
 
-        $this->assertStringContainsString('Top 10 Release nach Groesse', $output);
+        $this->assertStringContainsString('Top 10 Release nach Größe', $output);
         $this->assertStringContainsString('BigApp', $output);
     }
 
@@ -256,7 +256,7 @@ class StatsModulTest extends TestCase
 
         $output = $this->includeModule('pdl_stats.modul.php');
 
-        $this->assertStringContainsString('Server & DB Stats', $output);
+        $this->assertStringContainsString('Server &amp; DB Stats', $output);
         $this->assertStringContainsString('Nginx', $output);
     }
 
