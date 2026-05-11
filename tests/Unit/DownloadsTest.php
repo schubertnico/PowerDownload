@@ -126,7 +126,10 @@ class DownloadsTest extends TestCase
 
         $output = $this->includeDownloads();
 
-        $this->assertStringContainsString('Dieser Ordner ist leer', $output);
+        // Aktueller leerer-Ordner-Block trägt eine Überschrift und einen
+        // Hinweistext, die beide den Stand klar kommunizieren.
+        $this->assertStringContainsString('Dieser Ordner ist noch leer', $output);
+        $this->assertStringContainsString('keine Releases', $output);
     }
 
     #[Test]

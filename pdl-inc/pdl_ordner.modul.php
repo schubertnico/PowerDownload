@@ -23,7 +23,40 @@ $files_check = $db_handler->sql_num_rows($db_handler->sql_query("SELECT release_
 $ordner_check = $db_handler->sql_num_rows($db_handler->sql_query("SELECT ordner_id FROM " . $sql_table['ordner'] . " WHERE sordner_id='" . $ordner_id_safe . "'"));
 
 if ($files_check == 0 && $ordner_check == 0) {
-    echo "Dieser Ordner ist leer.";
+    // Leerer Ordner: für normale Nutzer eine freundliche Erklärung,
+    // für eingeloggte Admins zusätzlich Direkt-Links zum Anlegen.
+    $is_admin = !empty($user_details) && (($user_rights['adminaccess'] ?? '') === 'Y');
+    $can_add_release = $is_admin;
+    $can_add_subdir = !empty($user_rights['adddirs']) && $user_rights['adddirs'] === 'Y';
+    $ordner_id_int = (int) $ordner_id;
+    echo '<section class="card pdl-card mb-4" role="status" aria-live="polite">';
+    echo '<div class="card-body">';
+    echo '<h2 class="h5">Dieser Ordner ist noch leer.</h2>';
+    echo '<p class="mb-3">In diesem Ordner gibt es bisher keine Releases und keine Unter-Ordner.';
+    if (!$is_admin) {
+        echo ' Bitte schauen Sie später noch einmal vorbei oder wählen Sie im Menü einen anderen Bereich aus.';
+    }
+    echo '</p>';
+    if ($is_admin) {
+        echo '<p class="form-text mb-3">Hinweis (sichtbar nur für Admins): '
+            . 'Eine Datei kann nur innerhalb eines Releases existieren. '
+            . 'Bitte legen Sie zuerst ein Release an, anschließend können Sie Dateien oder Screenshots in dieses Release laden.</p>';
+        echo '<div class="d-flex flex-wrap gap-2">';
+        if ($can_add_release) {
+            echo '<a class="btn btn-primary" href="pdl-admin/addrelease.php?ordner_id=' . $ordner_id_int . '">+ Release hier anlegen</a>';
+        }
+        if ($can_add_subdir) {
+            echo '<a class="btn btn-outline-light" href="pdl-admin/adddir.php?ordner_id=' . $ordner_id_int . '">+ Unter-Ordner hier anlegen</a>';
+        }
+        echo '<a class="btn btn-outline-light" href="pdl-admin/or_list.php?ordner_id=' . $ordner_id_int . '">Zur Ordner-Übersicht im Admin</a>';
+        echo '</div>';
+    } else {
+        // Hinweis-Link zur Hauptseite für normale Nutzer
+        echo '<div class="d-flex flex-wrap gap-2">';
+        echo '<a class="btn btn-outline-light" href="' . htmlspecialchars($settings['script_file'] ?? 'downloads.php?') . '">Zur Startseite</a>';
+        echo '</div>';
+    }
+    echo '</div></section>';
 } else {
     if ($ordner_check != 0) {
         $ordner_rows = "";
