@@ -4,6 +4,23 @@
  * @license MIT
  */
 
+// Liefert eine kompakte, deutsche Bytegröße-Darstellung (z.B. "1,5 MB").
+if (!function_exists('pdl_format_bytes_public')) {
+    function pdl_format_bytes_public(int $bytes): string
+    {
+        if ($bytes < 1024) {
+            return $bytes . ' B';
+        }
+        if ($bytes < 1024 * 1024) {
+            return number_format($bytes / 1024, 1, ',', '.') . ' KB';
+        }
+        if ($bytes < 1024 * 1024 * 1024) {
+            return number_format($bytes / 1024 / 1024, 1, ',', '.') . ' MB';
+        }
+        return number_format($bytes / 1024 / 1024 / 1024, 2, ',', '.') . ' GB';
+    }
+}
+
 // Rechnet alle Subordner und Subfiles aus
 if (!function_exists('sub')) {
 function sub(int $ordner_id): void
@@ -58,8 +75,25 @@ if ($files_check == 0 && $ordner_check == 0) {
     }
     echo '</div></section>';
 } else {
+    // Hilfs-Helper: Wird ein DB-Template als "brauchbar" angesehen?
+    // Ein DB-Template muss mindestens einen `{rows}`- oder `{name}`-Platzhalter
+    // enthalten; sonst greifen wir auf eine Bootstrap-Standardansicht zurück,
+    // damit Releases auch ohne konfigurierte Templates sichtbar sind.
+    $tpl_ordner_box_usable = isset($template['ordner_box']) && strpos((string) $template['ordner_box'], '{rows}') !== false;
+    $tpl_ordner_row_usable = isset($template['ordner_row']) && (
+        strpos((string) $template['ordner_row'], '{name}') !== false
+        || strpos((string) $template['ordner_row'], '{id}') !== false
+    );
+    $tpl_release_box_usable = isset($template['release_box']) && strpos((string) $template['release_box'], '{rows}') !== false;
+    $tpl_release_row_usable = isset($template['release_row']) && (
+        strpos((string) $template['release_row'], '{name}') !== false
+        || strpos((string) $template['release_row'], '{id}') !== false
+    );
+
+    $script_file_attr = htmlspecialchars($settings['script_file'] ?? 'downloads.php?', ENT_QUOTES, 'UTF-8');
+
     if ($ordner_check != 0) {
-        $ordner_rows = "";
+        $ordner_data = [];
         $ordner_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['ordner'] . " WHERE sordner_id='" . $ordner_id_safe . "' ORDER BY name ASC");
         while ($ordner_row = $db_handler->sql_fetch_array($ordner_res)) {
             $subfiles = 0;
@@ -70,12 +104,45 @@ if ($files_check == 0 && $ordner_check == 0) {
             $ordner_row['id'] = $ordner_row['ordner_id'] ?? '';
             $ordner_row['name'] = stripslashes($ordner_row['name'] ?? '');
             $ordner_row['text'] = stripslashes($ordner_row['text'] ?? '');
-
-            $ordner_rows .= replace($template['ordner_row'] ?? '', $ordner_row);
+            $ordner_data[] = $ordner_row;
         }
 
-        echo replace($template['ordner_box'] ?? '', ['rows' => $ordner_rows]);
+        if ($tpl_ordner_box_usable && $tpl_ordner_row_usable) {
+            $ordner_rows = "";
+            foreach ($ordner_data as $ordner_row) {
+                $ordner_rows .= replace((string) $template['ordner_row'], $ordner_row);
+            }
+            echo replace((string) $template['ordner_box'], ['rows' => $ordner_rows]);
+        } else {
+            // Fallback: Bootstrap-Card-Liste.
+            echo '<section class="card pdl-card mb-4" aria-label="Unter-Ordner">';
+            echo '<header class="card-header pdl-card-header"><h2 class="h5 mb-0">Unter-Ordner</h2></header>';
+            echo '<ul class="list-group list-group-flush">';
+            foreach ($ordner_data as $ordner_row) {
+                $oid = (int) $ordner_row['id'];
+                $oname = (string) $ordner_row['name'];
+                $otext = (string) $ordner_row['text'];
+                $ofiles = (int) $ordner_row['files'];
+                $osubs = (int) $ordner_row['subdirs'];
+                echo '<li class="list-group-item bg-transparent text-body d-flex justify-content-between align-items-start flex-wrap gap-2">';
+                echo '<div>';
+                echo '<a class="link-light fw-bold" href="' . $script_file_attr . 'ordner_id=' . $oid . '">'
+                    . '<img src="pdl-gfx/folder.gif" alt="" class="me-2"> '
+                    . htmlspecialchars($oname, ENT_QUOTES, 'UTF-8') . '</a>';
+                if ($otext !== '') {
+                    echo '<div class="form-text mb-0">' . htmlspecialchars($otext, ENT_QUOTES, 'UTF-8') . '</div>';
+                }
+                echo '</div>';
+                echo '<div class="text-end small text-muted">'
+                    . $ofiles . ' ' . ($ofiles === 1 ? 'Release' : 'Releases')
+                    . ' &middot; ' . $osubs . ' Unter-' . ($osubs === 1 ? 'Ordner' : 'Ordner')
+                    . '</div>';
+                echo '</li>';
+            }
+            echo '</ul></section>';
+        }
     }
+
     if ($files_check != 0) {
         if ($page < 1) $page = 1;
 
@@ -92,10 +159,8 @@ if ($files_check == 0 && $ordner_check == 0) {
         $limit = $temp1 . "," . $perpage;
         $total = $db_handler->sql_num_rows($db_handler->sql_query("SELECT * FROM " . $sql_table['release'] . " WHERE ordner_id='" . $ordner_id_safe . "'"));
 
-        echo "<center>" . seiten($total, $perpage, "&ordner_id=" . $ordner_id, $settings['script_file'] ?? '') . "</center>";
-        echo "<form action=\"" . htmlspecialchars($settings['script_file'] ?? '') . "change_list=1\" method=\"post\">";
-
-        $release_rows = "";
+        echo '<nav class="d-flex justify-content-center my-3" aria-label="Seitenwahl">' . seiten($total, $perpage, "&ordner_id=" . $ordner_id, $settings['script_file'] ?? '') . '</nav>';
+        echo '<form action="' . $script_file_attr . 'change_list=1" method="post">';
 
         // orderby: nur Whitelist erlauben (verhindert SQLi, ignoriert manipulierte Settings)
         $orderby_whitelist = ['name', 'time', 'views', 'votes', 'voted'];
@@ -105,11 +170,15 @@ if ($files_check == 0 && $ordner_check == 0) {
         $orderseq_candidate = strtoupper((string)($_GET['orderseq'] ?? $_POST['orderseq'] ?? ($settings['orderseq'] ?? 'ASC')));
         $orderseq = $orderseq_candidate === 'DESC' ? 'DESC' : 'ASC';
 
+        // Releases sammeln (Daten + Anzahl Dateien für Fallback-Anzeige).
+        $release_data = [];
         $files_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['release'] . " WHERE ordner_id='" . $ordner_id_safe . "' AND released='Y' ORDER BY " . $orderby . " " . $orderseq . " LIMIT " . $limit);
         while ($files_row = $db_handler->sql_fetch_array($files_res)) {
             $release_id_safe = $db_handler->sql_escape_int($files_row['release_id'] ?? 0);
             $size = $db_handler->sql_fetch_array($db_handler->sql_query("SELECT SUM(size) AS tsize FROM " . $sql_table['files'] . " WHERE release_id='" . $release_id_safe . "' AND mirror='0'"));
+            $file_count = $db_handler->sql_num_rows($db_handler->sql_query("SELECT file_id FROM " . $sql_table['files'] . " WHERE release_id='" . $release_id_safe . "' AND mirror='0'"));
             $files_row['size'] = $size['tsize'] ?? 0;
+            $files_row['file_count'] = (int) $file_count;
             $files_row['id'] = $files_row['release_id'] ?? '';
 
             $files_row['name'] = stripslashes($files_row['name'] ?? '');
@@ -129,10 +198,47 @@ if ($files_check == 0 && $ordner_check == 0) {
             if ($files_row['text'] != "N/A") {
                 $files_row['text'] = bbcode($files_row['text'], $settings['badwords_releases'] ?? 'N', $settings['smilies'] ?? 'N', $settings['glossary'] ?? 'N', $settings['bb_code'] ?? 'N', $settings['html_releases'] ?? 'N');
             }
-
-            $release_rows .= replace($template['release_row'] ?? '', $files_row);
+            $release_data[] = $files_row;
         }
 
-        echo replace($template['release_box'] ?? '', ['rows' => $release_rows]) . "</form>";
+        if ($tpl_release_box_usable && $tpl_release_row_usable) {
+            $release_rows = "";
+            foreach ($release_data as $rrow) {
+                $release_rows .= replace((string) $template['release_row'], $rrow);
+            }
+            echo replace((string) $template['release_box'], ['rows' => $release_rows]);
+        } else {
+            // Fallback: Bootstrap-Card-Liste mit Name, Beschreibung, Größe,
+            // Anzahl Dateien und Direkt-Link zum Release.
+            echo '<section class="card pdl-card mb-4" aria-label="Releases in diesem Ordner">';
+            echo '<header class="card-header pdl-card-header"><h2 class="h5 mb-0">Releases in diesem Ordner</h2></header>';
+            echo '<ul class="list-group list-group-flush">';
+            foreach ($release_data as $rrow) {
+                $rid = (int) $rrow['id'];
+                $rname = (string) $rrow['name'];
+                $rtext = (string) $rrow['text'];
+                $rsize = (int) $rrow['size'];
+                $rfiles = (int) $rrow['file_count'];
+                $size_human = $rsize > 0 ? pdl_format_bytes_public($rsize) : '–';
+                echo '<li class="list-group-item bg-transparent text-body">';
+                echo '<div class="d-flex justify-content-between align-items-start flex-wrap gap-2">';
+                echo '<div class="flex-grow-1">';
+                echo '<a class="link-light fw-bold fs-6" href="' . $script_file_attr . 'release_id=' . $rid . '">'
+                    . htmlspecialchars($rname, ENT_QUOTES, 'UTF-8') . '</a>';
+                if ($rtext !== '' && $rtext !== 'N/A') {
+                    echo '<div class="form-text mb-0">' . $rtext . '</div>';
+                }
+                echo '</div>';
+                echo '<div class="text-end small text-muted">'
+                    . $rfiles . ' ' . ($rfiles === 1 ? 'Datei' : 'Dateien')
+                    . ' &middot; ' . $size_human
+                    . '</div>';
+                echo '</div>';
+                echo '</li>';
+            }
+            echo '</ul>';
+            echo '</section>';
+        }
+        echo '</form>';
     }
 }
