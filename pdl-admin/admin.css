@@ -195,14 +195,20 @@ body.pdl-admin hr {
     }
 }
 
-.pdl-admin-sidebar {
-    background-color: var(--pdl-admin-surface);
+.pdl-admin-sidebar,
+.pdl-admin-sidebar.offcanvas-lg {
+    background-color: var(--pdl-admin-surface) !important;
     color: var(--pdl-admin-text);
     border-right: 1px solid var(--pdl-admin-border);
 }
 
+.pdl-admin-sidebar .pdl-admin-nav {
+    background-color: var(--pdl-admin-surface);
+}
+
 @media (min-width: 992px) {
-    .pdl-admin-sidebar {
+    .pdl-admin-sidebar,
+    .pdl-admin-sidebar.offcanvas-lg {
         position: fixed;
         top: 56px;
         bottom: 0;

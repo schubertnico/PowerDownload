@@ -31,7 +31,7 @@ class DownloadsTest extends TestCase
             'spages' => 10, 'perpage' => 10, 'orderby' => 'name', 'orderseq' => 'ASC',
             'enable_treeview' => 'N', 'enable_extrernadmin' => 'N',
             'enable_search' => 'N', 'enable_comments' => 'N',
-            'debug' => false, 'showcopy' => false, 'pdlversion' => 'v3.0.3',
+            'debug' => false, 'showcopy' => false, 'pdlversion' => 'v3.5.0',
             'trenn_durch' => '', 'trenn_string' => '', 'bb_code' => 'N', 'smilies' => 'N',
             'glossary' => 'N', 'badwords_releases' => 'N', 'html_releases' => 'N',
             'shortname' => 0,
@@ -249,7 +249,8 @@ class DownloadsTest extends TestCase
 
         $output = $this->includeDownloads();
 
-        $this->assertStringContainsString('LOGIN_FORM_CONTENT', $output);
+        $this->assertStringContainsString('name="nick"', $output);
+        $this->assertStringContainsString('name="pw"', $output);
     }
 
     #[Test]

@@ -92,13 +92,16 @@ try {
     exit;
 }
 
-if (preg_match("/\?/", $settings['script_file'] ?? '')) {
-    $settings['script_file'] = ($settings['script_file'] ?? '') . "&";
+$script_file_raw = $settings['script_file'] ?? '';
+if ($script_file_raw === '' || substr($script_file_raw, -1) === '?' || substr($script_file_raw, -1) === '&') {
+    $settings['script_file'] = $script_file_raw;
+} elseif (strpos($script_file_raw, '?') !== false) {
+    $settings['script_file'] = $script_file_raw . "&";
 } else {
-    $settings['script_file'] = ($settings['script_file'] ?? '') . "?";
+    $settings['script_file'] = $script_file_raw . "?";
 }
 
-$settings['pdlversion'] = "v3.0.3";
+$settings['pdlversion'] = "v3.5.0";
 $settings['debug'] = false;
 $settings['showcopy'] = true;
 $settings['phpversion'] = str_replace(".", "", phpversion());

@@ -48,19 +48,27 @@ $pdl_render_top_card = function (string $title, array $cols, array $rows): void 
     echo '</tbody></table></div></div></section>';
 };
 
+$pdl_is_admin = (($user_rights['adminaccess'] ?? 'N') === 'Y');
+
 echo '<div class="row g-4">';
 echo '<div class="col-12 col-lg-6">';
 
-// Server & DB Stats
-echo '<section class="card pdl-card mb-4">';
-echo '<header class="card-header pdl-card-header"><h2 class="h6 mb-0">Server &amp; DB Stats</h2></header>';
-echo '<ul class="list-group list-group-flush">';
-echo '<li class="list-group-item d-flex justify-content-between bg-transparent text-body"><strong>DB Version</strong><span>' . htmlspecialchars((string) $mysqlversion) . '</span></li>';
-echo '<li class="list-group-item d-flex justify-content-between bg-transparent text-body"><strong>DB Größe</strong><span>' . htmlspecialchars((string) round($size / 1024 / 1024, 2)) . ' MB</span></li>';
-echo '<li class="list-group-item d-flex justify-content-between bg-transparent text-body"><strong>Tabellen in der DB</strong><span>' . (int) $tables . '</span></li>';
-echo '<li class="list-group-item d-flex justify-content-between bg-transparent text-body"><strong>DB Einträge</strong><span>' . (int) $rows . '</span></li>';
-echo '<li class="list-group-item d-flex justify-content-between bg-transparent text-body"><strong>Server Software</strong><span>' . htmlspecialchars((string)($_SERVER['SERVER_SOFTWARE'] ?? 'Unknown')) . '</span></li>';
-echo '</ul></section>';
+if ($pdl_is_admin) {
+    echo '<section class="card pdl-card mb-4">';
+    echo '<header class="card-header pdl-card-header"><h2 class="h6 mb-0">Server &amp; DB Stats</h2></header>';
+    echo '<ul class="list-group list-group-flush">';
+    echo '<li class="list-group-item d-flex justify-content-between bg-transparent text-body"><strong>DB Version</strong><span>' . htmlspecialchars((string) $mysqlversion) . '</span></li>';
+    echo '<li class="list-group-item d-flex justify-content-between bg-transparent text-body"><strong>DB Größe</strong><span>' . htmlspecialchars((string) round($size / 1024 / 1024, 2)) . ' MB</span></li>';
+    echo '<li class="list-group-item d-flex justify-content-between bg-transparent text-body"><strong>Tabellen in der DB</strong><span>' . (int) $tables . '</span></li>';
+    echo '<li class="list-group-item d-flex justify-content-between bg-transparent text-body"><strong>DB Einträge</strong><span>' . (int) $rows . '</span></li>';
+    echo '<li class="list-group-item d-flex justify-content-between bg-transparent text-body"><strong>Server Software</strong><span>' . htmlspecialchars((string)($_SERVER['SERVER_SOFTWARE'] ?? 'Unknown')) . '</span></li>';
+    echo '</ul></section>';
+} else {
+    echo '<section class="card pdl-card mb-4">';
+    echo '<header class="card-header pdl-card-header"><h2 class="h6 mb-0">Server &amp; DB Stats</h2></header>';
+    echo '<div class="card-body text-muted">Server-Statistik ist nur für Administratoren sichtbar.</div>';
+    echo '</section>';
+}
 
 // User & Gruppen
 $ugroup_rows = [];
@@ -162,7 +170,7 @@ $pdl_render_top_card('Top 10 Release nach Kommentaren', ['#', 'Release', 'Kommen
 
 // Top 10 Release nach Bewertungen
 $release_rows_votes = [];
-$release_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['release'] . " ORDER BY votes DESC LIMIT 0,10");
+$release_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['release'] . " WHERE votes > 0 ORDER BY votes DESC LIMIT 0,10");
 $count = 0;
 while ($release_row = $db_handler->sql_fetch_array($release_res)) {
     $count++;

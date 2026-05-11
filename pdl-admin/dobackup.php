@@ -4,7 +4,7 @@ include("header.inc.php");
 $submit = isset($_GET['submit']) ? (int)$_GET['submit'] : (isset($_POST['submit']) ? (int)$_POST['submit'] : 0);
 $backup = isset($_FILES['backup']['tmp_name']) ? $_FILES['backup']['tmp_name'] : '';
 
-if($user_rights['god'] == "Y")
+if($user_rights['backup'] == "Y")
  {
   if($submit == 1)
    {
@@ -21,59 +21,46 @@ if($user_rights['god'] == "Y")
          {
           $db_handler->sql_query($querys[$i]);
          }
-        echo "<br>done...";
+        echo pdl_admin_alert('success', '<strong>Backup wurde erfolgreich eingespielt.</strong>');
        }
       else
-       { echo "<br>Fehler beim Lesen der Datei."; }
+       { echo pdl_admin_alert('danger', 'Fehler beim Lesen der Datei.'); }
      }
     else
-     { echo "<br>Bitte eine Datei auswaehlen."; }
+     { echo pdl_admin_alert('warning', 'Bitte eine Datei auswählen.'); }
    }
   else
    {
-    ?>
-<br><br>
-<form action="dobackup.php?submit=1" method="post" enctype="multipart/form-data">
-<table border="0" cellpadding="0" cellspacing="0" width="55%">
-  <tr>
-    <td bgcolor="<?php echo htmlspecialchars($template['table_border']); ?>">
-      <table border="0" cellpadding="3" cellspacing="1" width="100%">
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($template['header_bg']); ?>" colspan="2" align="center">
-            <b>Backup ausfuehren</b>
-          </td>
-        </tr>
-        <?php $alt = alt_switch(); ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>" colspan="2" align="center">
-            Fuehren sie ein Backup nur aus, wenn es absolut notwendig ist. Jenachdem wie
-            alt das Backup ist gehen Daten verloren. Also vorsicht!
-          </td>
-        </tr>
-        <?php $alt = alt_switch(); ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <b>Backup Datei</b><br>
-            <small>Die .sql Datei, die beim Backup erstellt wurde.</small>
-          </td>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <input type="file" name="backup" size="30">
-          </td>
-        </tr>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($template['footer_bg']); ?>" colspan="2" align="center">
-            <input type="submit" value="Los!">
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
+    pdl_admin_breadcrumb([
+        ['title' => 'Admin-Center', 'href' => 'index.php'],
+        ['title' => 'System'],
+        ['title' => 'Backup ausführen'],
+    ]);
+    echo '<h1 class="h3 pdl-page-title">Backup ausführen</h1>';
+?>
+<div class="alert alert-warning">
+    <strong>Vorsicht:</strong> Fuehren Sie ein Backup nur aus, wenn es absolut notwendig ist. Je nachdem wie alt das Backup ist, gehen Daten verloren.
+</div>
+<form action="dobackup.php?submit=1" method="post" enctype="multipart/form-data" novalidate>
+    <section class="card pdl-card mb-4">
+        <header class="card-header"><h2 class="h5 mb-0">Backup einspielen</h2></header>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="pdlBackupFile" class="form-label">Backup-Datei</label>
+                <input type="file" id="pdlBackupFile" name="backup" class="form-control" accept=".sql" required>
+                <div class="form-text">Die <code>.sql</code>-Datei, die beim Backup erstellt wurde.</div>
+            </div>
+        </div>
+    </section>
+    <div class="d-grid d-md-flex gap-2 justify-content-md-end">
+        <a href="index.php" class="btn btn-outline-light">Abbrechen</a>
+        <button type="submit" class="btn btn-danger">Backup einspielen</button>
+    </div>
 </form>
-    <?php
+<?php
    }
  }
 else
- { echo "Sie haben keine Berechtigung diese Seite zu sehen"; }
+ { echo pdl_admin_alert('warning', 'Sie haben keine Berechtigung diese Seite zu sehen.'); }
 include("footer.inc.php");
 ?>

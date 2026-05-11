@@ -21,7 +21,9 @@ class StatsModulTest extends TestCase
     private function setupGlobals(): void
     {
         global $settings, $template, $smilies, $glossary, $badwords, $users, $alt_switch,
-               $page, $list, $total, $install, $inadmin, $db_handler, $sql_table;
+               $page, $list, $total, $install, $inadmin, $db_handler, $sql_table, $user_rights;
+
+        $user_rights = ['adminaccess' => 'Y'];
 
         $settings = [
             'dlspeed' => 56, 'date_format' => 'd.m.Y', 'script_file' => 'downloads.php?',
@@ -57,7 +59,7 @@ class StatsModulTest extends TestCase
     private function includeModule(string $file): string
     {
         global $settings, $template, $smilies, $glossary, $badwords, $users, $alt_switch,
-               $page, $list, $total, $install, $inadmin, $db_handler, $sql_table;
+               $page, $list, $total, $install, $inadmin, $db_handler, $sql_table, $user_rights;
 
         ob_start();
         include $this->incDir . $file;

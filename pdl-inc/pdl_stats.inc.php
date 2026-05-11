@@ -2,6 +2,9 @@
 /**
  * PowerDownload - Statistics Widget
  */
+if (function_exists('pdl_show_dashboard_widgets') && !pdl_show_dashboard_widgets()) {
+    return;
+}
 $files_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['files']);
 $files = $db_handler->sql_num_rows($files_res);
 
@@ -39,4 +42,6 @@ $stats = str_replace("{traffic}", $traffic_formatted, $stats);
 $stats = str_replace("{durch_downloads}", (string)$durch_downloads, $stats);
 $stats = str_replace("{durch_traffic}", $durch_traffic_formatted, $stats);
 
+echo '<section class="card pdl-card h-100"><header class="card-header pdl-card-header"><h2 class="h6 mb-0">Statistik</h2></header><div class="card-body p-2 small">';
 echo replace($stats, []);
+echo '</div></section>';

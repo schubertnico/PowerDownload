@@ -6,7 +6,6 @@ $user_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : (isset($_POST['user
 $nick = isset($_POST['nick']) ? $_POST['nick'] : '';
 $email = isset($_POST['email']) ? $_POST['email'] : '';
 $homepage = isset($_POST['homepage']) ? $_POST['homepage'] : '';
-$icq = isset($_POST['icq']) ? $_POST['icq'] : '';
 $get_letter = isset($_POST['get_letter']) ? $_POST['get_letter'] : '';
 $nugroup_id = isset($_POST['nugroup_id']) ? (int)$_POST['nugroup_id'] : 0;
 $submit = isset($_GET['submit']) ? (int)$_GET['submit'] : 0;
@@ -17,170 +16,134 @@ if($user_rights['edituser'] == "Y")
   if($submit == 1)
    {
     $safe_user_id = $db_handler->sql_escape_int($user_id);
-    $checkgod = $db_handler->sql_fetch_array($db_handler->sql_query("SELECT * FROM ".$sql_table['user']." WHERE user_id='".$safe_user_id."'"));
-    if($checkgod['ugroup_id'] == 1)
-     { echo "<br>User ist ein Godadmin und darf nicht editiert werden."; }
-    else
-     {
+    if((int)$user_id === 1) {
+        echo pdl_admin_alert('danger', 'Der Hauptadministrator (user_id 1) ist schreibgeschützt und kann nicht über dieses Formular geändert werden.');
+    } else {
       if(!preg_match("!http:\/\/!",$homepage)) $homepage = "http://$homepage";
       if($get_letter != "Y") $get_letter = "N";
       $safe_nick = $db_handler->sql_escape_string($nick);
       $safe_email = $db_handler->sql_escape_string($email);
       $safe_homepage = $db_handler->sql_escape_string($homepage);
-      $safe_icq = $db_handler->sql_escape_string($icq);
       $safe_get_letter = $db_handler->sql_escape_string($get_letter);
       $safe_nugroup_id = $db_handler->sql_escape_int($nugroup_id);
-      $db_handler->sql_query("UPDATE ".$sql_table['user']." SET nick='".$safe_nick."', email='".$safe_email."', homepage='".$safe_homepage."', icq='".$safe_icq."', get_letter='".$safe_get_letter."', ugroup_id='".$safe_nugroup_id."' WHERE user_id='".$safe_user_id."'");
-      echo "<br>done...";
-     }
+      $db_handler->sql_query("UPDATE ".$sql_table['user']." SET nick='".$safe_nick."', email='".$safe_email."', homepage='".$safe_homepage."', get_letter='".$safe_get_letter."', ugroup_id='".$safe_nugroup_id."' WHERE user_id='".$safe_user_id."'");
+      echo pdl_admin_alert('success', '<strong>User wurde aktualisiert.</strong>');
+    }
+    echo '<a class="btn btn-outline-light" href="edituser.php">Zurück zur User-Liste</a>';
    }
   elseif($user_id)
    {
     $safe_user_id = $db_handler->sql_escape_int($user_id);
     $getuser = $db_handler->sql_fetch_array($db_handler->sql_query("SELECT * FROM ".$sql_table['user']." WHERE user_id='".$safe_user_id."'"));
-    if($getuser['ugroup_id'] == 1)
-     { echo "<br>User ist ein Godadmin und kann nicht editiert werden."; }
-    else
-     {
-     ?>
-<br><br>
-<form action="edituser.php?submit=1" method="post">
-<input type="hidden" name="user_id" value="<?php echo htmlspecialchars((string) $user_id); ?>">
-<table border="0" cellpadding="0" cellspacing="0" width="75%">
-  <tr>
-    <td bgcolor="<?php echo htmlspecialchars($template['table_border']); ?>">
-      <table border="0" cellpadding="3" cellspacing="1" width="100%">
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($template['header_bg']); ?>" colspan="2" align="center">
-            <b>User Editieren</b>
-          </td>
-        </tr>
-        <?php $alt = alt_switch(); ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <b>Nickname</b><br>
-            <small>Hier k&ouml;nnen sie den Nickname des Users &auml;ndern.</small>
-          </td>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <input type="text" name="nick" size="30" value="<?php echo htmlspecialchars($getuser['nick']); ?>">
-          </td>
-        </tr>
-        <?php $alt = alt_switch(); ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <b>Email Adresse</b><br>
-            <small>Hier k&ouml;nnen sie die Email Adresse des Users einsehen bzw. &auml;ndern.</small>
-          </td>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <input type="text" name="email" size="30" value="<?php echo htmlspecialchars($getuser['email']); ?>">
-          </td>
-        </tr>
-        <?php $alt = alt_switch(); ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <b>Homepage</b><br>
-            <small>Hier k&ouml;nnen sie die Homepage des Users einsehen bzw. &auml;ndern.</small>
-          </td>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <input type="text" name="homepage" size="30" value="<?php echo htmlspecialchars($getuser['homepage']); ?>">
-          </td>
-        </tr>
-        <?php $alt = alt_switch(); ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <b>ICQ</b><br>
-            <small>Hier k&ouml;nnen sie die ICQ Nummer des Users einsehen bzw. &auml;ndern.</small>
-          </td>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <input type="text" name="icq" size="30" value="<?php if($getuser['icq'] > 0) echo htmlspecialchars($getuser['icq']); ?>">
-          </td>
-        </tr>
-        <?php $alt = alt_switch(); ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <b>Download Letter erhalten</b><br>
-            <small>Wenn sie unbedingt m&ouml;chten, das der User einen Download Letter erh&auml;lt k&ouml;nnen sie das hier extra eingeben.</small>
-          </td>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <input type="checkbox" name="get_letter" value="Y"<?php if($getuser['get_letter'] == "Y") echo " checked"; ?>> Ja, User soll den Letter erhalten.
-          </td>
-        </tr>
-        <?php $alt = alt_switch(); ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <b>Usergruppe</b><br>
-            <small>Hier k&ouml;nnen sie den User einer bestimmten Usergruppe zuteilen.
-            <b>Achtung:</b> Passen sie gut auf wen sie zum Godadmin ernennen. Denn dieser User kann dann weder gel&ouml;scht noch ge&auml;ndert werden danach.</small>
-          </td>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <select name="nugroup_id">
-            <?php
-            $ugroups_res = $db_handler->sql_query("SELECT * FROM ".$sql_table['usergroup']." WHERE ugroup_id!='3'");
-            while($ugroups_row = $db_handler->sql_fetch_array($ugroups_res))
-             {
-              echo "<option value=\"".htmlspecialchars($ugroups_row['ugroup_id'])."\"".pdlif($ugroups_row['ugroup_id'] == $getuser['ugroup_id']," selected","").">".htmlspecialchars($ugroups_row['name'])."</option>";
-             }
-            ?>
-            </select>
-          </td>
-        </tr>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($template['footer_bg']); ?>" colspan="2" align="center">
-            <input type="submit" value="User editieren">
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
+    if((int)$user_id === 1) {
+        echo pdl_admin_alert('warning', 'Der Hauptadministrator (user_id 1) ist schreibgeschützt und kann nicht über dieses Formular geändert werden.');
+    } else {
+        pdl_admin_breadcrumb([
+            ['title' => 'Admin-Center', 'href' => 'index.php'],
+            ['title' => 'User', 'href' => 'edituser.php'],
+            ['title' => 'User editieren'],
+        ]);
+        echo '<h1 class="h3 pdl-page-title">User editieren</h1>';
+?>
+<form action="edituser.php?submit=1" method="post" novalidate>
+    <input type="hidden" name="user_id" value="<?php echo (int)$user_id; ?>">
+    <section class="card pdl-card mb-4">
+        <header class="card-header"><h2 class="h5 mb-0">User-Daten</h2></header>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="pdlEUNick" class="form-label">Nickname</label>
+                <input type="text" id="pdlEUNick" name="nick" class="form-control" required value="<?php echo htmlspecialchars($getuser['nick']); ?>">
+                <div class="form-text">Hier können Sie den Nickname des Users ändern.</div>
+            </div>
+            <div class="mb-3">
+                <label for="pdlEUEmail" class="form-label">E-Mail-Adresse</label>
+                <input type="email" id="pdlEUEmail" name="email" class="form-control" value="<?php echo htmlspecialchars($getuser['email']); ?>">
+                <div class="form-text">Hier können Sie die E-Mail-Adresse des Users einsehen bzw. ändern.</div>
+            </div>
+            <div class="mb-3">
+                <label for="pdlEUHomepage" class="form-label">Homepage</label>
+                <input type="url" id="pdlEUHomepage" name="homepage" class="form-control" value="<?php echo htmlspecialchars($getuser['homepage']); ?>">
+                <div class="form-text">Hier können Sie die Homepage des Users einsehen bzw. ändern.</div>
+            </div>
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="pdlEUGetLetter" name="get_letter" value="Y"<?php if($getuser['get_letter'] == "Y") echo ' checked'; ?>>
+                <label class="form-check-label" for="pdlEUGetLetter">User soll den Newsletter erhalten</label>
+                <div class="form-text">Wenn Sie unbedingt möchten, dass der User den Newsletter erhält, können Sie das hier setzen.</div>
+            </div>
+            <div class="mb-3">
+                <label for="pdlEUUGroup" class="form-label">Usergruppe</label>
+                <select id="pdlEUUGroup" name="nugroup_id" class="form-select">
+                    <?php
+                    $ugroups_res = $db_handler->sql_query("SELECT * FROM ".$sql_table['usergroup']." ORDER BY name ASC");
+                    while($ugroups_row = $db_handler->sql_fetch_array($ugroups_res))
+                     {
+                      echo '<option value="'.htmlspecialchars($ugroups_row['ugroup_id']).'"'.pdlif($ugroups_row['ugroup_id'] == $getuser['ugroup_id'],' selected','').'>'.htmlspecialchars($ugroups_row['name']).'</option>';
+                     }
+                    ?>
+                </select>
+                <div class="form-text"><strong>Hinweis:</strong> Der Hauptadministrator (user_id 1) ist schreibgeschützt und kann nicht über dieses Formular bearbeitet werden. Sei vorsichtig, wenn du andere User in die Gruppe „Administrator" verschiebst – sie erhalten dann vollen Zugriff.</div>
+            </div>
+        </div>
+    </section>
+    <div class="d-grid d-md-flex gap-2 justify-content-md-end">
+        <a href="edituser.php" class="btn btn-outline-light">Abbrechen</a>
+        <button type="submit" class="btn btn-primary">Änderungen speichern</button>
+    </div>
 </form>
-     <?php
-     }
+<?php
+    }
    }
   else
    {
-    ?>
-<br><br>
-<table border="0" cellpadding="0" cellspacing="0" width="35%">
-  <tr>
-    <td bgcolor="<?php echo htmlspecialchars($template['table_border']); ?>">
-      <table border="0" cellpadding="3" cellspacing="1" width="100%">
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($template['header_bg']); ?>" align="center">
-            <b>W&auml;hlen sie den User aus, den sie editieren wollen.</b>
-          </td>
-        </tr>
-        <?php
-        if(!$page) $page = 1;
-        $temp1=$page * 25 - 25;
-        $limit=$temp1.",25";
-        $safe_user_details_id = $db_handler->sql_escape_int($user_details['user_id']);
-        $user_res = $db_handler->sql_query("SELECT ".$sql_table['user'].".nick, ".$sql_table['user'].".user_id, ".$sql_table['usergroup'].".name AS ugroup_name FROM ".$sql_table['user'].",".$sql_table['usergroup']." WHERE ".$sql_table['usergroup'].".ugroup_id=".$sql_table['user'].".ugroup_id AND ".$sql_table['usergroup'].".ugroup_id!='1' AND ".$sql_table['user'].".user_id!='".$safe_user_details_id."' ORDER BY ".$sql_table['user'].".nick ASC LIMIT $limit");
-        while($user_row = $db_handler->sql_fetch_array($user_res))
-         {
-          $alt = alt_switch();
-        ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <a href="edituser.php?user_id=<?php echo htmlspecialchars($user_row['user_id']); ?>"><?php echo htmlspecialchars($user_row['nick']); ?></a> - <?php echo htmlspecialchars($user_row['ugroup_name']); ?>
-          </td>
-        </tr>
-        <?php } ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($template['footer_bg']); ?>" align="center">
-            <?php echo seiten($db_handler->sql_num_rows($db_handler->sql_query("SELECT ".$sql_table['user'].".nick, ".$sql_table['user'].".user_id, ".$sql_table['usergroup'].".name AS ugroup_name FROM ".$sql_table['user'].",".$sql_table['usergroup']." WHERE ".$sql_table['usergroup'].".ugroup_id=".$sql_table['user'].".ugroup_id AND ".$sql_table['usergroup'].".ugroup_id!='1' AND ".$sql_table['user'].".user_id!='".$safe_user_details_id."'")),25,"","edituser.php?"); ?>
-            <?php if($db_handler->sql_num_rows($user_res) == 0) echo "Es sind keine editierbaren User vorhanden."; ?>
-            &nbsp;
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
-    <?php
+    pdl_admin_breadcrumb([
+        ['title' => 'Admin-Center', 'href' => 'index.php'],
+        ['title' => 'User'],
+        ['title' => 'User editieren'],
+    ]);
+    echo '<h1 class="h3 pdl-page-title">User editieren</h1>';
+
+    if(!$page) $page = 1;
+    $temp1=$page * 25 - 25;
+    $limit=$temp1.",25";
+    $safe_user_details_id = $db_handler->sql_escape_int($user_details['user_id']);
+    $count_query = "SELECT ".$sql_table['user'].".nick, ".$sql_table['user'].".user_id, ".$sql_table['usergroup'].".name AS ugroup_name FROM ".$sql_table['user'].",".$sql_table['usergroup']." WHERE ".$sql_table['usergroup'].".ugroup_id=".$sql_table['user'].".ugroup_id AND ".$sql_table['usergroup'].".ugroup_id!='1' AND ".$sql_table['user'].".user_id!='".$safe_user_details_id."'";
+    $total = $db_handler->sql_num_rows($db_handler->sql_query($count_query));
+    $user_res = $db_handler->sql_query($count_query . " ORDER BY ".$sql_table['user'].".nick ASC LIMIT $limit");
+?>
+<section class="card pdl-card">
+    <header class="card-header"><h2 class="h5 mb-0">User auswählen</h2></header>
+    <?php if ($db_handler->sql_num_rows($user_res) > 0) { ?>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover mb-0 align-middle">
+            <thead>
+                <tr><th scope="col">Nick</th><th scope="col">Usergruppe</th><th scope="col" class="text-end">Aktion</th></tr>
+            </thead>
+            <tbody>
+            <?php while($user_row = $db_handler->sql_fetch_array($user_res)) { ?>
+                <tr>
+                    <td><?php echo htmlspecialchars($user_row['nick']); ?></td>
+                    <td><?php echo htmlspecialchars($user_row['ugroup_name']); ?></td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-light" href="edituser.php?user_id=<?php echo (int)$user_row['user_id']; ?>">editieren</a>
+                    </td>
+                </tr>
+            <?php } ?>
+            </tbody>
+        </table>
+    </div>
+    <?php } else { ?>
+    <div class="card-body"><p class="text-muted mb-0">Es sind keine editierbaren User vorhanden.</p></div>
+    <?php } ?>
+    <?php if ($total > 25) { ?>
+    <div class="card-footer text-center">
+        <?php echo seiten($total, 25, "", "edituser.php?"); ?>
+    </div>
+    <?php } ?>
+</section>
+<?php
    }
  }
 else
- { echo "Sie haben keine Berechtigung diese Seite zu sehen"; }
+ { echo pdl_admin_alert('warning', 'Sie haben keine Berechtigung diese Seite zu sehen.'); }
 include("footer.inc.php");
 ?>

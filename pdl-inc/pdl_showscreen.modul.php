@@ -15,12 +15,16 @@ if ($screen) {
     $text = htmlspecialchars(stripslashes($screen['text'] ?? ''));
     $script_file = htmlspecialchars($settings['script_file'] ?? '');
 
-    echo "
-<center>
-<a href=\"" . $script_file . "release_id=" . $release_id . "\"><img src=\"pdl-gfx/screens/release" . $release_id . "screen" . $screen_id . "g.jpg\" border=\"0\" alt=\"Screenshot\"></a><br>
-" . $text . "<br>
-Screen wurde " . $views . " mal angeschaut
-</center>";
+    echo '<section class="card pdl-card mx-auto" style="max-width: 960px;">';
+    echo '<div class="card-body text-center">';
+    echo '<a href="' . $script_file . 'release_id=' . $release_id . '">';
+    echo '<img src="pdl-gfx/screens/release' . $release_id . 'screen' . (int) $screen_id . 'g.jpg" class="img-fluid mb-3" alt="Screenshot">';
+    echo '</a>';
+    if ($text !== '') {
+        echo '<p class="mb-2">' . $text . '</p>';
+    }
+    echo '<p class="small text-muted mb-0">Screen wurde ' . $views . ' mal angeschaut.</p>';
+    echo '</div></section>';
 } else {
-    echo "<center>Screenshot nicht gefunden.</center>";
+    echo pdl_alert('warning', 'Screenshot nicht gefunden.');
 }

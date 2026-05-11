@@ -5,13 +5,7 @@ function menu_topic(bool $rechte, string $titel): void
   if($rechte)
    {
     $master_if = true;
-    echo "
-    <tr>
-      <td align=\"center\" bgcolor=\"" . htmlspecialchars($template['footer_bg']) . "\">
-        <b>" . htmlspecialchars($titel) . "</b>
-      </td>
-    </tr>
-    ";
+    echo '<h2 class="pdl-menu-topic h6">' . htmlspecialchars($titel) . '</h2>';
    }
  }
 
@@ -20,29 +14,16 @@ function menu_link(bool $rechte, string $titel, string $link): void
   global $master_if;
   if($rechte && $master_if === true)
    {
-    echo "
-    <tr>
-      <td>
-        <a href=\"" . htmlspecialchars($link) . "\">" . htmlspecialchars($titel) . "</a>
-      </td>
-    </tr>
-    ";
+    echo '<a class="pdl-menu-link" href="' . htmlspecialchars($link) . '">'
+        . htmlspecialchars($titel) . '</a>';
    }
  }
 
 function menu_close(): void
  {
   global $master_if;
-  if($master_if == true)
-   {
-    echo "
-    <tr>
-      <td>
-        <hr>
-      </td>
-    </tr>
-    ";
-   }
+  // Bei der Bootstrap-Sidebar trennen die einzelnen Menü-Links sich selbst
+  // ueber CSS, daher ist hier kein zusaetzliches Trennelement noetig.
   $master_if = false;
  }
 
@@ -55,36 +36,21 @@ function pdlif(bool $bedingung, string $true, string $false): string
 function makedialog(string $titel, string $text, string $button, string $action): string
  {
   global $template;
-  return "
-<br><br>
-<form action=\"" . htmlspecialchars($action) . "?submit=1\" method=\"post\">
-<center>
-<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"90%\">
-  <tr>
-    <td bgcolor=\"" . htmlspecialchars($template['table_border']) . "\">
-      <table border=\"0\" cellpadding=\"3\" cellspacing=\"1\" width=\"100%\">
-        <tr>
-          <td bgcolor=\"" . htmlspecialchars($template['header_bg']) . "\" align=\"center\">
-            <b>" . htmlspecialchars($titel) . "</b>
-          </td>
-        </tr>
-        <tr>
-          <td bgcolor=\"" . htmlspecialchars($template['alt_1']) . "\">
-            $text
-          </td>
-        </tr>
-        <tr>
-          <td bgcolor=\"" . htmlspecialchars($template['footer_bg']) . "\" align=\"center\">
-            <input type=\"submit\" value=\"" . htmlspecialchars($button) . "\">
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
-</center>
+  return '
+<form action="' . htmlspecialchars($action) . '?submit=1" method="post" class="pdl-confirm-form">
+<div class="card pdl-card mx-auto pdl-danger-action" style="max-width: 720px;">
+    <header class="card-header bg-danger text-white">
+        <h2 class="h5 mb-0">' . htmlspecialchars($titel) . '</h2>
+    </header>
+    <div class="card-body">
+        ' . $text . '
+    </div>
+    <div class="card-footer text-end">
+        <button type="submit" class="btn btn-danger">' . htmlspecialchars($button) . '</button>
+    </div>
+</div>
 </form>
-  ";
+  ';
  }
 
 // treeview_select() is now defined in pdl_functions.inc.php
@@ -127,4 +93,36 @@ function check_gd(): void
     elseif(strstr($version[1],"1.")) $settings['gdversion'] = 1;
    }
  }
+
+/**
+ * Rendert eine Bootstrap-Breadcrumb für den Admin-Bereich.
+ *
+ * @param array<int, array{title: string, href?: string}> $items
+ */
+function pdl_admin_breadcrumb(array $items): void
+{
+    echo '<nav aria-label="Navigationspfad"><ol class="breadcrumb">';
+    $count = count($items);
+    foreach ($items as $i => $item) {
+        $title = htmlspecialchars($item['title'] ?? '');
+        if ($i === $count - 1 || empty($item['href'])) {
+            echo '<li class="breadcrumb-item active" aria-current="page">' . $title . '</li>';
+        } else {
+            echo '<li class="breadcrumb-item"><a href="' . htmlspecialchars($item['href']) . '">' . $title . '</a></li>';
+        }
+    }
+    echo '</ol></nav>';
+}
+
+/**
+ * Rendert ein Bootstrap-Alert im Admin-Bereich.
+ */
+function pdl_admin_alert(string $type, string $message): string
+{
+    $allowed = ['success', 'danger', 'warning', 'info', 'primary', 'secondary'];
+    if (!in_array($type, $allowed, true)) {
+        $type = 'info';
+    }
+    return '<div class="alert alert-' . htmlspecialchars($type) . '" role="alert">' . $message . '</div>';
+}
 ?>

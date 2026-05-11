@@ -13,17 +13,26 @@ if($user_rights['editfiles'] == "Y")
     $db_handler->sql_query("DELETE FROM " . $sql_table['screens'] . " WHERE screen_id=" . $db_handler->sql_escape_int($screen_id));
     unlink("../pdl-gfx/screens/release".$release_data['release_id']."screen".$screen_id."g.jpg");
     unlink("../pdl-gfx/screens/release".$release_data['release_id']."screen".$screen_id."k.jpg");
-    echo "<br>done...";
+    echo pdl_admin_alert('success', '<strong>Screen wurde gelöscht.</strong>');
    }
   else
    {
-    echo makedialog("Screen wirklich löschen?","
-         <input type=\"hidden\" name=\"screen_id\" value=\"" . htmlspecialchars((string) $screen_id) . "\">
-         Wollen sie den Screen wirklich löschen? Dabei wird der Datenbankeintrag und
-         die hochgeladenen Screenshots gelöscht.","  Ja  ","delscreen.php");
+    pdl_admin_breadcrumb([
+        ['title' => 'Admin-Center', 'href' => 'index.php'],
+        ['title' => 'Releases', 'href' => 'or_list.php'],
+        ['title' => 'Screen löschen'],
+    ]);
+    echo '<h1 class="h3 pdl-page-title">Screen löschen</h1>';
+    echo makedialog(
+        "Screen wirklich löschen?",
+        '<input type="hidden" name="screen_id" value="' . (int)$screen_id . '">'
+        . '<p class="mb-0">Wollen Sie den Screen wirklich löschen? Dabei werden der Datenbankeintrag und die hochgeladenen Screenshots gelöscht.</p>',
+        "Ja, jetzt löschen",
+        "delscreen.php"
+    );
    }
  }
 else
- { echo "Sie haben keine Berechtigung diese Seite zu sehen"; }
+ { echo pdl_admin_alert('warning', 'Sie haben keine Berechtigung diese Seite zu sehen.'); }
 include("footer.inc.php");
 ?>
