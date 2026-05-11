@@ -38,20 +38,31 @@ if (($settings['enable_search'] ?? 'N') == "Y") {
         $temp1 = $page * $perpage - $perpage;
         $limit = $temp1 . "," . $perpage;
         $total = $db_handler->sql_num_rows($db_handler->sql_query($query));
-        echo "<br><center>Ihre Suchanfrage ergab <b>" . $total . "</b> Treffer</center><br>";
+        echo '<p class="mb-3">Ihre Suchanfrage ergab <strong>' . (int) $total . '</strong> Treffer.</p>';
 
         if ($total > 0) {
             $text_encoded = urlencode($text);
             $in_encoded = urlencode($in);
-            echo "<center>" . seiten($total, $perpage, "&show_search=1&submit=1&text=" . $text_encoded . "&in=" . $in_encoded, $settings['script_file'] ?? '') . "<br></center>";
+            echo '<div class="mb-3">' . seiten($total, $perpage, "&show_search=1&submit=1&text=" . $text_encoded . "&in=" . $in_encoded, $settings['script_file'] ?? '') . '</div>';
             echo "<form action=\"" . htmlspecialchars($settings['script_file'] ?? '') . "change_list=1\" method=\"post\">";
 
+            // Wie in pdl_ordner.modul.php: DB-Templates nur verwenden, wenn
+            // sinnvolle Platzhalter enthalten sind. Sonst Bootstrap-Fallback.
+            $tpl_release_box_usable = isset($template['release_box']) && strpos((string) $template['release_box'], '{rows}') !== false;
+            $tpl_release_row_usable = isset($template['release_row']) && (
+                strpos((string) $template['release_row'], '{name}') !== false
+                || strpos((string) $template['release_row'], '{id}') !== false
+            );
+
             $release_rows = "";
+            $release_data = [];
             $files_res = $db_handler->sql_query($query . " LIMIT " . $limit);
             while ($files_row = $db_handler->sql_fetch_array($files_res)) {
                 $release_id_safe = $db_handler->sql_escape_int($files_row['release_id'] ?? 0);
                 $size = $db_handler->sql_fetch_array($db_handler->sql_query("SELECT SUM(size) AS tsize FROM " . $sql_table['files'] . " WHERE release_id='" . $release_id_safe . "' AND mirror='0'"));
+                $file_count = $db_handler->sql_num_rows($db_handler->sql_query("SELECT file_id FROM " . $sql_table['files'] . " WHERE release_id='" . $release_id_safe . "' AND mirror='0'"));
                 $files_row['size'] = $size['tsize'] ?? 0;
+                $files_row['file_count'] = (int) $file_count;
                 $files_row['id'] = $files_row['release_id'] ?? '';
 
                 $files_row['name'] = stripslashes($files_row['name'] ?? '');
@@ -75,64 +86,74 @@ if (($settings['enable_search'] ?? 'N') == "Y") {
                     $files_row['text'] = bbcode($files_row['text'], $settings['badwords_releases'] ?? 'N', $settings['smilies'] ?? 'N', $settings['glossary'] ?? 'N', $settings['bb_code'] ?? 'N', $settings['html_releases'] ?? 'N');
                 }
 
-                $release_rows .= replace($template['release_row'] ?? '', $files_row);
+                if ($tpl_release_row_usable) {
+                    $release_rows .= replace((string) $template['release_row'], $files_row);
+                }
+                $release_data[] = $files_row;
             }
 
-            echo replace($template['release_box'] ?? '', ['rows' => $release_rows]) . "</form>";
+            if ($tpl_release_box_usable && $tpl_release_row_usable) {
+                echo replace((string) $template['release_box'], ['rows' => $release_rows]);
+            } else {
+                $sf_attr = htmlspecialchars((string) ($settings['script_file'] ?? 'downloads.php?'), ENT_QUOTES, 'UTF-8');
+                echo '<section class="card pdl-card mb-4" aria-label="Such-Ergebnisse">';
+                echo '<header class="card-header pdl-card-header"><h2 class="h5 mb-0">Such-Ergebnisse</h2></header>';
+                echo '<ul class="list-group list-group-flush">';
+                foreach ($release_data as $rrow) {
+                    $rid = (int) $rrow['id'];
+                    $rname = (string) $rrow['name'];
+                    $rtext = (string) $rrow['text'];
+                    $rsize = (int) $rrow['size'];
+                    $rfiles = (int) $rrow['file_count'];
+                    $size_human = $rsize > 0 ? size($rsize) : '–';
+                    echo '<li class="list-group-item bg-transparent text-body">';
+                    echo '<div class="d-flex justify-content-between align-items-start flex-wrap gap-2">';
+                    echo '<div class="flex-grow-1">';
+                    echo '<a class="link-light fw-bold" href="' . $sf_attr . 'release_id=' . $rid . '">' . $rname . '</a>';
+                    if ($rtext !== '' && $rtext !== 'N/A') {
+                        echo '<div class="form-text mb-0">' . $rtext . '</div>';
+                    }
+                    echo '</div>';
+                    echo '<div class="text-end small text-muted">'
+                        . $rfiles . ' ' . ($rfiles === 1 ? 'Datei' : 'Dateien')
+                        . ' &middot; ' . htmlspecialchars($size_human)
+                        . '</div>';
+                    echo '</div></li>';
+                }
+                echo '</ul></section>';
+            }
+            echo '</form>';
         }
     } else {
         $script_file = htmlspecialchars($settings['script_file'] ?? '');
-        $table_border = htmlspecialchars($template['table_border'] ?? '#000000');
-        $header_bg = htmlspecialchars($template['header_bg'] ?? '#CCCCCC');
-        $footer_bg = htmlspecialchars($template['footer_bg'] ?? '#CCCCCC');
-        $alt = alt_switch();
         ?>
-<center>
-<form action="<?php echo $script_file; ?>show_search=1&submit=1" method="post">
-<table border="0" cellpadding="0" cellspacing="0" width="45%">
-  <tr>
-    <td bgcolor="<?php echo $table_border; ?>">
-      <table border="0" cellpadding="3" cellspacing="1" width="100%">
-        <tr>
-          <td bgcolor="<?php echo $header_bg; ?>" colspan="2" align="center">
-            <b>Suche</b>
-          </td>
-        </tr>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <b>Suchbegriff</b>
-          </td>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <input type="text" name="text" size="30"><br>
-            Einzelne Suchwoerter trennen durch Leerzeichen.
-          </td>
-        </tr>
-        <?php $alt = alt_switch(); ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <b>Suchen in</b>
-          </td>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <select name="in">
-            <option value="text">Beschreibung</option>
-            <option value="texttitel">Beschreibung und Titel</option>
-            <option value="titel">Titel</option>
-            </select>
-          </td>
-        </tr>
-        <tr>
-          <td bgcolor="<?php echo $footer_bg; ?>" colspan="2" align="center">
-            <input type="submit" value="Suche starten">
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
-</center>
-</form>
+<section class="card pdl-card mx-auto" style="max-width: 540px;">
+    <header class="card-header pdl-card-header">
+        <h2 class="h5 mb-0">Suche</h2>
+    </header>
+    <div class="card-body">
+        <form action="<?php echo $script_file; ?>show_search=1&amp;submit=1" method="post" novalidate>
+            <div class="mb-3">
+                <label for="pdlSearchText" class="form-label">Suchbegriff</label>
+                <input type="text" id="pdlSearchText" name="text" class="form-control" required aria-describedby="pdlSearchTextHelp">
+                <div id="pdlSearchTextHelp" class="form-text">Einzelne Suchwoerter trennen durch Leerzeichen.</div>
+            </div>
+            <div class="mb-3">
+                <label for="pdlSearchIn" class="form-label">Suchen in</label>
+                <select id="pdlSearchIn" name="in" class="form-select">
+                    <option value="text">Beschreibung</option>
+                    <option value="texttitel" selected>Beschreibung und Titel</option>
+                    <option value="titel">Titel</option>
+                </select>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">Suche starten</button>
+            </div>
+        </form>
+    </div>
+</section>
         <?php
     }
 } else {
-    echo "<br><center>Die Suche wurde global deaktiviert.</center>";
+    echo pdl_alert('info', 'Die Suche wurde global deaktiviert.');
 }
