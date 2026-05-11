@@ -1,6 +1,6 @@
 <?php
 include("header.inc.php");
-if($user_rights['writeletter'] == "Y")
+if($user_rights['adminaccess'] == "Y")
  {
   $submit = isset($_REQUEST['submit']) ? (int)$_REQUEST['submit'] : 0;
   $extra_addys = isset($_POST['extra_addys']) ? $_POST['extra_addys'] : '';
@@ -33,14 +33,10 @@ if($user_rights['writeletter'] == "Y")
     for($i = 0; $i < count($addys); $i++)
      {
       $sleep++;
-      if($sleep == 10)
-       {
-        sleep(1);
-        $sleep = 0;
-       }
-      mail($addys[$i], "Download Letter", stripslashes($text), "FROM: " . $settings['mail_fromname'] . " <" . $settings['mail_fromaddr'] . ">");
+      if($sleep == 10) { sleep(1); $sleep = 0; }
+      mail($addys[$i], "Newsletter", stripslashes($text), "FROM: " . $settings['mail_fromname'] . " <" . $settings['mail_fromaddr'] . ">");
      }
-    echo "<br>done... Download Letter wurde an ".count($addys)." Adressen verschickt.";
+    echo pdl_admin_alert('success', '<strong>Newsletter wurde an ' . count($addys) . ' Adressen verschickt.</strong>');
     if(!$settings['lastletter']) $db_handler->sql_query("INSERT INTO " . $sql_table['settings'] . " (wert,variablenname) VALUES ('".time()."','lastletter')");
     else $db_handler->sql_query("UPDATE " . $sql_table['settings'] . " SET wert='".time()."' WHERE variablenname='lastletter'");
    }
@@ -56,7 +52,7 @@ if($user_rights['writeletter'] == "Y")
 
     $dls_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['release'] . " WHERE time>'" . $db_handler->sql_escape_string((string)$datum) . "' ORDER BY time ASC");
 
-    $text = "Download Letter vom ".date("d.m.Y").".\n";
+    $text = "Newsletter vom ".date("d.m.Y").".\n";
     $text.= "Seit dem ".date("d.m.Y",(int)$datum)." wurden ".$db_handler->sql_num_rows($dls_res)." Downloads hinzugefügt.\n\n";
 
     while($dls_row = $db_handler->sql_fetch_array($dls_res))
@@ -70,82 +66,70 @@ if($user_rights['writeletter'] == "Y")
       $text.= "Nähere Infos zu ".$dls_row['name']." und den Download finden sie unter\n".$settings['script_file']."release_id=".$dls_row['release_id']."\n";
       $text.= "-------------------------------------------\n\n";
      }
-    $text.= "Dies ist ein automatisch generierter Download Letter. Sie erhalten ihn weil sie sich unter ".$settings['script_file']." angemeldet haben.\n";
-    $text.= "Um den Download Letter nicht mehr zu erhalten loggen sie sich unter ".$settings['script_file']."usercenter=login ein und ändern sie ihr Profil anschließend unter der Adresse ".$settings['script_file']."usercenter=profil wichtig ist das sie den Punkt \"Download Letter erhalten\" deaktivieren.";
-    ?>
-<br><br>
-<script language="JavaScript">
-function loc(anfang)
- {
-  document.location.href = 'makeletter.php?anfang='+anfang;
- }
+    $text.= "Dies ist ein automatisch generierter Newsletter. Sie erhalten ihn weil sie sich unter ".$settings['script_file']." angemeldet haben.\n";
+    $text.= "Um den Newsletter nicht mehr zu erhalten loggen sie sich unter ".$settings['script_file']."usercenter=login ein und ändern sie ihr Profil anschließend unter der Adresse ".$settings['script_file']."usercenter=profil wichtig ist das sie den Punkt \"Newsletter erhalten\" deaktivieren.";
+
+    pdl_admin_breadcrumb([
+        ['title' => 'Admin-Center', 'href' => 'index.php'],
+        ['title' => 'Newsletter'],
+        ['title' => 'Newsletter generieren'],
+    ]);
+    echo '<h1 class="h3 pdl-page-title">Newsletter verfassen</h1>';
+?>
+<script>
+function loc(anfang) {
+    document.location.href = 'makeletter.php?anfang='+anfang;
+}
 </script>
-<form action="makeletter.php?submit=1" method="post">
-<table border="0" cellpadding="0" cellspacing="0" width="75%">
-  <tr>
-    <td bgcolor="<?php echo htmlspecialchars($template['table_border']); ?>">
-      <table border="0" cellpadding="3" cellspacing="1" width="100%">
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($template['header_bg']); ?>" colspan="2" align="center">
-            <b>Download Letter verfassen</b>
-          </td>
-        </tr>
-        <?php $alt = alt_switch(); ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>" colspan="2" align="center">
-            <b>Inhalt</b>
-          </td>
-        </tr>
-        <?php $alt = alt_switch(); ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>" colspan="2" align="center">
-            <textarea name="text" cols="70" rows="30"><?php echo htmlspecialchars($text); ?></textarea>
-          </td>
-        </tr>
-        <?php $alt = alt_switch(); ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <b>Letter senden an</b><br>
-            <small>Hier können sie den Letter nur bestimmten Usergruppen senden, um z.B. nur einen Internen Letter zu verschicken.</small>
-          </td>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <select name="ugroup_ids[]" size="4" multiple="multiple">
-            <?php
-            $ugroup_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['usergroup'] . " WHERE ugroup_id!='3'");
-            while($ugroup_row = $db_handler->sql_fetch_array($ugroup_res))
-             {
-              echo "<option value=\"" . htmlspecialchars($ugroup_row['ugroup_id']) . "\">" . htmlspecialchars($ugroup_row['name']) . "</option>";
-             }
-            ?>
-            </select>
-          </td>
-        </tr>
-        <?php $alt = alt_switch(); ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <b>Außerdem senden an</b><br>
-            <small>Hier können sie nochmal extra Mailadressen eingeben, an die der Letter gehen soll. Mailadressen bitte mit ; trennen!</small>
-          </td>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <input type="text" name="extra_addys" size="30">
-          </td>
-        </tr>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($template['footer_bg']); ?>" colspan="2" align="center">
-            <input type="submit" value="Abschicken"> <input type="reset" value="Eingaben löschen"><br>
-            Text mit Übersicht der Downloads seit <input type="text" name="anfang" value="<?php echo htmlspecialchars(date("d.m.Y", (int)$datum)); ?>" size="8">
-            &nbsp;<button onclick="javascript:loc(form.anfang.value)">füllen</button>.
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
+<form action="makeletter.php?submit=1" method="post" novalidate>
+    <section class="card pdl-card mb-4">
+        <header class="card-header"><h2 class="h5 mb-0">Inhalt</h2></header>
+        <div class="card-body">
+            <label for="pdlLetterText" class="form-label">Newsletter-Text</label>
+            <textarea id="pdlLetterText" name="text" class="form-control" rows="20"><?php echo htmlspecialchars($text); ?></textarea>
+        </div>
+    </section>
+
+    <section class="card pdl-card mb-4">
+        <header class="card-header"><h2 class="h5 mb-0">Empfaenger</h2></header>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="pdlLetterUgroups" class="form-label">Newsletter senden an Usergruppen</label>
+                <select id="pdlLetterUgroups" name="ugroup_ids[]" class="form-select" size="4" multiple>
+                    <?php
+                    $ugroup_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['usergroup'] . " WHERE ugroup_id!='3'");
+                    while($ugroup_row = $db_handler->sql_fetch_array($ugroup_res)) {
+                        echo '<option value="' . htmlspecialchars($ugroup_row['ugroup_id']) . '">' . htmlspecialchars($ugroup_row['name']) . '</option>';
+                    }
+                    ?>
+                </select>
+                <div class="form-text">Hier können Sie den Newsletter nur bestimmten Usergruppen senden, um z.B. nur einen internen Newsletter zu verschicken.</div>
+            </div>
+            <div class="mb-3">
+                <label for="pdlLetterExtra" class="form-label">Außerdem senden an</label>
+                <input type="text" id="pdlLetterExtra" name="extra_addys" class="form-control" aria-describedby="pdlLetterExtraHelp">
+                <div id="pdlLetterExtraHelp" class="form-text">Hier können Sie zusaetzliche Mailadressen eingeben. Mehrere Adressen mit <code>;</code> trennen.</div>
+            </div>
+            <div class="mb-3">
+                <label for="pdlLetterAnfang" class="form-label">Text mit Übersicht der Downloads seit</label>
+                <div class="input-group">
+                    <input type="text" id="pdlLetterAnfang" name="anfang" class="form-control" value="<?php echo htmlspecialchars(date("d.m.Y", (int)$datum)); ?>">
+                    <button type="button" class="btn btn-outline-light" onclick="loc(document.getElementById('pdlLetterAnfang').value)">Füllen</button>
+                </div>
+                <div class="form-text">Format: TT.MM.JJJJ</div>
+            </div>
+        </div>
+    </section>
+
+    <div class="d-grid d-md-flex gap-2 justify-content-md-end">
+        <button type="reset" class="btn btn-outline-light">Eingaben zurücksetzen</button>
+        <button type="submit" class="btn btn-primary">Newsletter abschicken</button>
+    </div>
 </form>
-    <?php
+<?php
    }
  }
 else
- { echo "Sie haben keine Berechtigung diese Seite zu sehen"; }
+ { echo pdl_admin_alert('warning', 'Sie haben keine Berechtigung diese Seite zu sehen.'); }
 include("footer.inc.php");
 ?>

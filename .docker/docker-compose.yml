@@ -39,6 +39,7 @@ services:
       MYSQL_PASSWORD: pdl_password
     volumes:
       - powerdownload_mysql_data:/var/lib/mysql
+      - ./initdb:/docker-entrypoint-initdb.d:ro
     networks:
       - powerdownload_network
     restart: unless-stopped

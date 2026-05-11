@@ -39,3 +39,4 @@ $inadmin = 0;
 // Include the functions file
 require_once dirname(__DIR__) . '/pdl-inc/pdl_functions.inc.php';
 require_once dirname(__DIR__) . '/pdl-inc/pdl_csrf.inc.php';
+require_once dirname(__DIR__) . '/pdl-inc/pdl_layout.inc.php';

@@ -3,7 +3,7 @@ include("header.inc.php");
 
 $submit = isset($_POST['submit']) ? (int)$_POST['submit'] : (isset($_GET['submit']) ? (int)$_GET['submit'] : 0);
 
-if($user_rights['god'] == "Y")
+if($user_rights['backup'] == "Y")
  {
   if($submit == 1)
    {
@@ -12,21 +12,31 @@ if($user_rights['god'] == "Y")
     $db_handler->sql_query("UPDATE " . $sql_table['files'] . " SET downloads='0'");
     $db_handler->sql_query("DELETE FROM " . $sql_table['comments']);
     $db_handler->sql_query("DELETE FROM " . $sql_table['iplock']);
-    echo "<br>done...";
+    echo pdl_admin_alert('success', '<strong>Datenbank wurde zurückgesetzt.</strong>');
    }
   else
    {
-    echo makedialog("Reseten?","
-         Beim Reseten der Datenbank geschieht folgendes:<br>
-         - Views der Release werden auf 0 gesetzt<br>
-         - Downloads der Files werden auf 0 gesetzt<br>
-         - Alle Kommentare werden gel&ouml;scht<br>
-         - Views der Screens werden gel&ouml;scht<br>
-         - Bewertungen werden auf 0 gesetzt<br>
-         Soll die Datenbank wirklich resetet werden?","  Ja  ","reset.php");
+    pdl_admin_breadcrumb([
+        ['title' => 'Admin-Center', 'href' => 'index.php'],
+        ['title' => 'System'],
+        ['title' => 'Datenbank zurücksetzen'],
+    ]);
+    echo '<h1 class="h3 pdl-page-title">Datenbank zurücksetzen</h1>';
+    echo makedialog(
+        "Datenbank wirklich zurücksetzen?",
+        '<p class="mb-2">Beim Zurücksetzen geschieht folgendes:</p>'
+        . '<ul class="mb-2"><li>Views der Releases werden auf <strong>0</strong> gesetzt</li>'
+        . '<li>Downloads der Files werden auf <strong>0</strong> gesetzt</li>'
+        . '<li>Alle Kommentare werden <strong>gelöscht</strong></li>'
+        . '<li>Views der Screens werden auf <strong>0</strong> gesetzt</li>'
+        . '<li>Bewertungen werden auf <strong>0</strong> gesetzt</li></ul>'
+        . '<p class="mb-0"><strong>Soll die Datenbank wirklich zurückgesetzt werden?</strong></p>',
+        "Ja, zurücksetzen",
+        "reset.php"
+    );
    }
  }
 else
- { echo "Sie haben keine Berechtigung diese Seite zu sehen"; }
+ { echo pdl_admin_alert('warning', 'Sie haben keine Berechtigung diese Seite zu sehen.'); }
 include("footer.inc.php");
 ?>

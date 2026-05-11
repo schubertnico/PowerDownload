@@ -10,10 +10,10 @@ $submit = isset($_GET['submit']) ? $_GET['submit'] : '';
 if($user_rights['editfiles'] == "Y")
  {
   $release = $db_handler->sql_fetch_array($db_handler->sql_query("SELECT release_id FROM `".$sql_table['comments']."` WHERE comment_id='".$db_handler->sql_escape_string($comment_id)."'"));
-  $release_id = $release['release_id'];
+  $release_id = $release['release_id'] ?? '';
   if(!$release_id)
    {
-    echo "<br>Bitte ein Kommentar auswählen.";
+    echo pdl_admin_alert('warning', 'Bitte einen Kommentar auswählen.');
    }
   else
    {
@@ -21,59 +21,46 @@ if($user_rights['editfiles'] == "Y")
      {
       $text .= "\n\nEditiert von ".$user_details['nick']." am ".date($settings['date_format']);
       $db_handler->sql_query("UPDATE `".$sql_table['comments']."` SET titel='".$db_handler->sql_escape_string($titel)."', text='".$db_handler->sql_escape_string($text)."' WHERE comment_id='".$db_handler->sql_escape_string($comment_id)."'");
-      echo "<br>done...<br><a href=\"editrelease.php?release_id=".htmlspecialchars($release_id)."\">Zurück zum Release</a>";
+      echo pdl_admin_alert('success', '<strong>Kommentar wurde geändert.</strong>');
+      echo '<a class="btn btn-primary" href="editrelease.php?release_id=' . htmlspecialchars((string)$release_id) . '">Zurück zum Release</a>';
      }
     else
      {
       $comment = $db_handler->sql_fetch_array($db_handler->sql_query("SELECT * FROM `".$sql_table['comments']."` WHERE comment_id='".$db_handler->sql_escape_string($comment_id)."'"));
-      ?>
-<br><br>
-<form action="editcomment.php?submit=1" method="post">
-<input type="hidden" name="comment_id" value="<?php echo htmlspecialchars($comment_id); ?>">
-<table border="0" cellpadding="0" cellspacing="0" width="85%">
-  <tr>
-    <td bgcolor="<?php echo htmlspecialchars($template['table_border']); ?>">
-      <table border="0" cellpadding="3" cellspacing="1" width="100%">
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($template['header_bg']); ?>" colspan="2" align="center">
-            <b>Kommentar Editieren</b>
-          </td>
-        </tr>
-        <?php $alt = alt_switch(); ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <b>Titel</b><br>
-            <small>Titel des Kommentars</small>
-          </td>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <input type="text" name="titel" size="35" value="<?php echo htmlspecialchars(stripslashes($comment['titel'])); ?>">
-          </td>
-        </tr>
-        <?php $alt = alt_switch(); ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <b>Text</b><br>
-            <small>Der Kommentar selbst</small>
-          </td>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <textarea cols="60" rows="10" name="text"><?php echo htmlspecialchars(stripslashes($comment['text'])); ?></textarea>
-          </td>
-        </tr>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($template['footer_bg']); ?>" colspan="2" align="center">
-            <input type="submit" value="Los!">
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
+      pdl_admin_breadcrumb([
+          ['title' => 'Admin-Center', 'href' => 'index.php'],
+          ['title' => 'Kommentare'],
+          ['title' => 'Kommentar editieren'],
+      ]);
+      echo '<h1 class="h3 pdl-page-title">Kommentar editieren</h1>';
+?>
+<form action="editcomment.php?submit=1" method="post" novalidate>
+    <input type="hidden" name="comment_id" value="<?php echo htmlspecialchars($comment_id); ?>">
+    <section class="card pdl-card mb-4">
+        <header class="card-header"><h2 class="h5 mb-0">Kommentar-Daten</h2></header>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="pdlCmTitel" class="form-label">Titel</label>
+                <input type="text" id="pdlCmTitel" name="titel" class="form-control" required value="<?php echo htmlspecialchars(stripslashes($comment['titel'] ?? '')); ?>">
+                <div class="form-text">Titel des Kommentars.</div>
+            </div>
+            <div class="mb-3">
+                <label for="pdlCmText" class="form-label">Text</label>
+                <textarea id="pdlCmText" name="text" class="form-control" rows="10" required><?php echo htmlspecialchars(stripslashes($comment['text'] ?? '')); ?></textarea>
+                <div class="form-text">Der Kommentar selbst.</div>
+            </div>
+        </div>
+    </section>
+    <div class="d-grid d-md-flex gap-2 justify-content-md-end">
+        <a href="editrelease.php?release_id=<?php echo htmlspecialchars((string)$release_id); ?>" class="btn btn-outline-light">Abbrechen</a>
+        <button type="submit" class="btn btn-primary">Änderungen speichern</button>
+    </div>
 </form>
-      <?php
+<?php
      }
    }
  }
 else
- { echo "Sie haben keine Berechtigung diese Seite zu sehen"; }
+ { echo pdl_admin_alert('warning', 'Sie haben keine Berechtigung diese Seite zu sehen.'); }
 include("footer.inc.php");
 ?>

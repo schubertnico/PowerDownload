@@ -12,7 +12,7 @@ $script_file = htmlspecialchars($settings['script_file'] ?? '');
 $remind_code_raw = (string) ($remind_code ?? '');
 
 if ($remind_code_raw === '') {
-    echo "<center><b>Ungültiger oder abgelaufener Code.</b></center>";
+    echo pdl_alert('danger', '<strong>Ungültiger oder abgelaufener Code.</strong>');
     return;
 }
 
@@ -23,7 +23,7 @@ $getuser = $db_handler->sql_fetch_array($db_handler->sql_query(
 ));
 
 if (!$getuser) {
-    echo "<center><b>Ungültiger oder abgelaufener Code.</b></center>";
+    echo pdl_alert('danger', '<strong>Ungültiger oder abgelaufener Code.</strong>');
     return;
 }
 
@@ -55,26 +55,42 @@ if ($submit == 1) {
             error_log("PowerDownload: Mailversand an " . ($getuser['email'] ?? '') . " fehlgeschlagen (Lost2).");
         }
 
-        echo '<center><b>Passwort erfolgreich gesetzt. Bitte <a href="' . $script_file . 'usercenter=login">einloggen</a>.</b></center>';
+        echo pdl_alert('success', '<strong>Passwort erfolgreich gesetzt.</strong> Bitte <a href="' . $script_file . 'usercenter=login" class="alert-link">einloggen</a>.');
         return;
     }
 }
 
 if ($errors) {
-    echo '<div style="color:#c00;text-align:center;margin:10px"><ul style="display:inline-block;text-align:left">';
+    $err_html = '<strong>Bitte prüfen Sie die folgenden Eingaben:</strong><ul class="mb-0 mt-2">';
     foreach ($errors as $err) {
-        echo "<li>" . htmlspecialchars($err) . "</li>";
+        $err_html .= '<li>' . htmlspecialchars($err) . '</li>';
     }
-    echo '</ul></div>';
+    $err_html .= '</ul>';
+    echo pdl_alert('danger', $err_html);
 }
 
 $remind_code_html = htmlspecialchars($remind_code_raw, ENT_QUOTES, 'UTF-8');
-echo '<center><h3>Neues Passwort setzen</h3></center>';
-echo '<form method="post" action="downloads.php">';
-echo csrf_input();
-echo '<input type="hidden" name="usercenter" value="lost2">';
-echo '<input type="hidden" name="submit" value="1">';
-echo '<input type="hidden" name="remind_code" value="' . $remind_code_html . '">';
-echo '<table align="center"><tr><td><label for="pw_new">Neues Passwort:</label></td><td><input type="password" id="pw_new" name="pw_new" required minlength="8"></td></tr>';
-echo '<tr><td><label for="pw_new2">Bestätigung:</label></td><td><input type="password" id="pw_new2" name="pw_new2" required minlength="8"></td></tr>';
-echo '<tr><td colspan="2" align="center"><button type="submit">Passwort setzen</button></td></tr></table></form>';
+?>
+<section class="card pdl-card mx-auto" style="max-width: 540px;">
+    <header class="card-header pdl-card-header"><h2 class="h5 mb-0">Neues Passwort setzen</h2></header>
+    <div class="card-body">
+        <form method="post" action="downloads.php" novalidate>
+            <?php echo csrf_input(); ?>
+            <input type="hidden" name="usercenter" value="lost2">
+            <input type="hidden" name="submit" value="1">
+            <input type="hidden" name="remind_code" value="<?php echo $remind_code_html; ?>">
+            <div class="mb-3">
+                <label for="pdlPwNew" class="form-label">Neues Passwort</label>
+                <input type="password" id="pdlPwNew" name="pw_new" class="form-control" required minlength="8" aria-describedby="pdlPwNewHelp">
+                <div id="pdlPwNewHelp" class="form-text">Mindestens 8 Zeichen.</div>
+            </div>
+            <div class="mb-3">
+                <label for="pdlPwNew2" class="form-label">Passwort-Bestätigung</label>
+                <input type="password" id="pdlPwNew2" name="pw_new2" class="form-control" required minlength="8">
+            </div>
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary">Passwort setzen</button>
+            </div>
+        </form>
+    </div>
+</section>

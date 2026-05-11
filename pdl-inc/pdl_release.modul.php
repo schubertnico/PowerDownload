@@ -150,7 +150,7 @@ if (!$release_row) {
         $release_row['vote_form'] = '';
     }
     if (($user_rights['vote'] ?? 'N') == "N") {
-        $release_row['vote_form'] = '<p class="small text-muted mt-3 mb-0">Sie haben keine Berechtigung den Download zu bewerten.</p>';
+        $release_row['vote_form'] = '<p class="small text-muted mt-3 mb-0">Sie haben keine Berechtigung, dieses Release zu bewerten.</p>';
     }
 
     $tpl_file_detail_raw = (string) ($template['file_detail'] ?? '');
@@ -297,7 +297,59 @@ if (!$release_row) {
         echo '</div></header>';
         echo '<div class="card-body">';
 
-        if ($showcomments == 1) {
+        if ($comments_num == 0) {
+            echo '<div class="text-center py-4">';
+            echo '<p class="text-muted mb-2"><strong>Noch keine Kommentare.</strong></p>';
+            if ($user_details ?? null) {
+                if (($user_rights['addcomments'] ?? 'N') == "Y") {
+                    echo '<p class="mb-0">Schreibe den ersten Kommentar zu diesem Release!</p>';
+                    echo '</div>';
+                    $tpl_form_raw = (string) ($template['comments_form'] ?? '');
+                    $html_setting = ($settings['html_comments'] ?? 'N') == "Y" ? "An" : "Aus";
+                    $zensur_setting = ($settings['badwords_comments'] ?? 'N') == "Y" ? "An" : "Aus";
+                    $bbcode_setting = ($settings['bb_code'] ?? 'N') == "Y" ? "An" : "Aus";
+                    $smilies_setting = ($settings['smilies'] ?? 'N') == "Y" ? "An" : "Aus";
+                    $glossar_setting = ($settings['glossary'] ?? 'N') == "Y" ? "An" : "Aus";
+                    $user_nick = htmlspecialchars($user_details['nick'] ?? '');
+                    $tpl_form = str_replace('{html}', $html_setting, $tpl_form_raw);
+                    $tpl_form = str_replace('{zensur}', $zensur_setting, $tpl_form);
+                    $tpl_form = str_replace('{bbcode}', $bbcode_setting, $tpl_form);
+                    $tpl_form = str_replace('{smilies}', $smilies_setting, $tpl_form);
+                    $tpl_form = str_replace('{glossar}', $glossar_setting, $tpl_form);
+                    $tpl_form = str_replace('{user}', $user_nick, $tpl_form);
+                    $tpl_form_usable = $tpl_form_raw !== '' && (
+                        strpos($tpl_form_raw, '{titel}') !== false
+                        || strpos($tpl_form_raw, '{text}') !== false
+                        || strpos($tpl_form_raw, 'name=') !== false
+                    );
+                    echo '<div class="border-top pt-3 mt-3">';
+                    echo '<h3 class="h6 mb-3">Kommentar schreiben</h3>';
+                    echo '<form action="downloads.php" method="post" novalidate>';
+                    echo csrf_input();
+                    echo '<input type="hidden" name="usercenter" value="comments">';
+                    echo '<input type="hidden" name="submit" value="1">';
+                    echo '<input type="hidden" name="release_id" value="' . (int) $release_id . '">';
+                    if ($tpl_form_usable) {
+                        echo replace($tpl_form, []);
+                    } else {
+                        echo '<div class="mb-3"><label for="pdlCommentTitel" class="form-label">Titel</label>';
+                        echo '<input type="text" class="form-control" id="pdlCommentTitel" name="titel" required></div>';
+                        echo '<div class="mb-3"><label for="pdlCommentText" class="form-label">Kommentar</label>';
+                        echo '<textarea class="form-control" id="pdlCommentText" name="text" rows="5" required></textarea></div>';
+                        echo '<button type="submit" class="btn btn-primary">Kommentar absenden</button>';
+                    }
+                    echo '</form>';
+                    echo '</div>';
+                } else {
+                    echo '<p class="mb-0">Noch keine Kommentare zu diesem Release.</p>';
+                    echo '</div>';
+                }
+            } else {
+                echo '<p class="mb-2">Melde dich an, um einen Kommentar zu hinterlassen.</p>';
+                echo '<a class="btn btn-outline-primary btn-sm" href="downloads.php?usercenter=login">Anmelden</a>';
+                echo '</div>';
+            }
+        } elseif ($showcomments == 1) {
             $tpl_comments_raw = (string) ($template['comments'] ?? '');
             $tpl_comments_usable = $tpl_comments_raw !== '' && (
                 strpos($tpl_comments_raw, '{titel}') !== false
@@ -334,9 +386,6 @@ if (!$release_row) {
                     echo '<div>' . (string) $c['text'] . '</div>';
                     echo '</article>';
                 }
-            }
-            if ($comments_num == 0) {
-                echo '<p class="text-muted mb-0 small">Bisher keine Kommentare vorhanden.</p>';
             }
         } else {
             echo '<p class="text-muted mb-0 small">Bitte oben "Anzeigen" klicken, um die Kommentare einzublenden.</p>';

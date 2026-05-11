@@ -65,7 +65,7 @@ class ModulesTest extends TestCase
             'referer_check' => 'N',
             'debug' => false,
             'showcopy' => false,
-            'pdlversion' => 'v3.0.3',
+            'pdlversion' => 'v3.5.0',
             'shortname' => 0,
             'installed' => time() - 86400,
             'ftp_server' => '',
@@ -160,7 +160,8 @@ class ModulesTest extends TestCase
     public function loginModuleShowsForm(): void
     {
         $output = $this->includeModule('pdl_ulogin.modul.php');
-        $this->assertStringContainsString('Login Form Here', $output);
+        $this->assertStringContainsString('name="nick"', $output);
+        $this->assertStringContainsString('name="pw"', $output);
         $this->assertStringContainsString('<form', $output);
     }
 
@@ -174,7 +175,9 @@ class ModulesTest extends TestCase
         $submit = 0;
 
         $output = $this->includeModule('pdl_uregister.modul.php');
-        $this->assertStringContainsString('Register Form Here', $output);
+        $this->assertStringContainsString('name="nick"', $output);
+        $this->assertStringContainsString('name="email"', $output);
+        $this->assertStringContainsString('name="pw_new"', $output);
     }
 
     #[Test]
@@ -261,11 +264,14 @@ class ModulesTest extends TestCase
         $pw_new2 = 'pass1234';
         $user_details = null;
         $db_handler = new MockDbHandler();
-        $db_handler->addResult([['nick' => 'ExistingUser']]);
+        $db_handler->addResult([['c' => 0]]); // rate-limit counter
+        $db_handler->addResult([]); // INSERT iplock (no-op)
+        $db_handler->addResult([['nick' => 'ExistingUser']]); // nick exists
 
         $output = $this->includeModule('pdl_uregister.modul.php');
-        // Modul liefert "bereits ein Benutzer mit diesem Nickname registriert"
-        $this->assertStringContainsString('Nickname registriert', $output);
+        // Modul liefert "Es ist bereits ein Benutzer mit diesem Nickname registriert."
+        $this->assertStringContainsString('Nickname', $output);
+        $this->assertStringContainsString('bereits ein Benutzer', $output);
     }
 
     #[Test]
@@ -280,11 +286,14 @@ class ModulesTest extends TestCase
         $pw_new2 = 'pass1234';
         $user_details = null;
         $db_handler = new MockDbHandler();
-        $db_handler->addResult([]);
-        $db_handler->addResult([['email' => 'existing@test.com']]);
+        $db_handler->addResult([['c' => 0]]); // rate-limit counter
+        $db_handler->addResult([]); // INSERT iplock (no-op)
+        $db_handler->addResult([]); // nick check (no match)
+        $db_handler->addResult([['email' => 'existing@test.com']]); // email exists
 
         $output = $this->includeModule('pdl_uregister.modul.php');
-        $this->assertStringContainsString('E-Mail-Adresse registriert', $output);
+        $this->assertStringContainsString('E-Mail-Adresse', $output);
+        $this->assertStringContainsString('bereits', $output);
     }
 
     #[Test]
@@ -295,13 +304,15 @@ class ModulesTest extends TestCase
         $nick = 'NewUser';
         $_POST['nick'] = 'NewUser';
         $email = 'newuser@test.com';
-        $pw_new = 'securepass';
-        $pw_new2 = 'securepass';
+        $pw_new = 'secure123';
+        $pw_new2 = 'secure123';
         $homepage = 'www.example.com';
         $icq = 0;
         $get_letter = 'Y';
         $user_details = null;
         $db_handler = new MockDbHandler();
+        $db_handler->addResult([['c' => 0]]); // rate-limit counter
+        $db_handler->addResult([]); // INSERT iplock (no-op)
         $db_handler->addResult([]); // nick check
         $db_handler->addResult([]); // email check
         $db_handler->addResult([]); // insert
@@ -607,7 +618,8 @@ class ModulesTest extends TestCase
         $submit = 0;
 
         $output = $this->includeModule('pdl_ulost.modul.php');
-        $this->assertStringContainsString('Lost Password Form Here', $output);
+        $this->assertStringContainsString('name="email"', $output);
+        $this->assertStringContainsString('Passwort vergessen', $output);
     }
 
     #[Test]

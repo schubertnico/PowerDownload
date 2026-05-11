@@ -1,5 +1,5 @@
 =====================================================================
-                    PowerDownload 3.0.3 - Readme
+                    PowerDownload 3.5.0 - Readme
 =====================================================================
 
 PowerDownload ist ein PHP-basiertes Download-Management-System mit
@@ -7,7 +7,10 @@ Ordnerstruktur, Benutzerverwaltung, Bewertungs- und Kommentarsystem.
 
 Original 2001/2002 von PowerScripts veröffentlicht und 2025/2026 auf
 PHP 8.4 + MySQL 8 modernisiert (Sessions, password_hash, CSRF,
-Rate-Limit, Cookie-Hardening).
+Rate-Limit, Cookie-Hardening). Die gesamte HTML-Ausgabe wurde
+2026-05 auf Bootstrap 5.3 umgestellt (öffentlicher Bereich, Admin,
+Setup/Update) - dunkles Theme, hohe WCAG-Kontraste, responsives
+Layout.
 
 Projektseite : https://www.powerscripts.org
 Projekte     : https://www.powerscripts.org/projects-6.html
@@ -48,14 +51,26 @@ Stoppen     : docker compose -f .docker/docker-compose.yml down
   - Verbindungsdaten in pdl-inc/pdl_config.inc.php setzen:
       $config_sql_server, $config_sql_user,
       $config_sql_password, $config_sql_database
-  - Im Browser install_303.php aufrufen.
-  - Danach install_303.php und update_*.php LÖSCHEN.
+  - Im Browser setup.php aufrufen (spielt das Schema aus
+    .docker/initdb/01-pdl3-init.sql ein) ODER alternativ
+    install_303.php fuer den klassischen Wizard.
+  - Danach setup.php, install_303.php und update_*.php LÖSCHEN.
   - Schreibrechte: pdl-gfx/screens/ und pdl-gfx/smilies/ -> 0775.
   - Settings im Admin-Panel anpassen (script_file, mail_*, ...).
+
+Single Source of Truth fuer das Schema und alle Default-Daten ist
+.docker/initdb/01-pdl3-init.sql. Sowohl Docker-Init als auch setup.php
+und install_303.php (via install_querys.inc) spielen exakt diese
+Datei ein - so ist die DB nach jeder Installationsvariante identisch.
 
 Update aus Vorgängerversion:
   - 2.2.4 -> 3.0.x : update_224to303.php
   - 3.0.1 -> 3.0.3 : update_301to303.php
+  - 3.0.3 -> 3.5.0 : keine separate Update-Datei nötig — setup.php oder
+    .docker/initdb/01-pdl3-init.sql spielt das vollständige Schema mit
+    den neuen Spalten (pdl3_settings: name/bez/eingabe/reihenfolge,
+    pdl3_settingsgroup: reihenfolge) und allen aktualisierten Default-
+    Daten (Rechte in sauberem Deutsch, ergänzte Settings) ein.
 
 
 ---------------------------------------------------------------------
@@ -131,6 +146,38 @@ Anzahl + Aussehen werden in den Settings/Templates konfiguriert.
   - Server-Validierung E-Mail (FILTER_VALIDATE_EMAIL) + URL
   - Path-Traversal-Schutz (Whitelist bei Modul-Includes)
   - utf8mb4 als DB-Charset
+
+
+---------------------------------------------------------------------
+7a. FRONTEND (Bootstrap 5)
+---------------------------------------------------------------------
+
+Bootstrap 5.3.3 wird via CDN geladen, eigene Theme-Stylesheets:
+
+  - pdl-gfx/pdl-public.css   Public-Theme (dunkler Body, helle Texte,
+                             rote Akzentfarbe)
+  - pdl-admin/admin.css      Admin-Theme (rotes Admin-Theme,
+                             responsiver Sidebar)
+
+Layout-Helper (pdl-inc/pdl_layout.inc.php):
+
+  pdl_layout_start($title, $settings, $userRights, $userDetails)
+  pdl_layout_end($settings, $rendertime, $querycount)
+  pdl_alert($type, $msg)            success|danger|warning|info|...
+  pdl_card_start($title, $extra)    konsistente Card-Wrapper
+  pdl_card_end()
+
+Admin-Helper (pdl-admin/functions.inc.php):
+
+  pdl_admin_breadcrumb($items)      Bootstrap-Breadcrumbs
+  pdl_admin_alert($type, $msg)      Admin-Alerts
+  makedialog($titel, $text,         Bestätigungs-Card mit
+             $button, $action)      pdl-danger-action-Markierung
+
+Bedeutung wird nicht nur über Farbe vermittelt: gefährliche Aktionen
+haben zusätzlich Klartext-Label und linke rote Border. Alle
+Bootstrap-Defaults (text-primary, text-muted, alert-info etc.)
+werden auf hohe Kontraste auf dunklem Hintergrund überschrieben.
 
 
 ---------------------------------------------------------------------

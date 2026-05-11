@@ -62,6 +62,7 @@ if($user_rights['editdirs'] == "Y" || $user_rights['deldirs'] == "Y" || $user_ri
         ['title' => $current_ordner_name],
     ]);
     echo '<h1 class="h3 pdl-page-title">Ordner und Releases</h1>';
+    echo pdl_admin_alert('info', 'Diese Übersicht zeigt alle Ordner inkl. der enthaltenen Releases. Beide Menüpunkte „Releases ändern/löschen" und „Ordner ändern/löschen" führen hierher.');
 ?>
 <div class="alert alert-info" role="alert">
     <strong>So funktioniert dieser Bereich:</strong>

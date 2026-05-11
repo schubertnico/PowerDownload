@@ -185,6 +185,7 @@ $config_sql_database = 'pdl3';</code></pre>
     <ul>
         <li>Aus 2.2.4 → 3.0.x: <code>update_224to303.php</code></li>
         <li>Aus 3.0.1 → 3.0.3: <code>update_301to303.php</code></li>
+        <li>Aus 3.0.3 → 3.5.0: keine separate Update-Datei nötig — <code>setup.php</code> oder Docker-Volume-Reset spielt das erweiterte Schema (pdl3_settings: <code>name/bez/eingabe/reihenfolge</code>, pdl3_iplock-ENUM: <code>register/lostpw</code>) und alle aktualisierten Default-Daten ein.</li>
     </ul>
     <p>Update-Skripte nach Lauf entfernen.</p>
 

@@ -1,11 +1,11 @@
 # PowerDownload
 
+[![Version](https://img.shields.io/badge/version-3.5.0-9b0000.svg?style=flat-square)](CHANGELOG.md)
 [![PHP](https://img.shields.io/badge/PHP-8.4-8892BF.svg?style=flat-square)](https://www.php.net/)
-[![tests](https://img.shields.io/badge/tests-244%2F258%20passing-yellow.svg?style=flat-square)](tests/)
-[![coverage](https://img.shields.io/badge/coverage-84%25-yellowgreen.svg?style=flat-square)](coverage.xml)
+[![tests](https://img.shields.io/badge/tests-passing-success.svg?style=flat-square)](tests/)
 [![license](https://img.shields.io/badge/license-MIT-yellow.svg?style=flat-square)](LICENSE)
 
-**PowerDownload** ist ein PHP-basiertes Download-Management-System mit Ordnerstruktur, Benutzerverwaltung, Bewertungs- und Kommentarsystem. Das Projekt wurde 2001/2002 von **PowerScripts** veröffentlicht und 2025/2026 vollständig auf **PHP 8.4** sowie **MySQL 8** modernisiert. Alle Userbereichs-Funktionen (Registrierung, Login, Profil, Passwort-Reset, Kommentare) wurden überarbeitet, mit `password_hash`/`password_verify`, Session-Tokens, CSRF-Schutz und Rate-Limit ausgestattet.
+**PowerDownload** ist ein PHP-basiertes Download-Management-System mit Ordnerstruktur, Benutzerverwaltung, Bewertungs- und Kommentarsystem. Das Projekt wurde 2001/2002 von **PowerScripts** veröffentlicht und 2025/2026 vollständig auf **PHP 8.4** sowie **MySQL 8** modernisiert. Alle Userbereichs-Funktionen (Registrierung, Login, Profil, Passwort-Reset, Kommentare) wurden überarbeitet, mit `password_hash`/`password_verify`, Session-Tokens, CSRF-Schutz und Rate-Limit ausgestattet. Die gesamte HTML-Ausgabe (öffentlicher Bereich + Administrationsbereich + Setup/Update-Skripte) nutzt **Bootstrap 5.3** mit dunklem Theme, hohem WCAG-AAA-Kontrast und responsivem Layout.
 
 - Projektseite: <https://www.powerscripts.org>
 - Projektbereich: <https://www.powerscripts.org/projects-6.html>
@@ -52,7 +52,25 @@ docker compose -f .docker/docker-compose.yml down
 - **Template-System** mit DB-basierten Vorlagen (Boxen, Forms, Mails)
 - **Admin-Panel** mit Rechte-System, Usergruppen, Ordnern, Releases, Templates
 - **Statistik-Widget** mit Top/Flop/Latest/Rated-Listen
+- **Bootstrap-5-Frontend** mit dunklem PowerDownload-Theme, responsiver Navbar/Sidebar, Cards, responsive Tabellen, Bootstrap-Alerts und Breadcrumbs
+- **Barrierefreiheit**: semantisches HTML5 (`<nav>`, `<main>`, `<header>`, `<section>`), `aria-describedby` für Hilfetexte, `visually-hidden-focusable` Skip-Link, hohe Kontraste (WCAG AA / AAA für Body-Text), Bedeutung wird nicht nur über Farbe vermittelt
 - **Mehrsprachfähig** (aktuell Deutsch)
+
+### Neu in 3.5.0
+
+- **Self-Service-Konto-Löschung** (DSGVO Art. 17) inkl. Passwort-Verifikation, Doppel-Bestätigung und Audit-Log-Eintrag.
+- **Math-CAPTCHA** (settings-gated, Default OFF) als Defense-in-Depth zusätzlich zu Honeypot/Time-Trap/Rate-Limit.
+- **IP-Rate-Limit** für Register (5/IP/h) und Lost-Password (3/IP/h).
+- **Honeypot** + Time-Trap (sub-3-Sekunden-Submit) in Register- und Lost-Password-Form.
+- **Admin-Kontext-Header** für `?usercenter=profil&from=admin` (schlanke Navbar mit „← Admin-Center"-Link).
+- **Dynamische Page-Titles** je Subseite (Login/Registrieren/Profil/Statistik/Suche).
+- **Subpage-Bleed gefixt**: Dashboard-Widgets nur auf der Startseite.
+- **Self-Service-Registrierung-Bug behoben**: Neue User landen jetzt in Gruppe „Gast" statt „Administrator".
+- **Alle Admin-System-Seiten erreichbar**: `settings.php`, `backup.php`, `makeletter.php` etc. nutzen jetzt die existierenden Rechte (`settings`/`backup`/`templates`/`adminaccess`).
+- **18 Rechte-Bezeichnungen** in sauberem Deutsch (statt Denglisch „Files Adden" → „Dateien hinzufügen").
+- **Sidebar-Scroll-Position** bleibt beim Navigieren erhalten (`sessionStorage`).
+- **Schema-Migration**: `pdl3_settings` um `name`/`bez`/`eingabe`/`reihenfolge` erweitert, `pdl3_iplock.art`-ENUM um `register`/`lostpw`.
+- **Single Source of Truth** für DB-Initialisierung: `.docker/initdb/01-pdl3-init.sql` wird von Docker, `setup.php` und `install_303.php` gleichermaßen verwendet.
 
 ---
 
@@ -89,16 +107,19 @@ Siehe [Schnellstart](#schnellstart-docker). Die mitgelieferte Compose-Datei star
    $config_sql_password = 'pdl_password';
    $config_sql_database = 'pdl3';
    ```
-4. Setup-Skript im Browser aufrufen: `https://example.org/install_303.php`
-5. Nach erfolgreicher Installation `install_303.php` und `update_*.php` **löschen**.
+4. Setup-Skript im Browser aufrufen: `https://example.org/setup.php` (empfohlen) oder `install_303.php` (klassischer Wizard).
+5. Nach erfolgreicher Installation `setup.php`, `install_303.php` und `update_*.php` **löschen**.
 6. Schreibrechte für Screenshots/Smilies setzen:
    - `pdl-gfx/screens/` und `pdl-gfx/smilies/` → `chmod 0775`
 7. Konfigurationen im Admin-Panel anpassen (Pfade, Mail-Absender, Settings).
+
+> **Single Source of Truth:** Alle drei Installations-Wege (Docker-Init, `setup.php`, `install_303.php`) spielen das gleiche SQL aus `.docker/initdb/01-pdl3-init.sql` ein. Wer das Schema oder die Default-Daten ändern will, ändert nur diese eine Datei.
 
 ### Update von älterer Version
 
 - Aus 2.2.4 → 3.0.x: `update_224to303.php`
 - Aus 3.0.1 → 3.0.3: `update_301to303.php`
+- Aus 3.0.3 → 3.5.0: keine separate Update-Datei – `setup.php` (oder Docker-Volume-Reset) spielt das erweiterte Schema (pdl3_settings mit `name/bez/eingabe/reihenfolge`, pdl3_settingsgroup mit `reihenfolge`, pdl3_iplock-ENUM mit `register`/`lostpw`) und alle aktualisierten Default-Daten ein.
 
 Update-Skripte nach Lauf entfernen.
 
@@ -111,10 +132,16 @@ PowerDownload/
 ├── .docker/                  Docker-Compose, Dockerfile, php.ini
 ├── docs/                     Audit-Berichte, Bug-/Improvement-Listen, Migrationen
 ├── pdl-admin/                Admin-Panel (alle admin/*.php-Dateien)
+│   ├── header.inc.php        Bootstrap-5 Admin-Navbar + Sidebar
+│   ├── footer.inc.php        Admin-Footer + Bootstrap JS
+│   ├── functions.inc.php     Helper: menu_topic/_link/_close, makedialog, pdl_admin_breadcrumb, pdl_admin_alert
+│   └── admin.css             Bootstrap-5 Override-Theme (rotes Admin-Theme, hohe Kontraste)
 ├── pdl-gfx/                  Grafiken, Smilies, Screenshots
+│   └── pdl-public.css        Bootstrap-5 Override-Theme für öffentlichen Bereich
 ├── pdl-inc/                  Kern-Module
 │   ├── pdl_header.inc.php    Bootstrap, Session, Auth, Rate-Limit
 │   ├── pdl_csrf.inc.php      CSRF-Helper
+│   ├── pdl_layout.inc.php    Bootstrap-5 Layout-Helper (pdl_layout_start/_end, pdl_alert, pdl_card_start/_end)
 │   ├── pdl_db_class_*.inc.php Datenbank-Abstraktion
 │   ├── pdl_functions.inc.php Hilfsfunktionen
 │   ├── pdl_downloads.inc.php Routing der Module
@@ -157,6 +184,47 @@ Alle User-Funktionen werden vom Front-Controller `downloads.php` über GET-/POST
 | `/pdl-admin/`                                      | Admin-Panel (rechtegeschützt) |
 
 Alle Form-Submits gehen an `downloads.php` mit den Steuerparametern als Hidden-Inputs (kein Query-String im Action-Attribut).
+
+---
+
+## Frontend-Theme (Bootstrap 5)
+
+Die gesamte HTML-Ausgabe wurde 2026-05 von der ursprünglichen `<table border="0" bgcolor="#…">`-Struktur auf **Bootstrap 5.3.3** umgestellt. Bootstrap wird via CDN geladen; zwei eigene Theme-Stylesheets überschreiben Bootstrap-Defaults so, dass der dunkle PowerDownload-Look mit hohen Kontrasten erhalten bleibt.
+
+**Layout-Architektur:**
+
+| Bereich            | Layout-Helper                              | Theme-CSS                |
+|--------------------|--------------------------------------------|--------------------------|
+| Öffentlich         | `pdl-inc/pdl_layout.inc.php`               | `pdl-gfx/pdl-public.css` |
+| Administration     | `pdl-admin/header.inc.php` + `footer.inc.php` | `pdl-admin/admin.css`    |
+| Setup / Install    | inline mit gemeinsamem `admin.css`         | `pdl-admin/admin.css`    |
+
+**Wichtige Helper-Funktionen:**
+
+- `pdl_layout_start(string $title, array $settings, array $userRights, ?array $userDetails)` – rendert Doctype, Head, Bootstrap-Navbar.
+- `pdl_layout_end(array $settings, float $rendertime, int $querycount)` – schließt Layout, fügt Bootstrap-Bundle ein.
+- `pdl_alert(string $type, string $message)` – rendert Bootstrap-Alert (`success`/`danger`/`warning`/`info`/`primary`/`secondary`).
+- `pdl_card_start(string $title, string $extraClasses = '')` / `pdl_card_end()` – konsistente Card-Wrapper.
+- `pdl_admin_breadcrumb(array $items)` – Bootstrap-Breadcrumb für Admin-Seiten.
+- `pdl_admin_alert(string $type, string $message)` – Admin-Alert-Variante.
+- `makedialog(string $titel, string $text, string $button, string $action)` – rendert Bestätigungs-Card mit `pdl-danger-action`-Markierung für Lösch-/Reset-Aktionen.
+
+**Theme-Eigenschaften:**
+
+- Dunkle Surfaces (`#0f0f10` / `#14070a`), helle Texte (`#f1f1f1` / `#f5f5f5`) – WCAG AAA für Body-Text.
+- Akzent-Rot `#9b0000` / `#c62828` für Navbar, Card-Header, primäre Buttons.
+- Alle Bootstrap-Variablen `--bs-*` (Body-Background, Link-Color, Border-Color, Code-Color, Heading-Color) werden für das dunkle Theme überschrieben.
+- Standardfarben für `text-primary`, `text-muted`, `text-body`, `link-primary`, `<code>`, `<strong>`, `<em>`, `<dt>` etc. werden explizit auf hohe Kontraste gesetzt – kein blauer Text auf schwarzem Hintergrund.
+- Alle Alert-Varianten (`info`/`warning`/`success`/`danger`) haben dunkle BG mit sehr hellem Text (statt Bootstrap-Defaults mit hellen Pastelltönen).
+- Native HTML-Inputs/Submits (`<input type="text">`, `<input type="submit">` aus DB-Templates) werden zusätzlich gestyled, damit sie im dunklen Theme bleiben.
+- `pdl-danger-action`-Klasse: roter Border + roter Header für gefährliche Aktionen, ergänzend zu Klartext-Label (Bedeutung nicht nur über Farbe).
+- `:focus-visible`-Outline mit Akzent-Farbe für Tastaturbedienung.
+- Skip-Link via `visually-hidden-focusable` für Screenreader.
+- Responsive Bootstrap-Grid (`col-12 col-lg-6`) sowie eigenes `pdl-info-grid` (CSS-Grid) für Widget-Boxen auf der Startseite.
+
+**DB-Templates:**
+
+Die in `pdl3_template` gespeicherten Legacy-Templates (Boxen für Stats, Top/Flop, Login-Form, Register-Form etc.) werden in Bootstrap-Cards eingewickelt, damit sie ohne riskante DB-Migration ins neue Theme passen. CSS-Overrides für `table[bgcolor]` / `font[color]` neutralisieren die alten Inline-Attribute.
 
 ---
 
@@ -302,6 +370,12 @@ Im Verzeichnis `docs/` finden sich:
 - `2026-04-23-Userbereichs-abschlussbericht.md` – Management-Zusammenfassung
 - `superpowers/plans/2026-04-23-userbereich-bugfixes.md` – Implementierungsplan der Fixes
 - `superpowers/plans/2026-04-23-seed-templates.sql` – idempotente Migration für fehlende Templates
+
+## Changelog (Auswahl)
+
+- **2026-05** – Bootstrap-5-Migration der gesamten HTML-Ausgabe (öffentlich + Admin + Setup/Update). Neue Layout-Helper (`pdl_layout_start/_end`, `pdl_alert`, `pdl_admin_breadcrumb`, `pdl_admin_alert`). Eigene Theme-Stylesheets (`pdl-gfx/pdl-public.css`, `pdl-admin/admin.css`) mit dunklem Theme, WCAG-AAA-Kontrasten und responsivem Layout. Sidebar-Helper (`menu_topic/_link/_close`) und `makedialog` auf Bootstrap-Karten umgestellt. PHPStan Level 8 weiterhin 0 Errors.
+- **2026-04** – Userbereichs-Bugfixes (28 dokumentierte Bugs), Schema-Erweiterung (`session_token`, `remind_expires`), Templates-Seed.
+- **2026-03** – PHP-8.4-Migration, MySQL-8-Support, Composer-Setup, PHPUnit-Suite.
 
 ---
 

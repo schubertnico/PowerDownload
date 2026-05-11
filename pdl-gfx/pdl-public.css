@@ -1,0 +1,696 @@
+/*
+ * PowerDownload - Public Bootstrap 5 Theme Overrides
+ *
+ * Dunkles Theme mit hohen Kontrasten (WCAG AA / AAA fuer Body-Text).
+ * Alle Bootstrap-Defaults (blaue Links, graues text-muted, etc.) werden
+ * ueberschrieben, damit Text auf dunklem Hintergrund klar lesbar bleibt.
+ */
+
+:root {
+    --pdl-bg: #0f0f10;
+    --pdl-surface: #1c1c1f;
+    --pdl-surface-alt: #25252a;
+    --pdl-text: #f1f1f1;
+    --pdl-muted: #d0d0d0;
+    --pdl-accent: #c62828;
+    --pdl-accent-strong: #9b0000;
+    --pdl-accent-soft: #ff8a8a;
+    --pdl-accent-link: #ff9090;
+    --pdl-accent-link-hover: #ffd0d0;
+    --pdl-border: #4a4a52;
+    --pdl-success: #6ee787;
+    --pdl-warning: #ffc857;
+    --pdl-danger: #ff7575;
+    --pdl-info: #8ad9ff;
+}
+
+body.pdl-public {
+    /* Bootstrap-Variablen ueberschreiben, damit Bootstrap-eigene Komponenten
+       (z.B. utility classes) den dunklen Body-Background nutzen. */
+    --bs-body-bg: var(--pdl-bg);
+    --bs-body-color: var(--pdl-text);
+    --bs-secondary-color: var(--pdl-muted);
+    --bs-tertiary-color: var(--pdl-muted);
+    --bs-secondary-bg: var(--pdl-surface);
+    --bs-tertiary-bg: var(--pdl-surface-alt);
+    --bs-border-color: var(--pdl-border);
+    --bs-link-color: var(--pdl-accent-link);
+    --bs-link-color-rgb: 255, 144, 144;
+    --bs-link-hover-color: var(--pdl-accent-link-hover);
+    --bs-link-hover-color-rgb: 255, 208, 208;
+    --bs-emphasis-color: var(--pdl-text);
+    --bs-heading-color: var(--pdl-text);
+    --bs-code-color: #ffb3b3;
+    --bs-highlight-color: var(--pdl-text);
+    --bs-highlight-bg: rgba(255, 200, 87, 0.25);
+    background-color: var(--pdl-bg) !important;
+    color: var(--pdl-text) !important;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Allgemeine Links: hoher Kontrast auf dunkel */
+body.pdl-public a {
+    color: var(--pdl-accent-link);
+    text-decoration-color: rgba(255, 144, 144, 0.45);
+}
+
+body.pdl-public a:hover,
+body.pdl-public a:focus {
+    color: var(--pdl-accent-link-hover);
+}
+
+/* Bootstrap-Utility-Klassen, die haeufig blaue Farben setzen */
+body.pdl-public .text-primary,
+body.pdl-public .link-primary {
+    color: var(--pdl-accent-link) !important;
+}
+
+body.pdl-public .text-secondary,
+body.pdl-public .link-secondary {
+    color: var(--pdl-muted) !important;
+}
+
+body.pdl-public .text-muted {
+    color: var(--pdl-muted) !important;
+}
+
+body.pdl-public .text-body,
+body.pdl-public .text-body-secondary,
+body.pdl-public .text-body-tertiary {
+    color: var(--pdl-text) !important;
+}
+
+body.pdl-public .text-success {
+    color: var(--pdl-success) !important;
+}
+
+body.pdl-public .text-warning {
+    color: var(--pdl-warning) !important;
+}
+
+body.pdl-public .text-danger {
+    color: var(--pdl-danger) !important;
+}
+
+body.pdl-public .text-info {
+    color: var(--pdl-info) !important;
+}
+
+body.pdl-public .text-light {
+    color: var(--pdl-text) !important;
+}
+
+body.pdl-public .text-dark {
+    color: var(--pdl-text) !important;
+}
+
+body.pdl-public .link-light,
+body.pdl-public .link-light:hover,
+body.pdl-public .link-light:focus {
+    color: var(--pdl-text) !important;
+}
+
+/* Code/kbd/pre auf gut lesbares helles Theme */
+body.pdl-public code,
+body.pdl-public pre,
+body.pdl-public samp {
+    color: #ffb3b3;
+    background-color: rgba(255, 255, 255, 0.06);
+    padding: 0.1rem 0.35rem;
+    border-radius: 0.25rem;
+}
+
+body.pdl-public kbd {
+    color: var(--pdl-bg);
+    background-color: var(--pdl-text);
+}
+
+/* Headings + emphasis */
+body.pdl-public h1,
+body.pdl-public h2,
+body.pdl-public h3,
+body.pdl-public h4,
+body.pdl-public h5,
+body.pdl-public h6,
+body.pdl-public strong,
+body.pdl-public b,
+body.pdl-public em,
+body.pdl-public i,
+body.pdl-public mark,
+body.pdl-public dt,
+body.pdl-public label {
+    color: var(--pdl-text);
+}
+
+body.pdl-public mark {
+    background-color: rgba(255, 200, 87, 0.25);
+    color: var(--pdl-text);
+}
+
+/* hr */
+body.pdl-public hr {
+    border-color: var(--pdl-border);
+    color: var(--pdl-border);
+    opacity: 1;
+}
+
+/* Navbar */
+.pdl-navbar {
+    background-color: var(--pdl-accent-strong);
+}
+
+.pdl-navbar .navbar-brand,
+.pdl-navbar .nav-link,
+.pdl-navbar .navbar-text {
+    color: #fff !important;
+}
+
+.pdl-navbar .nav-link:hover,
+.pdl-navbar .nav-link:focus {
+    color: #ffd0d0 !important;
+}
+
+.pdl-navbar .navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #fff;
+}
+
+.pdl-navbar .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255,255,255,0.85%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* Cards */
+.pdl-card {
+    background-color: var(--pdl-surface);
+    border-color: var(--pdl-border);
+    color: var(--pdl-text);
+}
+
+.pdl-card .card-body,
+.pdl-card .card-footer {
+    color: var(--pdl-text);
+}
+
+.pdl-card-header {
+    background-color: var(--pdl-accent-strong);
+    color: #fff;
+    border-bottom-color: var(--pdl-border);
+}
+
+/* List-Group in dunklen Cards */
+body.pdl-public .list-group {
+    --bs-list-group-bg: transparent;
+    --bs-list-group-color: var(--pdl-text);
+    --bs-list-group-border-color: var(--pdl-border);
+    --bs-list-group-action-color: var(--pdl-text);
+    --bs-list-group-action-hover-color: var(--pdl-text);
+    --bs-list-group-action-hover-bg: rgba(255, 255, 255, 0.06);
+    --bs-list-group-action-active-color: #fff;
+    --bs-list-group-action-active-bg: var(--pdl-accent-strong);
+}
+
+body.pdl-public .list-group-item {
+    background-color: transparent;
+    color: var(--pdl-text);
+    border-color: var(--pdl-border);
+}
+
+body.pdl-public .list-group-item-action {
+    color: var(--pdl-text);
+}
+
+body.pdl-public .list-group-item-action:hover,
+body.pdl-public .list-group-item-action:focus {
+    background-color: rgba(255, 255, 255, 0.06);
+    color: var(--pdl-text);
+}
+
+/* Tabellen */
+.pdl-table-wrapper {
+    overflow-x: auto;
+}
+
+.pdl-public .table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--pdl-text);
+    --bs-table-color-state: var(--pdl-text);
+    --bs-table-bg-state: transparent;
+    --bs-table-striped-bg: rgba(255, 255, 255, 0.05);
+    --bs-table-striped-color: var(--pdl-text);
+    --bs-table-hover-bg: rgba(255, 255, 255, 0.10);
+    --bs-table-hover-color: var(--pdl-text);
+    --bs-table-active-bg: rgba(255, 255, 255, 0.12);
+    --bs-table-active-color: var(--pdl-text);
+    --bs-table-border-color: var(--pdl-border);
+    color: var(--pdl-text);
+}
+
+.pdl-public .table thead th,
+.pdl-public .table tfoot th {
+    background-color: var(--pdl-accent-strong);
+    color: #fff;
+    border-color: var(--pdl-border);
+}
+
+.pdl-public .table tfoot td {
+    background-color: var(--pdl-surface-alt);
+    color: var(--pdl-text);
+}
+
+.pdl-public .table td,
+.pdl-public .table th {
+    border-color: var(--pdl-border);
+    vertical-align: middle;
+    color: var(--pdl-text);
+}
+
+.pdl-public .table a {
+    color: var(--pdl-accent-link);
+}
+
+.pdl-public .table a:hover,
+.pdl-public .table a:focus {
+    color: var(--pdl-accent-link-hover);
+}
+
+/* Forms */
+.pdl-public .form-control,
+.pdl-public .form-select,
+.pdl-public textarea,
+.pdl-public input[type="text"],
+.pdl-public input[type="email"],
+.pdl-public input[type="url"],
+.pdl-public input[type="password"],
+.pdl-public input[type="number"],
+.pdl-public input[type="search"],
+.pdl-public input[type="tel"],
+.pdl-public input[type="file"],
+.pdl-public select {
+    background-color: var(--pdl-surface-alt);
+    border-color: var(--pdl-border);
+    color: var(--pdl-text);
+    border-style: solid;
+    border-width: 1px;
+    border-radius: 0.25rem;
+    padding: 0.35rem 0.6rem;
+}
+
+.pdl-public input[type="submit"],
+.pdl-public input[type="reset"],
+.pdl-public input[type="button"],
+.pdl-public button[type="submit"]:not(.btn) {
+    background-color: var(--pdl-accent);
+    color: #fff;
+    border: 1px solid var(--pdl-accent-strong);
+    border-radius: 0.25rem;
+    padding: 0.35rem 0.9rem;
+    cursor: pointer;
+}
+
+.pdl-public input[type="submit"]:hover,
+.pdl-public input[type="reset"]:hover,
+.pdl-public input[type="button"]:hover {
+    background-color: var(--pdl-accent-strong);
+}
+
+.pdl-public input[type="checkbox"]:not(.form-check-input),
+.pdl-public input[type="radio"]:not(.form-check-input) {
+    accent-color: var(--pdl-accent);
+}
+
+.pdl-public .form-control:focus,
+.pdl-public .form-select:focus,
+.pdl-public textarea:focus {
+    background-color: var(--pdl-surface-alt);
+    color: var(--pdl-text);
+    border-color: var(--pdl-accent-soft);
+    box-shadow: 0 0 0 0.2rem rgba(255, 138, 138, 0.30);
+}
+
+.pdl-public .form-control::placeholder {
+    color: var(--pdl-muted);
+    opacity: 0.85;
+}
+
+.pdl-public .form-label {
+    font-weight: 600;
+    color: var(--pdl-text);
+}
+
+.pdl-public .form-text {
+    color: var(--pdl-muted) !important;
+}
+
+.pdl-public .form-check-input {
+    background-color: var(--pdl-surface-alt);
+    border-color: var(--pdl-border);
+}
+
+.pdl-public .form-check-input:checked {
+    background-color: var(--pdl-accent);
+    border-color: var(--pdl-accent);
+}
+
+.pdl-public .form-check-label {
+    color: var(--pdl-text);
+}
+
+.pdl-public .input-group-text {
+    background-color: var(--pdl-surface);
+    border-color: var(--pdl-border);
+    color: var(--pdl-text);
+}
+
+/* Buttons */
+.pdl-public .btn-primary {
+    background-color: var(--pdl-accent);
+    border-color: var(--pdl-accent);
+    color: #fff;
+}
+
+.pdl-public .btn-primary:hover,
+.pdl-public .btn-primary:focus {
+    background-color: var(--pdl-accent-strong);
+    border-color: var(--pdl-accent-strong);
+    color: #fff;
+}
+
+.pdl-public .btn-outline-light {
+    border-color: var(--pdl-text);
+    color: var(--pdl-text);
+    background-color: transparent;
+}
+
+.pdl-public .btn-outline-light:hover,
+.pdl-public .btn-outline-light:focus {
+    background-color: var(--pdl-text);
+    color: var(--pdl-bg);
+    border-color: var(--pdl-text);
+}
+
+.pdl-public .btn-outline-secondary {
+    border-color: var(--pdl-muted);
+    color: var(--pdl-muted);
+    background-color: transparent;
+}
+
+.pdl-public .btn-outline-secondary:hover,
+.pdl-public .btn-outline-secondary:focus {
+    background-color: var(--pdl-muted);
+    color: var(--pdl-bg);
+    border-color: var(--pdl-muted);
+}
+
+.pdl-public .btn-outline-danger {
+    border-color: var(--pdl-danger);
+    color: var(--pdl-danger);
+    background-color: transparent;
+}
+
+.pdl-public .btn-outline-danger:hover,
+.pdl-public .btn-outline-danger:focus {
+    background-color: var(--pdl-danger);
+    color: var(--pdl-bg);
+    border-color: var(--pdl-danger);
+}
+
+.pdl-public .btn-secondary {
+    background-color: var(--pdl-surface-alt);
+    border-color: var(--pdl-border);
+    color: var(--pdl-text);
+}
+
+.pdl-public .btn-secondary:hover,
+.pdl-public .btn-secondary:focus {
+    background-color: var(--pdl-surface);
+    border-color: var(--pdl-border);
+    color: var(--pdl-text);
+}
+
+.pdl-public .btn-link {
+    color: var(--pdl-accent-link);
+}
+
+/* Badges */
+.pdl-public .badge.text-bg-secondary {
+    background-color: var(--pdl-surface-alt) !important;
+    color: var(--pdl-text) !important;
+}
+
+.pdl-public .badge.text-bg-light {
+    background-color: var(--pdl-text) !important;
+    color: var(--pdl-bg) !important;
+}
+
+.pdl-public .badge.text-bg-success {
+    background-color: #1e6e3a !important;
+    color: #fff !important;
+}
+
+.pdl-public .badge.text-bg-warning {
+    background-color: var(--pdl-warning) !important;
+    color: #2a1f00 !important;
+}
+
+.pdl-public .badge.text-bg-danger {
+    background-color: var(--pdl-danger) !important;
+    color: #2a0000 !important;
+}
+
+.pdl-public .badge.text-bg-info {
+    background-color: var(--pdl-info) !important;
+    color: #00263a !important;
+}
+
+/* Alerts mit hohem Kontrast (heller Text auf dunklen Untergruenden) */
+.pdl-public .alert-info {
+    background-color: #0f3a4a !important;
+    color: #cdeefb !important;
+    border-color: #1e5c75 !important;
+}
+
+.pdl-public .alert-warning {
+    background-color: #4a3300 !important;
+    color: #ffe9b3 !important;
+    border-color: #806300 !important;
+}
+
+.pdl-public .alert-success {
+    background-color: #143b1f !important;
+    color: #cef0d6 !important;
+    border-color: #1e6e3a !important;
+}
+
+.pdl-public .alert-danger {
+    background-color: #4a0e0e !important;
+    color: #ffd6d6 !important;
+    border-color: #8c1f1f !important;
+}
+
+.pdl-public .alert-secondary {
+    background-color: var(--pdl-surface-alt) !important;
+    color: var(--pdl-text) !important;
+    border-color: var(--pdl-border) !important;
+}
+
+.pdl-public .alert-primary {
+    background-color: #1f3251 !important;
+    color: #c8d8f0 !important;
+    border-color: #3a5b94 !important;
+}
+
+.pdl-public .alert .alert-link {
+    color: #fff;
+    text-decoration: underline;
+    font-weight: 700;
+}
+
+.pdl-public .alert-warning .alert-link { color: #fff; }
+.pdl-public .alert-info .alert-link { color: #fff; }
+
+/* Breadcrumbs */
+.pdl-public .breadcrumb {
+    --bs-breadcrumb-divider-color: var(--pdl-muted);
+    --bs-breadcrumb-item-active-color: var(--pdl-text);
+    background-color: transparent;
+    padding: 0.25rem 0;
+    margin-bottom: 0.75rem;
+}
+
+.pdl-public .breadcrumb-item a {
+    color: var(--pdl-accent-link);
+}
+
+.pdl-public .breadcrumb-item.active {
+    color: var(--pdl-muted);
+}
+
+/* Nav-Pills (z.B. fuer Sprungnav in Settings/Templates) */
+.pdl-public .nav-pills .nav-link {
+    color: var(--pdl-text);
+    background-color: var(--pdl-surface-alt);
+}
+
+.pdl-public .nav-pills .nav-link:hover,
+.pdl-public .nav-pills .nav-link:focus {
+    background-color: var(--pdl-accent-strong);
+    color: #fff;
+}
+
+.pdl-public .nav-pills .nav-link.active,
+.pdl-public .nav-pills .show > .nav-link {
+    background-color: var(--pdl-accent);
+    color: #fff;
+}
+
+.pdl-public .nav-pills .nav-link.bg-secondary-subtle {
+    background-color: var(--pdl-surface-alt) !important;
+    color: var(--pdl-text) !important;
+}
+
+/* Footer */
+.pdl-footer {
+    background-color: var(--pdl-surface);
+    border-top: 1px solid var(--pdl-border);
+    color: var(--pdl-text);
+}
+
+.pdl-footer .text-muted {
+    color: var(--pdl-muted) !important;
+}
+
+.pdl-footer a {
+    color: var(--pdl-accent-link);
+}
+
+/* Treeview */
+.pdl-treeview {
+    color: var(--pdl-muted);
+}
+
+.pdl-treeview ul {
+    list-style: none;
+    padding-left: 1.25rem;
+}
+
+.pdl-treeview li {
+    padding: 0.15rem 0;
+}
+
+.pdl-treeview a {
+    color: var(--pdl-accent-link);
+    text-decoration: none;
+}
+
+.pdl-treeview a:hover {
+    color: var(--pdl-accent-link-hover);
+    text-decoration: underline;
+}
+
+.pdl-treeview [aria-current="page"] {
+    color: var(--pdl-text);
+    font-weight: 600;
+}
+
+/* Info-Grid */
+.pdl-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 575.98px) {
+    .pdl-info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/*
+ * Override fuer die in der DB hinterlegten Legacy-Templates, die noch alte
+ * Tabellen mit bgcolor- und cellpadding-Attributen verwenden. Die DB-Templates
+ * koennen ohne Migration ueber CSS auf Bootstrap-Look gebracht werden.
+ */
+.pdl-public .card-body table[bgcolor],
+.pdl-public .card-body table table {
+    width: 100% !important;
+    border-collapse: collapse;
+    background: transparent !important;
+    color: var(--pdl-text);
+    font-size: 0.875rem;
+}
+
+.pdl-public .card-body table[bgcolor] td,
+.pdl-public .card-body table table td,
+.pdl-public .card-body table table th,
+.pdl-public table[bgcolor] td,
+.pdl-public table[bgcolor] th {
+    background-color: transparent !important;
+    color: var(--pdl-text) !important;
+    border-bottom: 1px solid var(--pdl-border);
+    padding: 0.4rem 0.6rem !important;
+}
+
+.pdl-public table[bgcolor] {
+    background-color: transparent !important;
+    width: 100%;
+    border: 1px solid var(--pdl-border);
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+
+.pdl-public table[bgcolor] a,
+.pdl-public table table a {
+    color: var(--pdl-accent-link);
+}
+
+.pdl-public table[bgcolor] a:hover,
+.pdl-public table table a:hover {
+    color: var(--pdl-accent-link-hover);
+}
+
+.pdl-public table[bgcolor] b,
+.pdl-public table[bgcolor] strong {
+    color: var(--pdl-text);
+}
+
+/* font-Tags der Legacy-Templates: Standardfarbe entfernen */
+.pdl-public font[color] {
+    color: inherit !important;
+}
+
+.pdl-public img[border] {
+    border: none !important;
+}
+
+/*
+ * Der DB-Template-Output enthaelt teilweise verschachtelte Tabellen mit
+ * sehr engen Paddings. Wir geben ihnen einen einheitlichen Rahmen.
+ */
+.pdl-public .card-body > table:first-child {
+    margin-bottom: 0;
+}
+
+.pdl-public center {
+    text-align: center;
+}
+
+/* Visually-hidden-focusable Skip-Link */
+body.pdl-public .visually-hidden-focusable:focus,
+body.pdl-public .visually-hidden-focusable:focus-within {
+    background-color: var(--pdl-accent-strong);
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    z-index: 9999;
+    position: fixed;
+    top: 0.5rem;
+    left: 0.5rem;
+}
+
+/* Button-Group + flex-wrap fuer Mobile */
+.pdl-public .btn-group.flex-wrap > .btn {
+    margin-bottom: 0.25rem;
+}

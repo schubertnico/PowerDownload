@@ -36,7 +36,7 @@ if ($submit === 1) {
     if (empty($errors)) {
         $needs_small = ($settings['gdversion'] === 0 || ($settings['screen_autosize'] ?? '') !== 'Y');
         if (!is_uploaded_file($screen_g)) {
-            $errors['screen_g'] = 'Großer Screen wurde nicht hochgeladen.';
+            $errors['screen_g'] = 'Großer Screenshot wurde nicht hochgeladen.';
         } else {
             $err = pdl_validate_screen_upload($screen_g_file);
             if ($err !== null) {
@@ -123,9 +123,9 @@ if ($submit === 1) {
 pdl_admin_breadcrumb([
     ['title' => 'Admin-Center', 'href' => 'index.php'],
     ['title' => 'Releases', 'href' => 'or_list.php'],
-    ['title' => 'Screen hochladen'],
+    ['title' => 'Screenshot hochladen'],
 ]);
-echo '<h1 class="h3 pdl-page-title">Screen hochladen</h1>';
+echo '<h1 class="h3 pdl-page-title">Screenshot hochladen</h1>';
 
 if (!empty($errors)) {
     echo pdl_admin_alert('danger', pdl_admin_render_errors($errors));
@@ -137,12 +137,11 @@ $text_attr = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
     <?php echo csrf_input(); ?>
     <input type="hidden" name="release_id" value="<?php echo $release_id; ?>">
     <section class="card pdl-card mb-4">
-        <header class="card-header"><h2 class="h5 mb-0">Screen-Daten</h2></header>
         <div class="card-body">
             <div class="mb-3">
-                <label for="pdlScreenG" class="form-label">Grosser Screen</label>
-                <input type="file" id="pdlScreenG" name="screen_g" class="form-control<?php echo isset($errors['screen_g']) ? ' is-invalid' : ''; ?>" accept="image/jpeg" required>
-                <div class="form-text">Hier den grossen Screen auswählen (JPG).</div>
+                <label for="pdlScreenG" class="form-label">Großer Screen</label>
+                <input type="file" id="pdlScreenG" name="screen_g" class="form-control<?php echo isset($errors['screen_g']) ? ' is-invalid' : ''; ?>" accept="image/jpeg,image/png,image/webp" required>
+                <div class="form-text">Hier den großen Screenshot auswählen (JPG, PNG oder WebP).</div>
             </div>
         <?php
         if (($settings['gdversion'] ?? 0) > 0 && (($settings['screen_autosize'] ?? '') === 'Y')) {
@@ -162,7 +161,7 @@ $text_attr = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
         } else { ?>
             <div class="mb-3">
                 <label for="pdlScreenK" class="form-label">Kleiner Screen</label>
-                <input type="file" id="pdlScreenK" name="screen_k" class="form-control<?php echo isset($errors['screen_k']) ? ' is-invalid' : ''; ?>" accept="image/jpeg" required>
+                <input type="file" id="pdlScreenK" name="screen_k" class="form-control<?php echo isset($errors['screen_k']) ? ' is-invalid' : ''; ?>" accept="image/jpeg,image/png,image/webp" required>
                 <div class="form-text">Da der Server keine automatische Verkleinerung unterstützt oder Sie den kleinen Screen selbst gestalten möchten, müssen Sie hier einen kleinen Screen angeben.</div>
             </div>
         <?php } ?>
@@ -175,7 +174,7 @@ $text_attr = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
     </section>
     <div class="d-grid d-md-flex gap-2 justify-content-md-end">
         <a href="editrelease.php?release_id=<?php echo $release_id; ?>" class="btn btn-outline-light">Abbrechen</a>
-        <button type="submit" class="btn btn-primary">Screen uploaden</button>
+        <button type="submit" class="btn btn-primary">Screenshot hochladen</button>
     </div>
 </form>
 <?php

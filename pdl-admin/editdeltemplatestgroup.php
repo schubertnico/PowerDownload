@@ -12,7 +12,7 @@ $submit = isset($_GET['submit']) ? (int)$_GET['submit'] : (isset($_POST['submit'
 $tgroup = isset($_POST['tgroup']) ? $_POST['tgroup'] : array();
 $templates_post = isset($_POST['templates']) ? $_POST['templates'] : array();
 
-if($user_rights['god'] == "Y")
+if($user_rights['templates'] == "Y")
  {
   if($submit == 1)
    {
@@ -36,159 +36,137 @@ if($user_rights['god'] == "Y")
       $db_handler->sql_query("UPDATE ".$sql_table['template']." SET reihenfolge='".$reihenfolge."', name='".$name."', bez='".$bez."', eingabe='".$eingabe."', variablenname='".$variablenname."', tgroup_id='".$tgroup_id."' WHERE template_id='".$template_id."'");
       if(isset($templates_post[$i]['delete']) && $templates_post[$i]['delete'] == "Y") $db_handler->sql_query("DELETE FROM ".$sql_table['template']." WHERE template_id='".$template_id."'");
      }
-    echo "<br>Templates/Gruppen geaendert/geloescht.<br>";
+    echo pdl_admin_alert('success', '<strong>Templates/Gruppen geändert/gelöscht.</strong>');
    }
-  echo "
-<br>
-<form action=\"editdeltemplatestgroup.php?submit=1\" method=\"post\">
-<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"75%\">
-  <tr>
-    <td bgcolor=\"".htmlspecialchars($template['table_border'])."\">
-      <table border=\"0\" cellpadding=\"3\" cellspacing=\"1\" width=\"100%\">
-        <tr>
-          <td bgcolor=\"".htmlspecialchars($template['header_bg'])."\" align=\"center\" colspan=\"3\">
-            <b>Templates/Gruppen aendern/loeschen</b>
-          </td>
-        </tr>";
+
+  pdl_admin_breadcrumb([
+      ['title' => 'Admin-Center', 'href' => 'index.php'],
+      ['title' => 'System-Erweiterungen'],
+      ['title' => 'Templates/Gruppen ändern/löschen'],
+  ]);
+  echo '<h1 class="h3 pdl-page-title">Templates/Gruppen ändern/löschen</h1>';
+?>
+<form action="editdeltemplatestgroup.php?submit=1" method="post" novalidate>
+<?php
   $tgroup_count = -1;
   $templates_count = -1;
   $tgroup_res = $db_handler->sql_query("SELECT * FROM ".$sql_table['templategroup']." ORDER BY reihenfolge ASC");
   while($tgroup_row = $db_handler->sql_fetch_array($tgroup_res))
    {
     $tgroup_count++;
-    echo "
-        <tr>
-          <td bgcolor=\"".htmlspecialchars($template['footer_bg'])."\">
-            <input type=\"text\" name=\"tgroup[".$tgroup_count."][reihenfolge]\" value=\"".htmlspecialchars($tgroup_row['reihenfolge'])."\" size=\"1\">
-          </td>
-          <td bgcolor=\"".htmlspecialchars($template['footer_bg'])."\" colspan=\"2\">
-            <input type=\"hidden\" name=\"tgroup[".$tgroup_count."][tgroup_id]\" value=\"".htmlspecialchars($tgroup_row['tgroup_id'])."\">
-            <input type=\"text\" name=\"tgroup[".$tgroup_count."][name]\" value=\"".htmlspecialchars($tgroup_row['name'])."\" size=\"35\">";
-    $dodelete = true;
-    foreach($prot_tgroups as $prot_tgroup)
-     {
-      if($prot_tgroup == $tgroup_row['tgroup_id'])
-       {
-        $dodelete = false;
-        break;
-       }
-     }
-    if($dodelete == true)
-     {
-      echo "
-      ( <input type=\"checkbox\" name=\"tgroup[".$tgroup_count."][delete]\" value=\"Y\"> Loeschen )
-      ";
-     }
-    echo "      </td>
-        </tr>
-    ";
+    $is_protected_tg = false;
+    foreach($prot_tgroups as $prot_tgroup) {
+        if($prot_tgroup == $tgroup_row['tgroup_id']) { $is_protected_tg = true; break; }
+    }
+?>
+    <section class="card pdl-card mb-4">
+        <header class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="h5 mb-0">Template-Gruppe</h2>
+            <span class="badge text-bg-secondary">#<?php echo (int)$tgroup_row['tgroup_id']; ?></span>
+        </header>
+        <div class="card-body">
+            <input type="hidden" name="tgroup[<?php echo $tgroup_count; ?>][tgroup_id]" value="<?php echo (int)$tgroup_row['tgroup_id']; ?>">
+            <div class="row g-3">
+                <div class="col-12 col-md-2">
+                    <label class="form-label">Reihenfolge</label>
+                    <input type="number" name="tgroup[<?php echo $tgroup_count; ?>][reihenfolge]" class="form-control" value="<?php echo htmlspecialchars($tgroup_row['reihenfolge']); ?>">
+                </div>
+                <div class="col-12 col-md-10">
+                    <label class="form-label">Name</label>
+                    <input type="text" name="tgroup[<?php echo $tgroup_count; ?>][name]" class="form-control" value="<?php echo htmlspecialchars($tgroup_row['name']); ?>">
+                </div>
+                <?php if (!$is_protected_tg) { ?>
+                <div class="col-12">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="tgroup[<?php echo $tgroup_count; ?>][delete]" value="Y" id="tgrp_del_<?php echo $tgroup_count; ?>">
+                        <label class="form-check-label fw-bold text-danger" for="tgrp_del_<?php echo $tgroup_count; ?>">Template-Gruppe löschen</label>
+                    </div>
+                </div>
+                <?php } ?>
+            </div>
+
+            <h3 class="h6 mt-4">Templates dieser Gruppe</h3>
+<?php
     $templates_res = $db_handler->sql_query("SELECT * FROM ".$sql_table['template']." WHERE tgroup_id='".$db_handler->sql_escape_int($tgroup_row['tgroup_id'])."' ORDER BY reihenfolge ASC");
     while($templates_row = $db_handler->sql_fetch_array($templates_res))
      {
       $templates_count++;
-      $alt = alt_switch();
-      echo "
-        <tr>
-          <td bgcolor=\"".htmlspecialchars($alt)."\">
-            &nbsp;&nbsp;<input type=\"text\" name=\"templates[".$templates_count."][reihenfolge]\" value=\"".htmlspecialchars($templates_row['reihenfolge'])."\" size=\"1\">
-          </td>
-          <td bgcolor=\"".htmlspecialchars($alt)."\" colspan=\"2\">
-            <input type=\"hidden\" name=\"templates[".$templates_count."][template_id]\" value=\"".htmlspecialchars($templates_row['template_id'])."\">
-            <input type=\"text\" name=\"templates[".$templates_count."][name]\" value=\"".htmlspecialchars($templates_row['name'])."\" size=\"35\">";
-      $dodelete = true;
-      foreach($prot_templates as $prot_template)
-       {
-        if($prot_template == $templates_row['variablenname'])
-         {
-          $dodelete = false;
-          break;
-         }
-       }
-      if($dodelete == true)
-       {
-        echo "
-        ( <input type=\"checkbox\" name=\"templates[".$templates_count."][delete]\" value=\"Y\"> Loeschen )
-        ";
-       }
-      echo "</td>
-        </tr>
-        <tr>
-          <td bgcolor=\"".htmlspecialchars($alt)."\">
-            &nbsp;
-          </td>
-          <td bgcolor=\"".htmlspecialchars($alt)."\">
-            Beschreibung<br>
-            <small>Beschreibung des Templates.</small>
-          </td>
-          <td bgcolor=\"".htmlspecialchars($alt)."\">
-            <textarea cols=\"50\" rows=\"5\" name=\"templates[".$templates_count."][bez]\">".htmlspecialchars($templates_row['bez'])."</textarea>
-          </td>
-        </tr>
-        <tr>
-          <td bgcolor=\"".htmlspecialchars($alt)."\">
-            &nbsp;
-          </td>
-          <td bgcolor=\"".htmlspecialchars($alt)."\">
-            Eingabeart<br>
-            <small>Waehlen sie aus folgender Liste aus auf welche Art das Template eingegeben wird.</small>
-          </td>
-          <td bgcolor=\"".htmlspecialchars($alt)."\">
-            <select name=\"templates[".$templates_count."][eingabe]\">
-            <option value=\"textarea\">Textarea</option>
-            <option value=\"input\"".pdlif($templates_row['eingabe'] == "input"," selected","").">Input</option>
-            <option value=\"farbe\"".pdlif($templates_row['eingabe'] == "farbe"," selected","").">Farbauswahl</option>
-            </select>
-          </td>
-        </tr>
-        <tr>
-          <td bgcolor=\"".htmlspecialchars($alt)."\">
-            &nbsp;
-          </td>
-          <td bgcolor=\"".htmlspecialchars($alt)."\">
-            Variablenname<br>
-            <small>Wird im System als \$template[variablenname] verfuegbar</small>
-          </td>
-          <td bgcolor=\"".htmlspecialchars($alt)."\">";
-      if($dodelete == true) echo "<input type=\"text\" name=\"templates[".$templates_count."][variablenname]\" value=\"".htmlspecialchars($templates_row['variablenname'])."\" size=\"35\">";
-      else echo "<input type=\"hidden\" name=\"templates[".$templates_count."][variablenname]\" value=\"".htmlspecialchars($templates_row['variablenname'])."\">".htmlspecialchars($templates_row['variablenname'])." - Kann nicht geaendert werden.";
-      echo "
-          </td>
-        </tr>
-        <tr>
-          <td bgcolor=\"".htmlspecialchars($alt)."\">
-            &nbsp;
-          </td>
-          <td bgcolor=\"".htmlspecialchars($alt)."\">
-            Templategruppe<br>
-            <small>zu welcher Templategruppe gehoert das Template?</small>
-          </td>
-          <td bgcolor=\"".htmlspecialchars($alt)."\">
-            <select name=\"templates[".$templates_count."][tgroup_id]\">";
-      $tgroup2_res = $db_handler->sql_query("SELECT * FROM ".$sql_table['templategroup']." ORDER BY reihenfolge ASC");
-      while($tgroup2_row = $db_handler->sql_fetch_array($tgroup2_res))
-       {
-        echo "<option value=\"".htmlspecialchars($tgroup2_row['tgroup_id'])."\"".pdlif($templates_row['tgroup_id'] == $tgroup2_row['tgroup_id']," selected","").">".htmlspecialchars($tgroup2_row['name'])."</option>";
-       }
-      echo "        </select>
-          </td>
-        </tr>
-      ";
+      $is_protected_t = false;
+      foreach($prot_templates as $prot_template) {
+        if($prot_template == $templates_row['variablenname']) { $is_protected_t = true; break; }
+      }
+?>
+            <div class="card pdl-card mb-3 <?php echo $is_protected_t ? '' : 'pdl-danger-action'; ?>">
+                <div class="card-body">
+                    <input type="hidden" name="templates[<?php echo $templates_count; ?>][template_id]" value="<?php echo (int)$templates_row['template_id']; ?>">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-2">
+                            <label class="form-label">Reihenfolge</label>
+                            <input type="number" name="templates[<?php echo $templates_count; ?>][reihenfolge]" class="form-control form-control-sm" value="<?php echo htmlspecialchars($templates_row['reihenfolge']); ?>">
+                        </div>
+                        <div class="col-12 col-md-10">
+                            <label class="form-label">Name</label>
+                            <input type="text" name="templates[<?php echo $templates_count; ?>][name]" class="form-control form-control-sm" value="<?php echo htmlspecialchars($templates_row['name']); ?>">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Beschreibung</label>
+                            <textarea name="templates[<?php echo $templates_count; ?>][bez]" class="form-control form-control-sm" rows="3"><?php echo htmlspecialchars($templates_row['bez']); ?></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Eingabeart</label>
+                            <select name="templates[<?php echo $templates_count; ?>][eingabe]" class="form-select form-select-sm">
+                                <option value="textarea">Textarea</option>
+                                <option value="input"<?php echo pdlif($templates_row['eingabe'] == "input"," selected",""); ?>>Input</option>
+                                <option value="farbe"<?php echo pdlif($templates_row['eingabe'] == "farbe"," selected",""); ?>>Farbauswahl</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Variablenname</label>
+                            <?php if (!$is_protected_t) { ?>
+                                <input type="text" name="templates[<?php echo $templates_count; ?>][variablenname]" class="form-control form-control-sm" value="<?php echo htmlspecialchars($templates_row['variablenname']); ?>">
+                            <?php } else { ?>
+                                <input type="hidden" name="templates[<?php echo $templates_count; ?>][variablenname]" value="<?php echo htmlspecialchars($templates_row['variablenname']); ?>">
+                                <p class="form-control-plaintext"><code><?php echo htmlspecialchars($templates_row['variablenname']); ?></code> <small class="text-muted">(geschuetzt)</small></p>
+                            <?php } ?>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Templategruppe</label>
+                            <select name="templates[<?php echo $templates_count; ?>][tgroup_id]" class="form-select form-select-sm">
+                            <?php
+                            $tgroup2_res = $db_handler->sql_query("SELECT * FROM ".$sql_table['templategroup']." ORDER BY reihenfolge ASC");
+                            while($tgroup2_row = $db_handler->sql_fetch_array($tgroup2_res)) {
+                                echo '<option value="'.htmlspecialchars($tgroup2_row['tgroup_id']).'"'.pdlif($templates_row['tgroup_id'] == $tgroup2_row['tgroup_id'],' selected','').'>'.htmlspecialchars($tgroup2_row['name']).'</option>';
+                            }
+                            ?>
+                            </select>
+                        </div>
+                        <?php if (!$is_protected_t) { ?>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="templates[<?php echo $templates_count; ?>][delete]" value="Y" id="tpl_del_<?php echo $templates_count; ?>">
+                                <label class="form-check-label fw-bold text-danger" for="tpl_del_<?php echo $templates_count; ?>">Template löschen</label>
+                            </div>
+                        </div>
+                        <?php } ?>
+                    </div>
+                </div>
+            </div>
+<?php
      }
-
+?>
+        </div>
+    </section>
+<?php
    }
-  echo "      <tr>
-          <td bgcolor=\"".htmlspecialchars($template['footer_bg'])."\" align=\"center\" colspan=\"3\">
-            <input type=\"submit\" value=\"Templates/Gruppen aendern/loeschen\">
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
-</form>";
-
+?>
+    <div class="d-grid d-md-flex gap-2 justify-content-md-end">
+        <a href="templates.php" class="btn btn-outline-light">Abbrechen</a>
+        <button type="submit" class="btn btn-primary">Templates/Gruppen speichern</button>
+    </div>
+</form>
+<?php
  }
 else
- { echo "Sie haben keine Berechtigung diese Seite zu sehen"; }
+ { echo pdl_admin_alert('warning', 'Sie haben keine Berechtigung diese Seite zu sehen.'); }
 include("footer.inc.php");
 ?>

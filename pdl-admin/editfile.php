@@ -25,100 +25,73 @@ if($user_rights['editfiles'] == "Y")
     $safe_mirror = $db_handler->sql_escape_string($mirror);
 
     $db_handler->sql_query("UPDATE " . $sql_table['files'] . " SET name='" . $safe_name . "', downloads=" . $safe_downloads . ", size=" . $safe_size . ", url='" . $safe_url . "', mirror='" . $safe_mirror . "' WHERE file_id=" . $safe_file_id);
-    echo "<br>done...<br><a href=\"editrelease.php?release_id=" . htmlspecialchars((string)$release_id) . "\">Zurueck zum Release</a>";
+    echo pdl_admin_alert('success', '<strong>Datei wurde aktualisiert.</strong>');
+    echo '<a class="btn btn-primary" href="editrelease.php?release_id=' . (int)$release_id . '">Zurück zum Release</a>';
    }
   else
    {
+    pdl_admin_breadcrumb([
+        ['title' => 'Admin-Center', 'href' => 'index.php'],
+        ['title' => 'Releases', 'href' => 'or_list.php'],
+        ['title' => 'Datei bearbeiten'],
+    ]);
+    echo '<h1 class="h3 pdl-page-title">Datei bearbeiten</h1>';
+
     $safe_file_id = $db_handler->sql_escape_int($file_id);
     $getfile = $db_handler->sql_fetch_array($db_handler->sql_query("SELECT * FROM " . $sql_table['files'] . " WHERE file_id=" . $safe_file_id));
-    ?>
-<br><br>
-<form action="editfile.php?submit=1" method="post">
-<input type="hidden" name="file_id" value="<?php echo htmlspecialchars((string)$file_id); ?>">
-<table border="0" cellpadding="0" cellspacing="0" width="65%">
-  <tr>
-    <td bgcolor="<?php echo htmlspecialchars($template['table_border']); ?>">
-      <table border="0" cellpadding="3" cellspacing="1" width="100%">
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($template['header_bg']); ?>" colspan="2" align="center">
-            <b>Datei bearbeiten</b>
-          </td>
-        </tr>
-        <?php $alt = alt_switch(); ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            Name<br>
-            <small>Wird beim Download Link angezeigt</small>
-          </td>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <input type="text" name="name" size="35" value="<?php echo htmlspecialchars($getfile['name']); ?>">
-          </td>
-        </tr>
-        <?php $alt = alt_switch(); ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            Downloads<br>
-            <small>Wie oft die Datei heruntergeladen wurde</small>
-          </td>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <input type="text" name="downloads" size="35" value="<?php echo htmlspecialchars((string)$getfile['downloads']); ?>">
-          </td>
-        </tr>
-        <?php $alt = alt_switch(); ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            Groesse<br>
-            <small>Dateigroesse in Byte</small>
-          </td>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <input type="text" name="size" size="35" value="<?php echo htmlspecialchars((string)$getfile['size']); ?>">
-          </td>
-        </tr>
-        <?php $alt = alt_switch(); ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            URL<br>
-            <small>URL zur Datei</small>
-          </td>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <input type="text" name="url" size="35" value="<?php echo htmlspecialchars($getfile['url']); ?>">
-          </td>
-        </tr>
-        <?php $alt = alt_switch(); ?>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            Fungiert als Mirror von<br>
-            <small>Geben sie hier die Datei an, dessen Mirror diese Datei darstellen soll.</small>
-          </td>
-          <td bgcolor="<?php echo htmlspecialchars($alt); ?>">
-            <select name="mirror">
-            <option value="0">Kein Mirror</option>
-            <?php
-            $safe_release_id = $db_handler->sql_escape_int($getfile['release_id']);
-            $safe_file_id = $db_handler->sql_escape_int($file_id);
-            $mirror_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['files'] . " WHERE release_id=" . $safe_release_id . " AND mirror='0' AND file_id!=" . $safe_file_id);
-            while($mirror_row = $db_handler->sql_fetch_array($mirror_res))
-             {
-              echo "<option value=\"" . htmlspecialchars((string)$mirror_row['file_id']) . "\"" . pdlif($mirror_row['file_id'] == $getfile['mirror'], " selected", "") . ">" . htmlspecialchars($mirror_row['name']) . "</option>";
-             }
-            ?>
-            </select>
-          </td>
-        </tr>
-        <tr>
-          <td bgcolor="<?php echo htmlspecialchars($template['footer_bg']); ?>" colspan="2" align="center">
-            <input type="submit" value="Datei editieren">
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
+?>
+<form action="editfile.php?submit=1" method="post" novalidate>
+    <input type="hidden" name="file_id" value="<?php echo (int)$file_id; ?>">
+    <section class="card pdl-card mb-4">
+        <header class="card-header"><h2 class="h5 mb-0">Datei-Daten</h2></header>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="pdlEdFName" class="form-label">Name</label>
+                <input type="text" id="pdlEdFName" name="name" class="form-control" required value="<?php echo htmlspecialchars($getfile['name']); ?>">
+                <div class="form-text">Wird beim Download-Link angezeigt.</div>
+            </div>
+            <div class="mb-3">
+                <label for="pdlEdFDls" class="form-label">Downloads</label>
+                <input type="number" min="0" id="pdlEdFDls" name="downloads" class="form-control" value="<?php echo htmlspecialchars((string)$getfile['downloads']); ?>">
+                <div class="form-text">Wie oft die Datei heruntergeladen wurde.</div>
+            </div>
+            <div class="mb-3">
+                <label for="pdlEdFSize" class="form-label">Größe</label>
+                <input type="number" min="0" id="pdlEdFSize" name="size" class="form-control" value="<?php echo htmlspecialchars((string)$getfile['size']); ?>">
+                <div class="form-text">Dateigröße in Byte.</div>
+            </div>
+            <div class="mb-3">
+                <label for="pdlEdFUrl" class="form-label">URL</label>
+                <input type="text" id="pdlEdFUrl" name="url" class="form-control" value="<?php echo htmlspecialchars($getfile['url']); ?>" required>
+                <div class="form-text">URL zur Datei.</div>
+            </div>
+            <div class="mb-3">
+                <label for="pdlEdFMirror" class="form-label">Fungiert als Mirror von</label>
+                <select id="pdlEdFMirror" name="mirror" class="form-select">
+                    <option value="0">Kein Mirror</option>
+                    <?php
+                    $safe_release_id = $db_handler->sql_escape_int($getfile['release_id']);
+                    $safe_file_id_2 = $db_handler->sql_escape_int($file_id);
+                    $mirror_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['files'] . " WHERE release_id=" . $safe_release_id . " AND mirror='0' AND file_id!=" . $safe_file_id_2);
+                    while($mirror_row = $db_handler->sql_fetch_array($mirror_res))
+                     {
+                      echo '<option value="' . htmlspecialchars((string)$mirror_row['file_id']) . '"' . pdlif($mirror_row['file_id'] == $getfile['mirror'], ' selected', '') . '>' . htmlspecialchars($mirror_row['name']) . '</option>';
+                     }
+                    ?>
+                </select>
+                <div class="form-text">Geben Sie hier die Datei an, dessen Mirror diese Datei darstellen soll.</div>
+            </div>
+        </div>
+    </section>
+    <div class="d-grid d-md-flex gap-2 justify-content-md-end">
+        <a href="editrelease.php?release_id=<?php echo (int)$getfile['release_id']; ?>" class="btn btn-outline-light">Abbrechen</a>
+        <button type="submit" class="btn btn-primary">Änderungen speichern</button>
+    </div>
 </form>
-    <?php
+<?php
    }
  }
 else
- { echo "Sie haben keine Berechtigung diese Seite zu sehen"; }
+ { echo pdl_admin_alert('warning', 'Sie haben keine Berechtigung diese Seite zu sehen.'); }
 include("footer.inc.php");
 ?>

@@ -41,7 +41,7 @@ $pdl_admin_script_file = htmlspecialchars((string)($settings['script_file'] ?? '
         <div class="d-none d-lg-flex align-items-center ms-auto">
             <?php if ($user_details) { ?>
             <span class="navbar-text me-3">Hallo <strong><?php echo $pdl_admin_user; ?></strong></span>
-            <a class="btn btn-sm btn-outline-light me-2" href="../<?php echo $pdl_admin_script_file; ?>usercenter=profil">Profil</a>
+            <a class="btn btn-sm btn-outline-light me-2" href="../<?php echo $pdl_admin_script_file; ?>usercenter=profil&from=admin">Profil</a>
             <a class="btn btn-sm btn-outline-light me-2" href="../<?php echo $pdl_admin_script_file; ?>">Zur Webseite</a>
             <a class="btn btn-sm btn-light" href="index.php?logout=1">Logout</a>
             <?php } else { ?>
@@ -58,35 +58,34 @@ $pdl_admin_script_file = htmlspecialchars((string)($settings['script_file'] ?? '
     </div>
     <div class="offcanvas-body p-0">
         <?php if ($user_details) { ?>
-        <div class="d-lg-none px-3 py-2 border-bottom border-secondary">
+        <div class="d-lg-none px-3 py-2 border-bottom border-secondary" aria-hidden="true">
             Hallo <strong><?php echo $pdl_admin_user; ?></strong><br>
             <a href="index.php?logout=1" class="link-light">Logout</a> &middot;
-            <a href="../<?php echo $pdl_admin_script_file; ?>usercenter=profil" class="link-light">Profil</a>
+            <a href="../<?php echo $pdl_admin_script_file; ?>usercenter=profil&from=admin" class="link-light">Profil</a>
         </div>
         <?php } ?>
         <nav class="pdl-admin-nav" aria-label="Admin-Bereiche">
             <?php
             $master_if = false;
             menu_topic(($user_rights['adminaccess'] ?? '') == "Y","Nützliches");
-            menu_link(($user_rights['adminaccess'] ?? '') == "Y","Ersetzungen anzeigen","showreplacements.php");
             menu_link(($user_rights['templates'] ?? '') == "Y","Template-Variablen anzeigen","showtempvars.php");
             menu_close();
             menu_topic(($user_rights['adminaccess'] ?? '') == "Y","Releases");
             menu_link(($settings['ftp_on'] ?? '') == "Y" && function_exists("ftp_connect"),"FTP Browser/Upload","ftp_browser.php");
-            menu_link(($user_rights['adminaccess'] ?? '') == "Y","hinzufügen","addrelease.php");
-            menu_link(($user_rights['editfiles'] ?? '') == "Y" || ($user_rights['delfiles'] ?? '') == "Y","ändern/löschen","or_list.php");
+            menu_link(($user_rights['adminaccess'] ?? '') == "Y","Release hinzufügen","addrelease.php");
+            menu_link(($user_rights['editfiles'] ?? '') == "Y" || ($user_rights['delfiles'] ?? '') == "Y","Release ändern/löschen","or_list.php");
             menu_close();
             menu_topic(($user_rights['adddirs'] ?? '') == "Y" || ($user_rights['editdirs'] ?? '') == "Y" || ($user_rights['deldirs'] ?? '') == "Y", "Ordner");
-            menu_link(($user_rights['adddirs'] ?? '') == "Y","hinzufügen","adddir.php");
-            menu_link(($user_rights['editdirs'] ?? '') == "Y" || ($user_rights['deldirs'] ?? '') == "Y","ändern/löschen","or_list.php");
+            menu_link(($user_rights['adddirs'] ?? '') == "Y","Ordner hinzufügen","adddir.php");
+            menu_link(($user_rights['editdirs'] ?? '') == "Y" || ($user_rights['deldirs'] ?? '') == "Y","Ordner ändern/löschen","or_list.php");
             menu_close();
             menu_topic(($user_rights['edituser'] ?? '') == "Y" || ($user_rights['deluser'] ?? '') == "Y","User");
             menu_link(($user_rights['edituser'] ?? '') == "Y" || ($user_rights['deluser'] ?? '') == "Y","Userliste / Suche","users.php");
             menu_link(($user_rights['edituser'] ?? '') == "Y" && ($user_rights['deluser'] ?? '') == "Y","Usergruppe hinzufügen","addugroup.php");
             menu_link(($user_rights['edituser'] ?? '') == "Y" && ($user_rights['deluser'] ?? '') == "Y","Usergruppe ändern/löschen","editdelugroup.php");
             menu_close();
-            menu_topic(($user_rights['writeletter'] ?? '') == "Y","Newsletter");
-            menu_link(($user_rights['writeletter'] ?? '') == "Y","Newsletter generieren/senden","makeletter.php");
+            menu_topic(($user_rights['adminaccess'] ?? '') == "Y","Newsletter");
+            menu_link(($user_rights['adminaccess'] ?? '') == "Y","Newsletter generieren/senden","makeletter.php");
             menu_close();
             menu_topic(($user_rights['templates'] ?? '') == "Y" || ($user_rights['replacements'] ?? '') == "Y","Vorlagen und Ersetzungen");
             menu_link(($user_rights['replacements'] ?? '') == "Y","Ersetzungen anzeigen","showreplacements.php");
@@ -94,22 +93,22 @@ $pdl_admin_script_file = htmlspecialchars((string)($settings['script_file'] ?? '
             menu_link(($user_rights['replacements'] ?? '') == "Y","Ersetzung löschen","delreplacement.php");
             menu_link(($user_rights['templates'] ?? '') == "Y","Vorlagen bearbeiten","templates.php");
             menu_close();
-            menu_topic(($user_rights['god'] ?? '') == "Y","System");
-            menu_link(($user_rights['god'] ?? '') == "Y","Settings","settings.php");
-            menu_link(($user_rights['god'] ?? '') == "Y","Datenbank-Backup","backup.php");
-            menu_link(($user_rights['god'] ?? '') == "Y","Backup ausführen","dobackup.php");
-            menu_link(($user_rights['god'] ?? '') == "Y","Datenbank optimieren","optimize.php");
-            menu_link(($user_rights['god'] ?? '') == "Y","Download-Datenbank zurücksetzen","reset.php");
+            menu_topic(($user_rights['settings'] ?? '') == "Y" || ($user_rights['backup'] ?? '') == "Y","System");
+            menu_link(($user_rights['settings'] ?? '') == "Y","Settings","settings.php");
+            menu_link(($user_rights['backup'] ?? '') == "Y","Datenbank-Backup","backup.php");
+            menu_link(($user_rights['backup'] ?? '') == "Y","Backup ausführen","dobackup.php");
+            menu_link(($user_rights['backup'] ?? '') == "Y","Datenbank optimieren","optimize.php");
+            menu_link(($user_rights['backup'] ?? '') == "Y","Download-Datenbank zurücksetzen","reset.php");
             menu_close();
-            menu_topic(($user_rights['god'] ?? '') == "Y","System-Erweiterungen");
-            menu_link(($user_rights['god'] ?? '') == "Y","Setting hinzufügen","addsettings.php");
-            menu_link(($user_rights['god'] ?? '') == "Y","Setting-Gruppe hinzufügen","addsgroup.php");
-            menu_link(($user_rights['god'] ?? '') == "Y","Settings/Gruppen ändern/löschen","editdelsettingssgroup.php");
-            menu_link(($user_rights['god'] ?? '') == "Y","Template hinzufügen","addtemplate.php");
-            menu_link(($user_rights['god'] ?? '') == "Y","Template-Gruppe hinzufügen","addtgroup.php");
-            menu_link(($user_rights['god'] ?? '') == "Y","Template/Gruppen ändern/löschen","editdeltemplatestgroup.php");
-            menu_link(($user_rights['god'] ?? '') == "Y","Userrechte hinzufügen","adduright.php");
-            menu_link(($user_rights['god'] ?? '') == "Y","Userrechte ändern/löschen","editdeluright.php");
+            menu_topic(($user_rights['settings'] ?? '') == "Y" || ($user_rights['templates'] ?? '') == "Y" || ($user_rights['adminaccess'] ?? '') == "Y","System-Erweiterungen");
+            menu_link(($user_rights['settings'] ?? '') == "Y","Setting hinzufügen","addsettings.php");
+            menu_link(($user_rights['settings'] ?? '') == "Y","Setting-Gruppe hinzufügen","addsgroup.php");
+            menu_link(($user_rights['settings'] ?? '') == "Y","Settings/Gruppen ändern/löschen","editdelsettingssgroup.php");
+            menu_link(($user_rights['templates'] ?? '') == "Y","Template hinzufügen","addtemplate.php");
+            menu_link(($user_rights['templates'] ?? '') == "Y","Template-Gruppe hinzufügen","addtgroup.php");
+            menu_link(($user_rights['templates'] ?? '') == "Y","Template/Gruppen ändern/löschen","editdeltemplatestgroup.php");
+            menu_link(($user_rights['adminaccess'] ?? '') == "Y","Userrechte hinzufügen","adduright.php");
+            menu_link(($user_rights['adminaccess'] ?? '') == "Y","Userrechte ändern/löschen","editdeluright.php");
             menu_close();
             ?>
         </nav>
