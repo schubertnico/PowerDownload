@@ -2,7 +2,6 @@
 # einem Webspace gebraucht wird. Entwicklungswerkzeuge bleiben im Repository.
 /.docker                    export-ignore
 /.github                    export-ignore
-/.ralph-loop                export-ignore
 /.php-cs-fixer.dist.php     export-ignore
 /.gitattributes             export-ignore
 /.gitignore                 export-ignore
