@@ -155,6 +155,10 @@ pdl-inc/pdl_config.local.inc.php
 pdl-inc/pdl_config.prod.inc.php
 pdl-inc/pdl_config.live.inc.php
 
+# Web-Installer: Zugangsdaten und Sperrdatei (logs/install.lock deckt /logs/* ab)
+pdl-inc/pdl_config.local.php
+pdl-inc/install.lock
+
 # Zertifikate, Schlüssel, Credentials
 *.key
 *.pem
@@ -204,8 +208,14 @@ backup.sql
 # Screenshots, die User hochladen (nur Verzeichnis tracken, kein Inhalt)
 /pdl-gfx/screens/*
 !/pdl-gfx/screens/.gitkeep
+!/pdl-gfx/screens/.htaccess
+!/pdl-gfx/screens/index.html
 /pdl-gfx/uploads/*
 !/pdl-gfx/uploads/.gitkeep
+# Hochgeladene Download-Dateien (nur Schutzdateien tracken)
+/pdl-files/*
+!/pdl-files/.htaccess
+!/pdl-files/index.html
 
 # Wartungsmodus-Marker
 .maintenance
@@ -217,3 +227,4 @@ backup.sql
 /todos/
 TODO.local.md
 NOTES.local.md
+.build/

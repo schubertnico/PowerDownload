@@ -59,13 +59,36 @@ class FunctionsHelperTest extends TestCase
     }
 
     #[Test]
-    public function userReturnsLinkWithEmail(): void
+    public function userHidesEmailInPublicArea(): void
     {
-        global $users;
+        // P41: Im öffentlichen Bereich keine E-Mail-Adresse als mailto-Link
+        global $users, $inadmin;
+        $inadmin = 0;
+        $users[1] = ['nick' => 'TestUser', 'email' => 'test@test.com', 'icq' => 0, 'homepage' => ''];
+        $result = user(1);
+        $this->assertStringNotContainsString('mailto:', $result);
+        $this->assertSame('TestUser', $result);
+    }
+
+    #[Test]
+    public function userReturnsMailtoLinkInAdmin(): void
+    {
+        global $users, $inadmin;
+        $inadmin = 1;
         $users[1] = ['nick' => 'TestUser', 'email' => 'test@test.com', 'icq' => 0, 'homepage' => ''];
         $result = user(1);
         $this->assertStringContainsString('mailto:', $result);
         $this->assertStringContainsString('TestUser', $result);
+        $inadmin = 0;
+    }
+
+    #[Test]
+    public function userDoesNotLinkUnsafeHomepage(): void
+    {
+        global $users, $inadmin;
+        $inadmin = 0;
+        $users[1] = ['nick' => 'TestUser', 'email' => '', 'homepage' => 'javascript:alert(1)'];
+        $this->assertSame('TestUser', user(1));
     }
 
     #[Test]

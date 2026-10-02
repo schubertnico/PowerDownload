@@ -12,6 +12,7 @@ use PHPUnit\Framework\Attributes\Test;
  *
  * Wird übersprungen, wenn die App nicht erreichbar ist (z.B. in CI ohne Docker).
  * Setzt die Umgebungsvariable POWERDOWNLOAD_URL = http://localhost:8092
+ * (Anmeldung: POWERDOWNLOAD_ADMIN_NICK / POWERDOWNLOAD_ADMIN_PW, Vorgabe admin/admin123)
  */
 class AdminCsrfTest extends TestCase
 {
@@ -43,7 +44,7 @@ class AdminCsrfTest extends TestCase
     {
         $resp = $this->httpPost(
             $this->baseUrl . '/pdl-admin/index.php?login=1',
-            ['nick' => 'admin', 'pw' => 'admin123']
+            ['nick' => (string) (getenv('POWERDOWNLOAD_ADMIN_NICK') ?: 'admin'), 'pw' => (string) (getenv('POWERDOWNLOAD_ADMIN_PW') ?: 'admin123')]
         );
         if ($resp === null) {
             $this->markTestSkipped('Login-Request schlug fehl');

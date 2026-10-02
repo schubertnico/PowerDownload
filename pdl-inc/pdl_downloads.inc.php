@@ -17,6 +17,8 @@ declare(strict_types=1);
 /** @psalm-suppress InvalidGlobal */
 global $rendertime1;
 
+require_once __DIR__ . '/pdl_locks.inc.php';
+
 // Initialize variables with defaults
 /** @psalm-suppress TypeDoesNotContainNull */
 $ordner_id = $ordner_id ?? 0;
@@ -51,13 +53,17 @@ if (!empty($release_id) || !empty($screen_id)) {
         )
     );
 
+    if ($release !== null && ($release['released'] ?? 'Y') !== 'Y') {
+        // Versteckte Releases erscheinen auch nicht im Navigationspfad.
+        $release = null;
+    }
     if ($release !== null) {
         $sordner_id = (int) $release['ordner_id'];
     }
     $isindex = false;
 }
 
-if (!empty($wrong_referer) || !empty($wrong_rights) || !empty($usercenter) || !empty($show_search) || !empty($show_stats)) {
+if (!empty($wrong_referer) || !empty($wrong_rights) || !empty($usercenter) || !empty($show_search) || !empty($show_stats) || $pdl_download_missing) {
     $isindex = false;
 }
 
@@ -79,7 +85,7 @@ if (($settings['enable_treeview'] ?? 'N') === "Y") {
     /** @psalm-suppress RedundantCondition */
     if ($isindex === true) {
         echo '<span aria-current="page">Index</span>';
-    } elseif ($isindex === false && $ordner_id === 0) {
+    } elseif (($isindex === false && $ordner_id === 0) || (isset($pdl_current_ordner) && $pdl_current_ordner === false)) {
         echo '<a href="' . $script_file_escaped . 'ordner_id=0">Index</a>';
     } else {
         treeview_pfeil($sordner_id);
@@ -105,7 +111,17 @@ $allowed_modules = [
     'comments' => 'pdl-inc/pdl_ucomments.modul.php',
 ];
 
-if (!empty($screen_id)) {
+if ($pdl_download_missing) {
+    $back_link = !empty($pdl_download_release_id)
+        ? '<a class="btn btn-outline-light" href="' . $script_file_escaped . 'release_id=' . $pdl_download_release_id . '">Zurück zum Release</a>'
+        : '<a class="btn btn-outline-light" href="' . $script_file_escaped . '">Zur Startseite</a>';
+    echo '<section class="card pdl-card mb-4" id="pdlDownloadMissing" role="alert">'
+        . '<div class="card-body">'
+        . '<h2 class="h5">Datei nicht gefunden</h2>'
+        . '<p class="mb-3">Diese Datei ist nicht (mehr) verfügbar. Möglicherweise wurde sie entfernt oder das Release ist nicht öffentlich.</p>'
+        . '<div class="d-flex flex-wrap gap-2">' . $back_link . '</div>'
+        . '</div></section>';
+} elseif (!empty($screen_id)) {
     include("pdl-inc/pdl_showscreen.modul.php");
 } elseif (!empty($usercenter)) {
     // Path traversal protection using whitelist
@@ -122,61 +138,78 @@ if (!empty($screen_id)) {
 } elseif (!empty($show_stats)) {
     include("pdl-inc/pdl_stats.modul.php");
 } elseif (!empty($wrong_referer)) {
-    echo pdl_alert('danger', '<strong>Es wurde illegal auf die Datei verlinkt.</strong>');
+    echo pdl_alert('danger', '<strong>Direktlinks auf Dateien sind nicht erlaubt.</strong> Bitte laden Sie die Datei über die Release-Seite herunter.');
 } elseif (!empty($wrong_rights)) {
-    echo pdl_alert('danger', '<strong>Sie haben keine Berechtigung eine Datei zu downloaden.</strong>');
+    // Rücksprungziel: das Release der Datei (vom Header mitgegeben). Nach der
+    // Anmeldung geht es dorthin zurück, siehe pdl_header.inc.php.
+    $rights_back = pdl_back_release($_GET['back_release'] ?? null);
+    $rights_hint = !empty($user_details)
+        ? 'Ihre Benutzergruppe darf keine Dateien herunterladen.'
+        : 'Bitte <a class="alert-link" id="pdlRightsLogin" href="' . $script_file_escaped . 'usercenter=login'
+            . htmlspecialchars(pdl_back_release_query($rights_back), ENT_QUOTES, 'UTF-8') . '">melden Sie sich an</a>, um Dateien herunterzuladen.';
+    echo '<div id="pdlWrongRights">' . pdl_alert('danger', '<strong>Sie dürfen diese Datei nicht herunterladen.</strong> ' . $rights_hint) . '</div>';
+    if ($rights_back > 0) {
+        echo '<p><a class="btn btn-outline-light" id="pdlRightsBack" href="' . $script_file_escaped . 'release_id=' . $rights_back . '">Zurück zum Release</a></p>';
+    }
 } else {
     include("pdl-inc/pdl_ordner.modul.php");
 }
 
-// Admin Links
+// Admin Links: Auswahlliste mit den Einträgen, für die der Besucher das
+// jeweilige Recht hat (wie in den Seiten des Adminbereichs). Ohne Eintrag
+// erscheint keine Liste.
 if (($settings['enable_extrernadmin'] ?? 'N') === "Y" && ($user_rights['adminaccess'] ?? 'N') === "Y") {
-    if (!empty($release_id) && empty($screen_id) && !empty($release_exists)) {
-        if (($user_rights['editfiles'] ?? 'N') === "Y" && ($user_rights['delfiles'] ?? 'N') === "Y") {
-            echo '<div class="d-flex justify-content-end my-3">'
-                . '<label class="form-label me-2 mb-0 align-self-center" for="pdlAdminOptionsRelease">Admin-Optionen</label>'
-                . '<select id="pdlAdminOptionsRelease" class="form-select form-select-sm w-auto" name="admin"'
-                . ' onchange="if(this.value){window.location=(\'pdl-admin/\'+this.value);}">'
-                . '<option value="">Bitte wählen</option>';
-
-            $release_id_escaped = (int) $release_id;
-            if (($user_rights['editfiles'] ?? 'N') === "Y") {
-                echo '<option value="editrelease.php?release_id=' . $release_id_escaped . '">Release editieren</option>';
-                echo '<option value="addfile.php?release_id=' . $release_id_escaped . '">Datei hinzufügen</option>';
-                echo '<option value="addscreen.php?release_id=' . $release_id_escaped . '">Screenshot hochladen</option>';
-            }
-
-            if (($user_rights['delfiles'] ?? 'N') === "Y") {
-                echo '<option value="delrelease.php?release_id=' . $release_id_escaped . '">Release löschen</option>';
-            }
-
-            echo '</select></div>';
+    $has_right = static fn (string $right): bool => ($user_rights[$right] ?? 'N') === "Y";
+    $admin_select = static function (string $id, array $options): string {
+        if ($options === []) {
+            return '';
         }
+        $html = '<div class="d-flex justify-content-end my-3">'
+            . '<label class="form-label me-2 mb-0 align-self-center" for="' . $id . '">Admin-Optionen</label>'
+            . '<select id="' . $id . '" class="form-select form-select-sm w-auto" name="admin"'
+            . ' onchange="if(this.value){window.location=(\'pdl-admin/\'+this.value);}">'
+            . '<option value="">Bitte wählen</option>';
+        foreach ($options as $value => $label) {
+            $html .= '<option value="' . htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') . '">' . $label . '</option>';
+        }
+        return $html . '</select></div>';
+    };
+
+    if (!empty($release_id) && empty($screen_id) && !empty($release_exists)) {
+        $release_id_escaped = (int) $release_id;
+        $release_options = [];
+        if ($has_right('editfiles')) {
+            $release_options['editrelease.php?release_id=' . $release_id_escaped] = 'Release bearbeiten';
+        }
+        if ($has_right('addfiles') || $has_right('editfiles')) {
+            $release_options['addfile.php?release_id=' . $release_id_escaped] = 'Datei hinzufügen';
+            $release_options['addscreen.php?release_id=' . $release_id_escaped] = 'Screenshot hochladen';
+        }
+        if ($has_right('delfiles')) {
+            $release_options['delrelease.php?release_id=' . $release_id_escaped] = 'Release löschen';
+        }
+        echo $admin_select('pdlAdminOptionsRelease', $release_options);
     } else {
         if (empty($screen_id) && empty($usercenter) && empty($wrong_referer) &&
-            empty($wrong_rights) && empty($show_search) && empty($show_stats)) {
+            empty($wrong_rights) && empty($show_search) && empty($show_stats) &&
+            !$pdl_download_missing && !(isset($pdl_current_ordner) && $pdl_current_ordner === false)) {
 
-            $ordner_id_escaped = $ordner_id;
-            echo '<div class="d-flex justify-content-end my-3">'
-                . '<label class="form-label me-2 mb-0 align-self-center" for="pdlAdminOptionsOrdner">Admin-Optionen</label>'
-                . '<select id="pdlAdminOptionsOrdner" class="form-select form-select-sm w-auto" name="admin"'
-                . ' onchange="if(this.value){window.location=(\'pdl-admin/\'+this.value);}">'
-                . '<option value="">Bitte wählen</option>'
-                . '<option value="addfile.php?ordner_id=' . $ordner_id_escaped . '">Datei hinzufügen</option>';
-
-            if (($user_rights['adddirs'] ?? 'N') === "Y") {
-                echo '<option value="adddir.php?ordner_id=' . $ordner_id_escaped . '">Sub-Ordner hinzufügen</option>';
+            $ordner_id_escaped = (int) $ordner_id;
+            $ordner_options = [];
+            // Dateien gehören immer zu einem Release: im Ordner zuerst ein Release anlegen
+            if ($has_right('addfiles')) {
+                $ordner_options['addrelease.php?ordner_id=' . $ordner_id_escaped] = 'Release hinzufügen';
             }
-
-            if (($user_rights['editdirs'] ?? 'N') === "Y" && $ordner_id !== 0) {
-                echo '<option value="editdir.php?ordner_id=' . $ordner_id_escaped . '">Ordner editieren</option>';
+            if ($has_right('adddirs')) {
+                $ordner_options['adddir.php?ordner_id=' . $ordner_id_escaped] = 'Unterordner hinzufügen';
             }
-
-            if (($user_rights['deldirs'] ?? 'N') === "Y" && $ordner_id !== 0) {
-                echo '<option value="deldir.php?ordner_id=' . $ordner_id_escaped . '">Ordner löschen</option>';
+            if ($has_right('editdirs') && $ordner_id_escaped !== 0) {
+                $ordner_options['editdir.php?ordner_id=' . $ordner_id_escaped] = 'Ordner bearbeiten';
             }
-
-            echo '</select></div>';
+            if ($has_right('deldirs') && $ordner_id_escaped !== 0) {
+                $ordner_options['deldir.php?ordner_id=' . $ordner_id_escaped] = 'Ordner löschen';
+            }
+            echo $admin_select('pdlAdminOptionsOrdner', $ordner_options);
         }
     }
 }

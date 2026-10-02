@@ -19,22 +19,41 @@ class FunctionsTest extends TestCase
     public function sizeReturnsKilobytesForSmallValues(): void
     {
         $this->assertSame('1 KB', size(1024));
-        $this->assertSame('0 KB', size(0));
-        $this->assertSame('0.5 KB', size(512));
+        $this->assertSame('0 B', size(0));
+        $this->assertSame('512 B', size(512));
+        $this->assertSame('1,5 KB', size(1536));
     }
 
     #[Test]
     public function sizeReturnsMegabytesForMediumValues(): void
     {
         $this->assertSame('1 MB', size(1024 * 1024));
-        $this->assertSame('1.5 MB', size(1024 * 1024 * 1.5));
+        $this->assertSame('1,5 MB', size(1024 * 1024 * 1.5));
+        $this->assertSame('1,4 MB', size(1468006));
     }
 
     #[Test]
     public function sizeReturnsGigabytesForLargeValues(): void
     {
         $this->assertSame('1 GB', size(1024 * 1024 * 1024));
-        $this->assertSame('2.5 GB', size((int)(1024 * 1024 * 1024 * 2.5)));
+        $this->assertSame('2,5 GB', size((int)(1024 * 1024 * 1024 * 2.5)));
+    }
+
+    #[Test]
+    public function sizeUsesGermanThousandsSeparatorAndRoundsUpToNextUnit(): void
+    {
+        // 1023,99 KB wird nicht als "1.024 KB", sondern als "1 MB" ausgegeben
+        $this->assertSame('1 MB', size(1048575));
+        $this->assertSame('1.000 KB', size(1024000));
+        $this->assertSame('0 B', size(-5));
+    }
+
+    #[Test]
+    public function countLabelUsesSingularAndPlural(): void
+    {
+        $this->assertSame('1 Download', pdl_count_label(1, 'Download', 'Downloads'));
+        $this->assertSame('0 Downloads', pdl_count_label(0, 'Download', 'Downloads'));
+        $this->assertSame('1.234 Downloads', pdl_count_label(1234, 'Download', 'Downloads'));
     }
 
     #[Test]
@@ -53,9 +72,9 @@ class FunctionsTest extends TestCase
     public static function sizeDataProvider(): array
     {
         return [
-            'zero bytes' => [0, '0 KB'],
-            '100 bytes' => [100, '0.1 KB'],
-            '500 bytes' => [500, '0.5 KB'],
+            'zero bytes' => [0, '0 B'],
+            '100 bytes' => [100, '100 B'],
+            '500 bytes' => [500, '500 B'],
             '1 KB' => [1024, '1 KB'],
             '10 KB' => [10240, '10 KB'],
             '100 KB' => [102400, '100 KB'],

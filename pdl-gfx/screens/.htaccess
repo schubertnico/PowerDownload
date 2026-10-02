@@ -1,0 +1,50 @@
+# Screenshots aus dem Adminbereich von PowerDownload.
+#
+# Hier liegen nur Bilder (release<R>screen<S>g.jpg / k.jpg). Der Webserver
+# darf in diesem Verzeichnis keinerlei serverseitigen Code ausführen, auch
+# nicht bei doppelten Endungen wie bild.php.png (Webspaces mit
+# „AddHandler … .php“).
+
+Options -ExecCGI -Indexes -MultiViews
+<IfModule mod_mime.c>
+    RemoveHandler .php .php3 .php4 .php5 .php7 .php8 .pht .phtml .phar .phps .cgi .pl .py .sh
+    RemoveType .php .php3 .php4 .php5 .php7 .php8 .pht .phtml .phar .phps .cgi .pl .py .sh
+</IfModule>
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+
+# Alles sperren, nur Bilddateien ausliefern (Apache 2.4 bzw. 2.2).
+<FilesMatch ".*">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+<FilesMatch "^[^.][^/]*\.(jpe?g|png|webp|gif)$">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Allow from all
+    </IfModule>
+</FilesMatch>
+# Skript-Endungen an beliebiger Stelle im Namen nie ausliefern.
+<FilesMatch "\.(ph(p\d?|t|tml|ar|ps)|cgi|pl|py|sh)(\.|$)">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+IndexIgnore *

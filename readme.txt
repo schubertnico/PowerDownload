@@ -1,24 +1,93 @@
 =====================================================================
-                    PowerDownload 3.5.0 - Readme
+                    PowerDownload 3.6.0 - Readme
 =====================================================================
 
 PowerDownload ist ein PHP-basiertes Download-Management-System mit
 Ordnerstruktur, Benutzerverwaltung, Bewertungs- und Kommentarsystem.
 
 Original 2001/2002 von PowerScripts veröffentlicht und 2025/2026 auf
-PHP 8.4 + MySQL 8 modernisiert (Sessions, password_hash, CSRF,
-Rate-Limit, Cookie-Hardening). Die gesamte HTML-Ausgabe wurde
-2026-05 auf Bootstrap 5.3 umgestellt (öffentlicher Bereich, Admin,
-Setup/Update) - dunkles Theme, hohe WCAG-Kontraste, responsives
-Layout.
+PHP 8.4 und MySQL 8 / MariaDB 10.6+ modernisiert. Seit 3.6.0 richtet
+ein Web-Installer (install.php) PowerDownload im Browser ein,
+bestehende Installationen aktualisiert update.php. Öffentlicher
+Bereich und Adminbereich nutzen Bootstrap 5.3 mit dunklem Theme,
+hohen Kontrasten und responsivem Layout.
 
 Projektseite : https://www.powerscripts.org
 Projekte     : https://www.powerscripts.org/projects-6.html
+               (Downloads und Video-Anleitungen)
 GitHub       : https://github.com/schubertnico/PowerDownload
 
 
 ---------------------------------------------------------------------
-1. SCHNELLSTART (Docker)
+1. INSTALLATION MIT DEM WEB-INSTALLER (Standard)
+---------------------------------------------------------------------
+
+  1. Dateien per FTP hochladen (inklusive .htaccess).
+  2. Leere MySQL-8- bzw. MariaDB-10.6-Datenbank beim Hoster anlegen.
+  3. https://ihre-domain/.../install.php aufrufen und den fünf
+     Schritten folgen: Systemprüfung, Datenbank, Website,
+     Administrator, Abschluss.
+  4. install.php löschen.
+
+Zugangsdaten stehen in pdl-inc/pdl_config.local.php;
+Umgebungsvariablen PDL_DB_* haben Vorrang.
+
+Hinweise:
+
+  - Den Administrator legen Sie im Installer mit eigenem Passwort an
+    (mindestens 8 Zeichen mit Buchstabe und Ziffer). Ein
+    Standardpasswort gibt es nicht.
+  - Ist pdl-inc/ nicht beschreibbar, bietet die Abschlussseite
+    pdl_config.local.php zum Herunterladen an. Die Datei dann selbst
+    nach pdl-inc/ hochladen.
+  - Der Installer überschreibt keine vorhandenen Tabellen und sperrt
+    sich nach dem Abschluss (pdl-inc/install.lock bzw.
+    logs/install.lock).
+  - install.php direkt nach dem Hochladen aufrufen: Bis zum Abschluss
+    könnte jeder Besucher den Installer bedienen.
+  - Pflicht: logs/ beschreibbar. Für Uploads außerdem pdl-files/,
+    pdl-gfx/screens/ und pdl-gfx/smilies/ beschreibbar (z. B. 0775).
+  - Danach im Adminbereich unter System -> Einstellungen Adresse und
+    Name der Download-Seite, Absenderadresse und Sortierung prüfen.
+
+Reihenfolge der Zugangsdaten (höchste Priorität zuerst):
+
+  1. Umgebungsvariablen PDL_DB_HOST, PDL_DB_PORT, PDL_DB_USER,
+     PDL_DB_PASS, PDL_DB_NAME
+  2. pdl-inc/pdl_config.local.php (Vorlage: pdl_config.local.example.php)
+  3. Vorgaben (PowerDownload gilt dann als nicht eingerichtet)
+
+pdl-inc/pdl_config.inc.php enthält keine Zugangsdaten mehr und wird
+bei jedem Update überschrieben.
+
+
+---------------------------------------------------------------------
+2. UPDATE VON 3.5.0 AUF 3.6.0
+---------------------------------------------------------------------
+
+  1. Datensicherung: Datenbank über das Kundenmenü des Hosters oder
+     phpMyAdmin sichern, dazu pdl-files/ und pdl-gfx/screens/. (Die
+     Sicherungsfunktion von 3.5.0 bricht bei leeren Feldern ab.)
+  2. pdl-inc/pdl_config.local.php nach der Vorlage
+     pdl-inc/pdl_config.local.example.php anlegen und die
+     Zugangsdaten eintragen, die bisher in pdl_config.inc.php standen.
+  3. Dateien ohne install.php hochladen.
+  4. Als Admin update.php aufrufen (Recht "Einstellungen verwalten"),
+     Vorschau prüfen, "Jetzt aktualisieren".
+  5. Altdateien löschen: setup.php, install_*.php (install_303.php),
+     install_querys.inc und update_*.php (update_224to303.php,
+     update_301to303.php). update.php darf bleiben.
+
+update.php ergänzt nur, was fehlt (Tabellen, Spalten, Einstellungen,
+Vorlagen, Rechte, Gruppe "Gast", Gruppe 1 wird "Mitglied"), hebt
+unveränderte Vorlagen auf den neuen Stand und lässt sich beliebig oft
+wiederholen. Eigene Einstellungswerte und geänderte Vorlagen bleiben
+unverändert, gelöscht wird nichts. update.php ist für Datenbanken ab
+3.5.0 ausgelegt; die Update-Skripte für 2.2.4 und 3.0.x sind entfallen.
+
+
+---------------------------------------------------------------------
+3. DOCKER (nur Entwicklung)
 ---------------------------------------------------------------------
 
   git clone https://github.com/schubertnico/PowerDownload.git
@@ -27,74 +96,55 @@ GitHub       : https://github.com/schubertnico/PowerDownload
 
 Anwendung   : http://localhost:8092
 phpMyAdmin  : http://localhost:8094  (root / root)
-Admin-Login : admin / admin123  (wird beim Login auf bcrypt migriert)
+Admin-Login : admin / admin123  (NUR Docker-Entwicklung, angelegt von
+              .docker/initdb/02-dev-admin.sql - nie auf einem
+              Webserver einspielen)
 
 Stoppen     : docker compose -f .docker/docker-compose.yml down
+Neu aufsetzen: docker compose -f .docker/docker-compose.yml down -v
+
+Schema und Grunddaten kommen aus pdl-inc/pdl3_schema.sql (dieselbe
+Datei, die auch der Web-Installer einspielt).
 
 
 ---------------------------------------------------------------------
-2. SYSTEMVORAUSSETZUNGEN
+4. SYSTEMVORAUSSETZUNGEN
 ---------------------------------------------------------------------
 
-  - PHP 8.4 (mysqli, gd, mbstring)
-  - MySQL 8.0 oder MariaDB 10.6+ (InnoDB, utf8mb4)
-  - Apache 2.4+ mit mod_rewrite oder Nginx
+  - PHP 8.4 oder neuer mit mysqli und mbstring
+    (optional: gd für Vorschaubilder, ftp für den FTP-Browser)
+  - MySQL 8.0+ oder MariaDB 10.6+ (InnoDB, utf8mb4)
+  - Apache 2.4+ mit mod_rewrite und .htaccess; unter Nginx die
+    Sperren aus der .htaccess selbst nachbilden (mindestens pdl-inc/,
+    logs/ und *.sql)
   - Composer 2.x (nur für Entwicklung)
 
 
 ---------------------------------------------------------------------
-3. INSTALLATION (manuell, ohne Docker)
+5. ROUTING (Front Controller: downloads.php)
 ---------------------------------------------------------------------
 
-  - Dateien auf den Webserver hochladen.
-  - MySQL-Datenbank anlegen (utf8mb4, InnoDB).
-  - Verbindungsdaten in pdl-inc/pdl_config.inc.php setzen:
-      $config_sql_server, $config_sql_user,
-      $config_sql_password, $config_sql_database
-  - Im Browser setup.php aufrufen (spielt das Schema aus
-    .docker/initdb/01-pdl3-init.sql ein) ODER alternativ
-    install_303.php fuer den klassischen Wizard.
-  - Danach setup.php, install_303.php und update_*.php LÖSCHEN.
-  - Schreibrechte: pdl-gfx/screens/ und pdl-gfx/smilies/ -> 0775.
-  - Settings im Admin-Panel anpassen (script_file, mail_*, ...).
-
-Single Source of Truth fuer das Schema und alle Default-Daten ist
-.docker/initdb/01-pdl3-init.sql. Sowohl Docker-Init als auch setup.php
-und install_303.php (via install_querys.inc) spielen exakt diese
-Datei ein - so ist die DB nach jeder Installationsvariante identisch.
-
-Update aus Vorgängerversion:
-  - 2.2.4 -> 3.0.x : update_224to303.php
-  - 3.0.1 -> 3.0.3 : update_301to303.php
-  - 3.0.3 -> 3.5.0 : keine separate Update-Datei nötig — setup.php oder
-    .docker/initdb/01-pdl3-init.sql spielt das vollständige Schema mit
-    den neuen Spalten (pdl3_settings: name/bez/eingabe/reihenfolge,
-    pdl3_settingsgroup: reihenfolge) und allen aktualisierten Default-
-    Daten (Rechte in sauberem Deutsch, ergänzte Settings) ein.
-
-
----------------------------------------------------------------------
-4. ROUTING (Front Controller: downloads.php)
----------------------------------------------------------------------
-
-  /downloads.php                                 Wurzel-Ordner
+  /downloads.php                                 Startseite
   /downloads.php?ordner_id=N                     Ordner-Inhalt
   /downloads.php?release_id=N                    Release-Detail
+  /downloads.php?load_file=N                     Download (Zähler)
   /downloads.php?screen_id=N                     Screenshot
   /downloads.php?show_search=1                   Suche
   /downloads.php?show_stats=1                    Statistik
-  /downloads.php?usercenter=login                Login
+  /downloads.php?usercenter=login                Anmelden
   /downloads.php?usercenter=register             Registrierung
   /downloads.php?usercenter=profil               Profil bearbeiten
   /downloads.php?usercenter=lost                 Passwort vergessen
   /downloads.php?usercenter=lost2&remind_code=X  Neues Passwort setzen
   /downloads.php?usercenter=comments&release_id=N Kommentar
-  /downloads.php?logout=1                        Logout
-  /pdl-admin/                                    Admin-Panel
+  /downloads.php?logout=1&csrf_token=X           Abmelden
+  /pdl-admin/                                    Adminbereich
+  /install.php                                   Web-Installer
+  /update.php                                    Datenbank-Update
 
 
 ---------------------------------------------------------------------
-5. EINBINDUNG IN EINE EIGENE SEITE
+6. EINBINDUNG IN EINE EIGENE SEITE
 ---------------------------------------------------------------------
 
 Wichtig: Header GANZ OBEN einbinden, vor jeglichem Output:
@@ -105,7 +155,7 @@ Download-Übersicht einbinden:
 
   <?php include("pdl-inc/pdl_downloads.inc.php"); ?>
 
-Optionale Widgets:
+Optionale Kästen (erscheinen nur auf der Startseite):
 
   <?php include("pdl-inc/pdl_top.inc.php"); ?>     Top-X
   <?php include("pdl-inc/pdl_flop.inc.php"); ?>    Flop-X
@@ -113,11 +163,13 @@ Optionale Widgets:
   <?php include("pdl-inc/pdl_rated.inc.php"); ?>   Bestbewertete-X
   <?php include("pdl-inc/pdl_stats.inc.php"); ?>   Statistik-Box
 
-Anzahl + Aussehen werden in den Settings/Templates konfiguriert.
+Anzahl und Aussehen werden in den Einstellungen und Vorlagen
+konfiguriert. Ist PowerDownload in eine andere Seite eingebunden, die
+Einstellung script_file anpassen.
 
 
 ---------------------------------------------------------------------
-6. ENTWICKLUNG
+7. ENTWICKLUNG
 ---------------------------------------------------------------------
 
   docker exec powerdownload_web composer install
@@ -130,58 +182,76 @@ Anzahl + Aussehen werden in den Settings/Templates konfiguriert.
   docker exec powerdownload_web composer rector:fix   (Anwenden)
   docker exec powerdownload_web composer quality      (alle Tools)
 
+Release-Archive (git archive, Quellcode-ZIP von GitHub) enthalten laut
+.gitattributes nur die Dateien für den Webspace, ohne .docker/,
+docs/, tests/ und tools/.
+
 
 ---------------------------------------------------------------------
-7. SICHERHEITS-FEATURES
+8. SICHERHEITS-FEATURES
 ---------------------------------------------------------------------
 
   - password_hash / password_verify (bcrypt, PASSWORD_DEFAULT)
   - Transparente MD5 -> bcrypt Migration nach erfolgreichem Login
-  - Session-Token im Cookie (kein Passwort-Hash mehr)
-  - session_regenerate_id nach Login
+  - Session-Token im Cookie (kein Passwort-Hash)
+  - Mehrere Geräte: Eine Anmeldung auf einem zweiten Gerät meldet das
+    erste nicht ab. "Abmelden" meldet alle Geräte ab.
   - Cookie-Flags: HttpOnly, SameSite=Lax, Secure (HTTPS)
-  - CSRF-Schutz auf allen POST-Endpunkten
-  - Rate-Limit Login: 5 Fehlversuche / IP / 15 min
-  - User-Enumeration verhindert (generische Antworten)
-  - Server-Validierung E-Mail (FILTER_VALIDATE_EMAIL) + URL
-  - Path-Traversal-Schutz (Whitelist bei Modul-Includes)
+  - CSRF-Schutz auf allen POST-Formularen, auch Anmelden, Abmelden
+    und gesamter Adminbereich; Löschen nur nach Bestätigungsseite
+  - Rate-Limits: Anmeldung 5 Fehlversuche / IP / 15 min,
+    Registrierung 5 und Passwort vergessen 3 je IP und Stunde
+    (IPv4 und IPv6)
+  - User-Enumeration verhindert (gleiche Antwort bei Passwort vergessen)
+  - Gäste erhalten die Rechte der Gruppe "Gast", nie Admin-Rechte
+  - Versteckte Releases bleiben in Suche, Statistik und Newsletter
+    verborgen
+  - BBCode-Links nur mit http, https, mailto
+  - Keine PHP-Ausführung in pdl-files/, pdl-gfx/screens/ und
+    pdl-gfx/smilies/; doppelte Endungen (datei.php.zip) werden beim
+    Speichern entschärft (datei_php.zip)
+  - pdl-files/ ist nicht direkt abrufbar (HTTP 403); Downloads nur über
+    downloads.php?load_file=N. Direktlinks auf pdl-files/ funktionieren
+    seit 3.6.0 nicht mehr.
+  - Sicherung ohne Anmelde-Tokens und Reset-Codes
+  - Installer sperrt sich nach dem Abschluss, kein Standardkonto
   - utf8mb4 als DB-Charset
 
 
 ---------------------------------------------------------------------
-7a. FRONTEND (Bootstrap 5)
+8a. FRONTEND (Bootstrap 5)
 ---------------------------------------------------------------------
 
 Bootstrap 5.3.3 wird via CDN geladen, eigene Theme-Stylesheets:
 
-  - pdl-gfx/pdl-public.css   Public-Theme (dunkler Body, helle Texte,
-                             rote Akzentfarbe)
-  - pdl-admin/admin.css      Admin-Theme (rotes Admin-Theme,
-                             responsiver Sidebar)
+  - pdl-gfx/pdl-public.css   Theme des öffentlichen Bereichs (dunkler
+                             Hintergrund, helle Texte, rote Akzente)
+  - pdl-admin/admin.css      Theme des Adminbereichs (Seitenleiste mit
+                             eigenem Scrollbalken, aktueller Menüpunkt
+                             hervorgehoben)
 
-Layout-Helper (pdl-inc/pdl_layout.inc.php):
+Layout-Helfer (pdl-inc/pdl_layout.inc.php):
 
   pdl_layout_start($title, $settings, $userRights, $userDetails)
   pdl_layout_end($settings, $rendertime, $querycount)
   pdl_alert($type, $msg)            success|danger|warning|info|...
-  pdl_card_start($title, $extra)    konsistente Card-Wrapper
+  pdl_card_start($title, $extra)    einheitliche Card-Rahmen
   pdl_card_end()
 
-Admin-Helper (pdl-admin/functions.inc.php):
+Admin-Helfer (pdl-admin/functions.inc.php):
 
   pdl_admin_breadcrumb($items)      Bootstrap-Breadcrumbs
   pdl_admin_alert($type, $msg)      Admin-Alerts
-  makedialog($titel, $text,         Bestätigungs-Card mit
-             $button, $action)      pdl-danger-action-Markierung
+  makedialog(...)                   Bestätigungsseite (POST mit CSRF,
+                                    Knopf "Abbrechen")
 
 Bedeutung wird nicht nur über Farbe vermittelt: gefährliche Aktionen
-haben zusätzlich Klartext-Label und linke rote Border. Alle
-Bootstrap-Defaults (text-primary, text-muted, alert-info etc.)
-werden auf hohe Kontraste auf dunklem Hintergrund überschrieben.
+haben zusätzlich Klartext und einen roten Rahmen. Browser-Dialoge
+(confirm/alert) gibt es nicht mehr.
 
 
 ---------------------------------------------------------------------
-8. PORTS (Docker-Setup)
+9. PORTS (Docker-Setup)
 ---------------------------------------------------------------------
 
   Web         8092    Apache + PHP
@@ -190,18 +260,25 @@ werden auf hohe Kontraste auf dunklem Hintergrund überschrieben.
 
 
 ---------------------------------------------------------------------
-9. PROFI-INFOS / API
+10. PROFI-INFOS / API
 ---------------------------------------------------------------------
 
-Settings : $settings['<name>']         (DB: pdl3_settings)
-Templates: $template['<name>']         (DB: pdl3_template)
-Rechte   : $user_rights['<name>']      (pro Usergruppe)
-User     : $user_details[...]          (leer = nicht eingeloggt)
+Einstellungen : $settings['<name>']     (DB: pdl3_settings)
+Vorlagen      : $template['<name>']     (DB: pdl3_template)
+Rechte        : $user_rights['<name>']  (pro Benutzergruppe)
+Benutzer      : $user_details[...]      (leer = nicht angemeldet)
 
-CSRF-Helper:
+Wichtige Einstellungen: site_url (Adresse für Links in Mails),
+sitename, mail_fromname, mail_fromaddr, guest_group_id (Gruppe für
+nicht angemeldete Besucher, Vorgabe 3), script_file (relativ lassen).
+
+CSRF-Helfer:
   csrf_token()     - Token holen / erzeugen
   csrf_verify($t)  - Token prüfen (true/false)
   csrf_input()     - <input type="hidden" name="csrf_token" ...>
+
+Mailversand:
+  pdl_send_mail($to, $subject, $body)  - UTF-8, korrekte Kopfzeilen
 
 DB-Klasse $db_handler:
   sql_query("query")
@@ -211,26 +288,37 @@ DB-Klasse $db_handler:
   sql_escape_string("string")
   sql_escape_int($int)
   sql_insert_id()
+  sql_error() / sql_errno()
 
 
 ---------------------------------------------------------------------
-10. TROUBLESHOOTING
+11. TROUBLESHOOTING
 ---------------------------------------------------------------------
 
-  - "Database not initialized" -> install_303.php aufrufen.
-  - Bestandsuser kann sich nicht einloggen -> Passwort vergessen
-    nutzen, alte MD5-Hashes werden beim Login automatisch migriert.
+  - "PowerDownload ist noch nicht eingerichtet" -> Neuinstallation:
+    install.php aufrufen. Nach einem Update: pdl-inc/
+    pdl_config.local.php fehlt oder enthält falsche Zugangsdaten.
+  - "Installer gesperrt" -> Installation ist abgeschlossen oder in
+    pdl-files/ bzw. pdl-gfx/screens/ liegen schon hochgeladene Dateien;
+    install.php vom Server löschen, ein Update läuft über update.php.
+  - Direktlink auf pdl-files/ liefert 403 -> so gewollt; verlinken Sie
+    downloads.php?load_file=N.
+  - Neue Funktionen fehlen nach einem Update -> update.php als Admin
+    aufrufen.
+  - Links in Mails falsch -> Einstellungen -> Allgemein ->
+    "Adresse der Download-Seite" mit https:// eintragen.
+  - Bestandsuser kann sich nicht anmelden -> Passwort vergessen
+    nutzen, alte MD5-Hashes werden beim Login automatisch umgestellt.
   - "Zu viele Fehlversuche" -> Rate-Limit; 15 min warten oder in
     MySQL: DELETE FROM pdl3_iplock WHERE ip='X' AND art='login';
-  - Mailversand schlägt fehl -> im Container kein sendmail; in
-    Produktion MTA bereitstellen, Fehler werden per error_log()
-    protokolliert.
-  - Leere Info-Boxen -> docs/superpowers/plans/
-    2026-04-23-seed-templates.sql einspielen.
+  - Mailversand schlägt fehl -> PowerDownload nutzt PHP-mail(); im
+    Container kein sendmail. Fehler stehen im Fehlerprotokoll.
+  - Upload oder Screenshot scheitert -> Schreibrechte für pdl-files/
+    bzw. pdl-gfx/screens/ prüfen.
 
 
 ---------------------------------------------------------------------
-11. LIZENZ
+12. LIZENZ
 ---------------------------------------------------------------------
 
 MIT-Lizenz - siehe LICENSE.
@@ -240,7 +328,7 @@ MIT-Lizenz - siehe LICENSE.
 
 
 ---------------------------------------------------------------------
-12. KONTAKT
+13. KONTAKT
 ---------------------------------------------------------------------
 
   SchubertMedia

@@ -98,165 +98,244 @@
     <h1>PowerDownload</h1>
 
     <p>
+        <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/version-3.6.0-9b0000.svg?style=flat-square" alt="Version 3.6.0"></a>
         <a href="https://www.php.net/"><img src="https://img.shields.io/badge/PHP-8.4-8892BF.svg?style=flat-square" alt="PHP 8.4"></a>
-        <a href="tests/"><img src="https://img.shields.io/badge/tests-244%2F258%20passing-yellow.svg?style=flat-square" alt="tests 244/258 passing"></a>
-        <a href="coverage.xml"><img src="https://img.shields.io/badge/coverage-84%25-yellowgreen.svg?style=flat-square" alt="coverage 84%"></a>
+        <a href="tests/"><img src="https://img.shields.io/badge/tests-passing-success.svg?style=flat-square" alt="tests passing"></a>
         <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-yellow.svg?style=flat-square" alt="license MIT"></a>
     </p>
 
-    <p><strong>PowerDownload</strong> ist ein PHP-basiertes Download-Management-System mit Ordnerstruktur, Benutzerverwaltung, Bewertungs- und Kommentarsystem. Das Projekt wurde 2001/2002 von <strong>PowerScripts</strong> veröffentlicht und 2025/2026 vollständig auf <strong>PHP 8.4</strong> sowie <strong>MySQL 8</strong> modernisiert. Alle Userbereichs-Funktionen (Registrierung, Login, Profil, Passwort-Reset, Kommentare) wurden überarbeitet, mit <code>password_hash</code>/<code>password_verify</code>, Session-Tokens, CSRF-Schutz und Rate-Limit ausgestattet.</p>
+    <p><strong>PowerDownload</strong> ist ein PHP-basiertes Download-Management-System mit Ordnerstruktur, Benutzerverwaltung, Bewertungs- und Kommentarsystem. Das Projekt wurde 2001/2002 von <strong>PowerScripts</strong> veröffentlicht und 2025/2026 vollständig auf <strong>PHP 8.4</strong> sowie <strong>MySQL 8 / MariaDB 10.6+</strong> modernisiert. Seit Version 3.6.0 richtet ein <strong>Web-Installer</strong> PowerDownload im Browser ein, bestehende Installationen aktualisiert <code>update.php</code>. Die HTML-Ausgabe nutzt <strong>Bootstrap 5.3</strong>; öffentlicher Bereich und Adminbereich haben ein dunkles Theme mit hohem Kontrast und responsivem Layout.</p>
 
     <ul>
         <li>Projektseite: <a href="https://www.powerscripts.org">https://www.powerscripts.org</a></li>
-        <li>Projektbereich: <a href="https://www.powerscripts.org/projects-6.html">https://www.powerscripts.org/projects-6.html</a></li>
+        <li>Projektbereich mit Downloads und Video-Anleitungen: <a href="https://www.powerscripts.org/projects-6.html">https://www.powerscripts.org/projects-6.html</a></li>
         <li>GitHub: <a href="https://github.com/schubertnico/PowerDownload">https://github.com/schubertnico/PowerDownload</a></li>
     </ul>
 
-    <h2>Schnellstart (Docker)</h2>
-
-    <div class="quickstart">
-        <p>Voraussetzung: Docker + Docker Compose installiert.</p>
-        <pre><code>git clone https://github.com/schubertnico/PowerDownload.git
-cd PowerDownload
-docker compose -f .docker/docker-compose.yml up -d --build</code></pre>
-        <p><strong>Anwendung öffnen:</strong> <a href="http://localhost:8092">http://localhost:8092</a><br>
-        <strong>phpMyAdmin:</strong> <a href="http://localhost:8094">http://localhost:8094</a> (User <code>root</code>, Passwort <code>root</code>)</p>
-        <p><strong>Standard-Admin-Login:</strong> <code>admin</code> / <code>admin123</code> (wird beim Login automatisch von MD5 auf bcrypt migriert).</p>
-    </div>
-
-    <p>Status prüfen, Logs verfolgen, stoppen:</p>
-    <pre><code>docker compose -f .docker/docker-compose.yml ps
-docker compose -f .docker/docker-compose.yml logs -f web
-docker compose -f .docker/docker-compose.yml down</code></pre>
-
-    <h2>Funktionsumfang</h2>
-    <ul>
-        <li>Verwaltung von <strong>Downloads</strong> und <strong>Releases</strong> in einer hierarchischen Ordnerstruktur</li>
-        <li><strong>Benutzerregistrierung</strong> mit E-Mail-Validierung und CSRF-Schutz</li>
-        <li><strong>Login</strong> mit <code>password_verify</code> und transparenter MD5→bcrypt-Migration für Bestandsuser</li>
-        <li><strong>Session-Token-basierte Authentifizierung</strong> (kein Passwort-Hash mehr im Cookie)</li>
-        <li><strong>Rate-Limit</strong> für Login-Versuche (5 Fehlschläge / 15 min / IP)</li>
-        <li><strong>Passwort-Vergessen-Flow</strong> mit zeitlich begrenztem Reset-Link (60 min TTL)</li>
-        <li><strong>Bewertungssystem</strong> (1–10) mit IP-Lock gegen Mehrfachvotes</li>
-        <li><strong>Kommentar-System</strong> mit BBCode, Smilies, Glossar, Bad-Words-Filter</li>
-        <li><strong>Screenshot-Upload</strong> und -Anzeige je Release</li>
-        <li><strong>Template-System</strong> mit DB-basierten Vorlagen (Boxen, Forms, Mails)</li>
-        <li><strong>Admin-Panel</strong> mit Rechte-System, Usergruppen, Ordnern, Releases, Templates</li>
-        <li><strong>Statistik-Widget</strong> mit Top/Flop/Latest/Rated-Listen</li>
-    </ul>
-
-    <h2>Systemanforderungen</h2>
-    <table>
-        <tr><th>Komponente</th><th>Version</th></tr>
-        <tr><td>PHP</td><td>8.4 (mit <code>mysqli</code>, <code>gd</code>, <code>mbstring</code>)</td></tr>
-        <tr><td>MySQL/MariaDB</td><td>MySQL 8.0 oder MariaDB 10.6+ (InnoDB)</td></tr>
-        <tr><td>Webserver</td><td>Apache 2.4+ mit <code>mod_rewrite</code> oder Nginx</td></tr>
-        <tr><td>Browser</td><td>Aktuelle Versionen von Chrome, Firefox, Safari, Edge</td></tr>
-        <tr><td>Composer</td><td>2.x (nur für Entwicklung)</td></tr>
-    </table>
-
     <h2>Installation</h2>
 
-    <h3>Variante A — Docker (empfohlen)</h3>
-    <p>Siehe Schnellstart oben. Die mitgelieferte Compose-Datei startet:</p>
+    <h3>Web-Installer (Standard)</h3>
+    <div class="quickstart">
+        <p>So richten Sie PowerDownload auf einem gewöhnlichen Webspace ein, ohne Kommandozeile:</p>
+        <ol>
+            <li>Dateien per FTP hochladen (inklusive <code>.htaccess</code>).</li>
+            <li>Leere MySQL-8- bzw. MariaDB-10.6-Datenbank beim Hoster anlegen.</li>
+            <li><code>https://ihre-domain/…/install.php</code> aufrufen und den fünf Schritten folgen: Systemprüfung, Datenbank, Website, Administrator, Abschluss.</li>
+            <li><code>install.php</code> löschen.</li>
+        </ol>
+        <p>Zugangsdaten stehen in <code>pdl-inc/pdl_config.local.php</code>; Umgebungsvariablen <code>PDL_DB_*</code> haben Vorrang.</p>
+    </div>
+
+    <ul>
+        <li>Den Administrator legen Sie im Installer mit eigenem Passwort an (mindestens 8 Zeichen mit Buchstabe und Ziffer). Ein Standardpasswort gibt es nicht.</li>
+        <li>Ist <code>pdl-inc/</code> nicht beschreibbar, bietet die Abschlussseite <code>pdl_config.local.php</code> zum Herunterladen an. Laden Sie die Datei dann selbst nach <code>pdl-inc/</code> hoch.</li>
+        <li>Der Installer überschreibt keine vorhandenen Tabellen und sperrt sich nach dem Abschluss (<code>pdl-inc/install.lock</code> bzw. <code>logs/install.lock</code>).</li>
+        <li>Rufen Sie <code>install.php</code> direkt nach dem Hochladen auf. Bis zum Abschluss könnte jeder Besucher den Installer bedienen.</li>
+        <li>Pflicht ist ein beschreibbares Verzeichnis <code>logs/</code>. Für Uploads sollten außerdem <code>pdl-files/</code>, <code>pdl-gfx/screens/</code> und <code>pdl-gfx/smilies/</code> beschreibbar sein (z. B. <code>chmod 0775</code>).</li>
+        <li>Nach der Installation im Adminbereich unter <strong>System → Einstellungen</strong> prüfen: Adresse und Name der Download-Seite, Absenderadresse, Sortierung.</li>
+    </ul>
+    <p>Ruft jemand <code>downloads.php</code> auf, bevor PowerDownload eingerichtet ist, erscheint die Seite „PowerDownload ist noch nicht eingerichtet“ mit dem Knopf „Installation starten“ (solange <code>install.php</code> existiert und nicht gesperrt ist).</p>
+    <p>Der Installer startet nicht, wenn in <code>pdl-files/</code> oder <code>pdl-gfx/screens/</code> schon hochgeladene Dateien liegen: Dort besteht offenbar bereits eine Installation, die über <code>update.php</code> aktualisiert wird (siehe unten).</p>
+
+    <h3>Docker (Entwicklung)</h3>
+    <p>Voraussetzung: Docker und Docker Compose.</p>
+    <pre><code>git clone https://github.com/schubertnico/PowerDownload.git
+cd PowerDownload
+docker compose -f .docker/docker-compose.yml up -d --build</code></pre>
+    <p><strong>Anwendung:</strong> <a href="http://localhost:8092">http://localhost:8092</a><br>
+    <strong>phpMyAdmin:</strong> <a href="http://localhost:8094">http://localhost:8094</a> (Benutzer <code>root</code>, Passwort <code>root</code>)</p>
+    <div class="note">
+        <p>Beim ersten Start spielt MySQL <code>pdl-inc/pdl3_schema.sql</code> und <code>.docker/initdb/02-dev-admin.sql</code> ein. Letztere legt den <strong>Entwicklungs-Admin <code>admin</code> / <code>admin123</code></strong> an. Dieses Konto gibt es nur in der Docker-Umgebung; spielen Sie <code>02-dev-admin.sql</code> nie auf einem Webserver ein.</p>
+    </div>
+    <p>Die Zugangsdaten bekommt der Web-Container über <code>PDL_DB_*</code> aus der Compose-Datei, <code>install.php</code> ist dort deshalb gesperrt.</p>
+    <pre><code>docker compose -f .docker/docker-compose.yml ps
+docker compose -f .docker/docker-compose.yml logs -f web
+docker compose -f .docker/docker-compose.yml down       # stoppen
+docker compose -f .docker/docker-compose.yml down -v    # stoppen und Datenbank verwerfen</code></pre>
+    <p>Die Compose-Datei startet:</p>
     <ul>
         <li><code>powerdownload_web</code> (Apache + PHP 8.4) auf Port <strong>8092</strong></li>
         <li><code>powerdownload_db</code> (MySQL 8.0) auf Port <strong>3319</strong></li>
         <li><code>powerdownload_phpmyadmin</code> (phpMyAdmin) auf Port <strong>8094</strong></li>
     </ul>
 
-    <h3>Variante B — Manuelles Setup auf eigenem Webserver</h3>
-    <ol>
-        <li>Repository klonen oder ZIP entpacken und Dateien auf den Webserver hochladen.</li>
-        <li>MySQL-Datenbank anlegen (UTF-8 / <code>utf8mb4</code>, InnoDB).</li>
-        <li>Verbindungsdaten in <code>pdl-inc/pdl_config.inc.php</code> eintragen:
-            <pre><code>$config_sql_server   = 'localhost';
-$config_sql_user     = 'pdl_user';
-$config_sql_password = 'pdl_password';
-$config_sql_database = 'pdl3';</code></pre>
-        </li>
-        <li>Setup-Skript im Browser aufrufen: <code>https://example.org/install_303.php</code></li>
-        <li>Nach erfolgreicher Installation <code>install_303.php</code> und <code>update_*.php</code> <strong>löschen</strong>.</li>
-        <li>Schreibrechte für Screenshots/Smilies setzen: <code>pdl-gfx/screens/</code> und <code>pdl-gfx/smilies/</code> → <code>chmod 0775</code>.</li>
-        <li>Konfigurationen im Admin-Panel anpassen (Pfade, Mail-Absender, Settings).</li>
-    </ol>
+    <h3>Konfiguration der Zugangsdaten</h3>
+    <table>
+        <tr><th>Quelle (höchste Priorität zuerst)</th><th>Inhalt</th></tr>
+        <tr><td>Umgebungsvariablen</td><td><code>PDL_DB_HOST</code>, <code>PDL_DB_PORT</code>, <code>PDL_DB_USER</code>, <code>PDL_DB_PASS</code>, <code>PDL_DB_NAME</code> (Docker, <code>SetEnv</code> beim Hoster)</td></tr>
+        <tr><td><code>pdl-inc/pdl_config.local.php</code></td><td>schreibt der Installer; Vorlage zum Anlegen von Hand: <code>pdl-inc/pdl_config.local.example.php</code></td></tr>
+        <tr><td>Vorgaben</td><td>ohne Zugangsdaten gilt PowerDownload als nicht eingerichtet</td></tr>
+    </table>
+    <p><code>pdl-inc/pdl_config.inc.php</code> enthält keine Zugangsdaten mehr und wird bei jedem Update überschrieben. <code>pdl_config.local.php</code> bleibt bei Updates erhalten und ist per <code>.htaccess</code> gesperrt.</p>
 
-    <h3>Update von älterer Version</h3>
+    <h2>Update von 3.5.0 auf 3.6.0</h2>
+    <ol>
+        <li><strong>Datensicherung:</strong> Datenbank über das Kundenmenü des Hosters oder phpMyAdmin sichern, dazu <code>pdl-files/</code> und <code>pdl-gfx/screens/</code>. (Die Sicherungsfunktion von 3.5.0 bricht bei leeren Feldern ab und eignet sich dafür nicht.)</li>
+        <li><strong><code>pdl-inc/pdl_config.local.php</code> anlegen:</strong> Vorlage <code>pdl-inc/pdl_config.local.example.php</code> kopieren, als <code>pdl_config.local.php</code> speichern und die Zugangsdaten eintragen, die bisher in <code>pdl-inc/pdl_config.inc.php</code> standen.</li>
+        <li><strong>Dateien hochladen, ohne <code>install.php</code>.</strong> Dabei wird <code>pdl_config.inc.php</code> überschrieben; die Zugangsdaten kommen ab jetzt aus <code>pdl_config.local.php</code>.</li>
+        <li><strong>Als Admin <code>update.php</code> aufrufen</strong> (Recht „Einstellungen verwalten“), die Vorschau prüfen und „Jetzt aktualisieren“ klicken.</li>
+        <li><strong>Altdateien löschen:</strong> <code>setup.php</code>, <code>install_*.php</code> (z. B. <code>install_303.php</code>), <code>install_querys.inc</code> und <code>update_*.php</code> (z. B. <code>update_224to303.php</code>, <code>update_301to303.php</code>). <code>update.php</code> selbst darf bleiben, es ist nur für Admins erreichbar.</li>
+    </ol>
+    <p>Was <code>update.php</code> ändert:</p>
     <ul>
-        <li>Aus 2.2.4 → 3.0.x: <code>update_224to303.php</code></li>
-        <li>Aus 3.0.1 → 3.0.3: <code>update_301to303.php</code></li>
-        <li>Aus 3.0.3 → 3.5.0: keine separate Update-Datei nötig — <code>setup.php</code> oder Docker-Volume-Reset spielt das erweiterte Schema (pdl3_settings: <code>name/bez/eingabe/reihenfolge</code>, pdl3_iplock-ENUM: <code>register/lostpw</code>) und alle aktualisierten Default-Daten ein.</li>
+        <li>ergänzt fehlende Tabellen, Spalten, Einstellungen (<code>site_url</code>, <code>sitename</code>, <code>guest_group_id</code>), Vorlagen (Mail-Vorlagen) und Rechte,</li>
+        <li>erweitert zu kleine Spalten (<code>pdl3_iplock.ip</code> für IPv6, neue ENUM-Werte),</li>
+        <li>hebt Vorlagen und Beschriftungen auf den Stand 3.6.0, solange sie noch dem Auslieferungsstand 3.5.0 entsprechen,</li>
+        <li>legt die Gruppe „Gast“ für nicht angemeldete Besucher an und benennt Gruppe 1 in „Mitglied“ um (mit Recht zum Bewerten), sofern sie unverändert ist,</li>
+        <li>setzt den Installationszeitpunkt, falls er noch fehlt.</li>
     </ul>
-    <p>Update-Skripte nach Lauf entfernen.</p>
+    <p>Eigene Einstellungswerte und selbst geänderte Vorlagen bleiben unverändert, gelöscht wird nichts. Die Vorschau nennt, was erhalten bleibt. Ein zweiter Aufruf meldet, dass nichts mehr zu tun ist. Auch nach künftigen Updates genügt es, <code>update.php</code> aufzurufen.</p>
+    <p>Fehlt <code>pdl_config.local.php</code> nach dem Hochladen, zeigt die Download-Seite „noch nicht eingerichtet“. Es gehen keine Daten verloren: Datei anlegen, hochladen, fertig. <code>install.php</code> würde eine Datenbank mit vorhandenen Tabellen ohnehin nicht anrühren.</p>
+    <p><code>update.php</code> ist für Datenbanken ab Version 3.5.0 ausgelegt. Die früheren Update-Skripte für 2.2.4 und 3.0.x sind entfallen.</p>
+
+    <h2>Video-Anleitungen</h2>
+    <p>Vertonte Video-Anleitungen mit Untertiteln zeigen Schritt für Schritt Installation, Grundeinstellungen, Ordner, Releases mit Dateien und Screenshots, Texte und Glossar, Registrierung, Herunterladen und Bewerten, Benutzergruppen und Rechte sowie Newsletter und Sicherung: <a href="https://www.powerscripts.org/projects-6.html">https://www.powerscripts.org/projects-6.html</a></p>
+
+    <h2>Funktionsumfang</h2>
+    <ul>
+        <li>Verwaltung von <strong>Releases</strong> mit einer oder mehreren Dateien in einer hierarchischen <strong>Ordnerstruktur</strong></li>
+        <li><strong>Dateien</strong> als Upload nach <code>pdl-files/</code> (PowerDownload ermittelt die Größe selbst) oder als externer Link, dazu <strong>Spiegel-Server</strong></li>
+        <li><strong>Downloadzähler</strong> über <code>downloads.php?load_file=…</code> mit Rechteprüfung, Hotlink-Schutz und Zählersperre (je IP und Datei einmal pro Stunde)</li>
+        <li><strong>Screenshots</strong> je Release (JPG, PNG und WebP, automatische Vorschaubilder mit GD)</li>
+        <li><strong>Bewertungssystem</strong> (1–10 Punkte) mit IP-Sperre gegen Mehrfachbewertungen</li>
+        <li><strong>Kommentar-System</strong> mit BBCode, Smileys, Glossar und Zensur</li>
+        <li><strong>Suche</strong> in Titel und/oder Beschreibung, alle Wörter müssen vorkommen</li>
+        <li><strong>Statistik</strong>: Startseiten-Kästen (Statistik, Top, Flop, Neueste, Bestbewertet) und eine Statistikseite</li>
+        <li><strong>Benutzerregistrierung</strong> mit Spamschutz (verstecktes Feld, Mindestzeit, optionale Rechenaufgabe, IP-Limit)</li>
+        <li><strong>Passwort vergessen</strong> mit Link, der 60 Minuten gültig ist</li>
+        <li><strong>Konto-Löschung</strong> durch das Mitglied selbst (DSGVO Art. 17)</li>
+        <li><strong>Benutzergruppen und Rechte</strong>: Gast (nicht angemeldet), Mitglied, Administrator und eigene Gruppen mit 18 Rechten</li>
+        <li><strong>Newsletter</strong> an Mitglieder mit Einwilligung, mit Vorschau und Testmail</li>
+        <li><strong>Vorlagen-System</strong> mit Editor (CodeMirror) im Adminbereich</li>
+        <li><strong>Adminbereich</strong> mit Übersicht, Einstellungen in Reitern, Sicherung, Wartung und Audit-Log</li>
+        <li><strong>Web-Installer</strong> und <strong>Update-Skript</strong></li>
+        <li><strong>Bootstrap-5-Frontend</strong> mit dunklem Theme, responsiver Navigation, Cards und Breadcrumbs</li>
+        <li><strong>Barrierefreiheit</strong>: semantisches HTML5, <code>aria-describedby</code> für Hilfetexte, Skip-Link, hohe Kontraste, Bedeutung nicht nur über Farbe</li>
+        <li><strong>Mehrsprachfähig</strong> (aktuell Deutsch, Anrede „Sie“)</li>
+    </ul>
+
+    <h3>Neu in 3.6.0</h3>
+    <ul>
+        <li><strong>Web-Installer <code>install.php</code></strong> in fünf Schritten, ohne Standardpasswort, mit Sperre nach dem Abschluss.</li>
+        <li><strong><code>update.php</code></strong> mit Vorschau für bestehende Installationen; wiederholbar, löscht nichts.</li>
+        <li><strong>Zugangsdaten in <code>pdl-inc/pdl_config.local.php</code></strong>, Umgebungsvariablen <code>PDL_DB_*</code> mit Vorrang, Port einstellbar.</li>
+        <li><strong>MariaDB 10.6+</strong> wird tatsächlich unterstützt (Kollation <code>utf8mb4_unicode_ci</code>).</li>
+        <li><strong>Bewertungen, Kommentaranzeige und Downloadzähler funktionieren</strong>; Archive in <code>pdl-files/</code> sind herunterladbar.</li>
+        <li><strong>Mails mit Inhalt und absoluten Links</strong> (Einstellung „Adresse der Download-Seite“), korrekt kodiert.</li>
+        <li><strong>Gruppe „Gast“</strong> für nicht angemeldete Besucher, Gruppe „Mitglied“ für Registrierte (darf bewerten).</li>
+        <li><strong>Screenshot-Upload</strong> repariert, auch für PNG und WebP.</li>
+        <li><strong>Sicherheit:</strong> CSRF-Schutz und Bestätigungsseiten für alle schreibenden Admin-Aktionen, keine SQL-Injection über Spaltennamen, versteckte Releases bleiben versteckt, sichere BBCode-Links, IP-Sperren auch für IPv6.</li>
+        <li><strong>Adminbereich:</strong> Übersicht mit Kennzahlen, Einstellungen in Reitern mit passenden Feldern, Newsletter mit Vorschau und Testmail, Release bearbeiten speichert wieder.</li>
+        <li><strong>Sprache:</strong> durchgehend Sie-Form, echte Umlaute, deutsche Begriffe (Benutzer, Einstellungen, Vorlagen, Sicherung).</li>
+    </ul>
+    <p>Alle Änderungen: <a href="CHANGELOG.md">CHANGELOG.md</a>.</p>
+
+    <h2>Systemanforderungen</h2>
+    <table>
+        <tr><th>Komponente</th><th>Version</th></tr>
+        <tr><td>PHP</td><td>8.4 oder neuer mit <code>mysqli</code> und <code>mbstring</code>; optional <code>gd</code> (Vorschaubilder), <code>ftp</code> (FTP-Browser)</td></tr>
+        <tr><td>Datenbank</td><td>MySQL 8.0+ oder MariaDB 10.6+ (InnoDB, <code>utf8mb4</code>)</td></tr>
+        <tr><td>Webserver</td><td>Apache 2.4+ mit <code>mod_rewrite</code> und <code>.htaccess</code> (<code>AllowOverride</code>). Unter Nginx die Sperren aus der <code>.htaccess</code> selbst nachbilden, mindestens für <code>pdl-inc/</code>, <code>logs/</code> und <code>*.sql</code></td></tr>
+        <tr><td>Browser</td><td>Aktuelle Versionen von Chrome, Firefox, Safari, Edge</td></tr>
+        <tr><td>Composer</td><td>2.x, nur für die Entwicklung</td></tr>
+    </table>
+    <p>Bootstrap und der Vorlagen-Editor werden vom CDN <code>cdn.jsdelivr.net</code> geladen.</p>
 
     <h2>Verzeichnisstruktur</h2>
     <pre><code>PowerDownload/
-├── .docker/                  Docker-Compose, Dockerfile, php.ini
-├── docs/                     Audit-Berichte, Bug-/Improvement-Listen, Migrationen
-├── pdl-admin/                Admin-Panel
-├── pdl-gfx/                  Grafiken, Smilies, Screenshots
-├── pdl-inc/                  Kern-Module
-│   ├── pdl_header.inc.php    Bootstrap, Session, Auth, Rate-Limit
-│   ├── pdl_csrf.inc.php      CSRF-Helper
-│   ├── pdl_db_class_*.inc.php Datenbank-Abstraktion
-│   ├── pdl_functions.inc.php Hilfsfunktionen
+├── .docker/                  Docker-Compose, Dockerfile, php.ini (nur Entwicklung)
+│   └── initdb/02-dev-admin.sql  Entwicklungs-Admin admin / admin123 (nur Docker)
+├── docs/                     Audit-Berichte und Pläne (nur im Repository)
+├── logs/                     Fehlerprotokoll, ggf. install.lock (muss beschreibbar sein)
+├── pdl-admin/                Adminbereich
+│   ├── header.inc.php        Navbar und Seitenleiste
+│   ├── footer.inc.php        Fuß und Bootstrap-JS
+│   ├── functions.inc.php     Helfer: Bestätigungsseiten, Rechteprüfung, Ordnerbaum, Löschen
+│   ├── system_helpers.inc.php  Helfer für Benutzer, Rechte, Einstellungen, Newsletter, Sicherung
+│   └── admin.css             Theme des Adminbereichs
+├── pdl-files/                hochgeladene Download-Dateien (per .htaccess gesperrt, Auslieferung über load_file)
+├── pdl-gfx/                  Grafiken, Smileys, favicon.svg
+│   ├── screens/              Screenshots (eigene .htaccess, nur Bilder, kein PHP)
+│   ├── smilies/              Smiley-Bilder (eigene .htaccess, nur Bilder, kein PHP)
+│   └── pdl-public.css        Theme des öffentlichen Bereichs
+├── pdl-inc/                  Kern (per .htaccess gesperrt)
+│   ├── installer/            Web-Installer und Updater (Namensraum PowerDownload\Installer)
+│   ├── pdl3_schema.sql       Datenbankschema mit Grunddaten (Installer, Docker, Tests)
+│   ├── pdl_config.inc.php    Tabellennamen, lädt die Zugangsdaten
+│   ├── pdl_config.local.example.php  Vorlage für pdl_config.local.php
+│   ├── pdl_localconfig.inc.php  Rangfolge Umgebung / Datei / Vorgaben
+│   ├── pdl_header.inc.php    Sitzung, Anmeldung, Rechte, Download, Bewertung
+│   ├── pdl_mail.inc.php      Mailversand und absolute Links
+│   ├── pdl_setup_required.inc.php  Seite „noch nicht eingerichtet“
+│   ├── pdl_csrf.inc.php      CSRF- und Passwort-Helfer
+│   ├── pdl_layout.inc.php    Layout-Helfer
+│   ├── pdl_db_class_*.inc.php  Datenbankklasse
+│   ├── pdl_functions.inc.php Hilfsfunktionen (BBCode, Kürzen, Suche, Auslieferung)
 │   ├── pdl_downloads.inc.php Routing der Module
-│   ├── pdl_*.modul.php       User-Center-Module
-│   └── pdl_*.inc.php         Widgets (stats, top, flop, latest, rated)
-├── tests/                    PHPUnit-Tests + Mocks
-├── tools/                    Hilfsskripte
-├── vendor/                   Composer-Abhängigkeiten
+│   ├── pdl_*.modul.php       Module (login, register, profil, lost, comments, release, ordner, search, stats)
+│   └── pdl_*.inc.php         Startseiten-Kästen (stats, top, flop, latest, rated)
+├── tests/                    PHPUnit-Tests (nur im Repository)
+├── tools/                    Hilfsskripte (nur im Repository)
 ├── downloads.php             Front-Controller
-├── index.php                 Redirect → downloads.php
-├── install_303.php           Initiale Installation
-├── update_*.php              Migrationen
-├── composer.json             PHP-Abhängigkeiten + Scripts
-├── phpunit.xml               Test-Konfiguration
-├── phpstan.neon.dist         Static-Analysis-Konfiguration
-└── README.md / .html / readme.txt</code></pre>
+├── index.php                 Weiterleitung auf downloads.php
+├── install.php               Web-Installer (nach der Installation löschen)
+├── update.php                Datenbank-Update für Admins
+├── composer.json             Abhängigkeiten der Entwicklung
+└── README.md / README.html / readme.txt / CHANGELOG.md</code></pre>
+    <p>Release-Archive (<code>git archive</code>, Quellcode-ZIP von GitHub) enthalten laut <code>.gitattributes</code> nur, was auf den Webspace gehört; <code>.docker/</code>, <code>docs/</code>, <code>tests/</code> und <code>tools/</code> fehlen dort.</p>
 
     <h2>Routing-Übersicht</h2>
     <table>
         <tr><th>Route</th><th>Modul</th></tr>
-        <tr><td><code>/downloads.php</code></td><td>Wurzel-Ordner-Liste</td></tr>
+        <tr><td><code>/downloads.php</code></td><td>Startseite mit Ordnerliste</td></tr>
         <tr><td><code>/downloads.php?ordner_id=N</code></td><td>Ordner-Inhalt</td></tr>
         <tr><td><code>/downloads.php?release_id=N</code></td><td>Release-Detail</td></tr>
+        <tr><td><code>/downloads.php?load_file=N</code></td><td>Download (Zähler, Rechte, Hotlink-Schutz)</td></tr>
         <tr><td><code>/downloads.php?screen_id=N</code></td><td>Screenshot-Anzeige</td></tr>
         <tr><td><code>/downloads.php?show_search=1</code></td><td>Suche</td></tr>
-        <tr><td><code>/downloads.php?show_stats=1</code></td><td>Server- &amp; DB-Statistik</td></tr>
-        <tr><td><code>/downloads.php?usercenter=login</code></td><td>Login-Formular</td></tr>
+        <tr><td><code>/downloads.php?show_stats=1</code></td><td>Statistik (Server-Angaben nur für Admins)</td></tr>
+        <tr><td><code>/downloads.php?usercenter=login</code></td><td>Anmelden</td></tr>
         <tr><td><code>/downloads.php?usercenter=register</code></td><td>Registrierung</td></tr>
-        <tr><td><code>/downloads.php?usercenter=profil</code></td><td>Profil bearbeiten</td></tr>
+        <tr><td><code>/downloads.php?usercenter=profil</code></td><td>Profil und Konto löschen</td></tr>
         <tr><td><code>/downloads.php?usercenter=lost</code></td><td>Passwort vergessen</td></tr>
-        <tr><td><code>/downloads.php?usercenter=lost2&amp;remind_code=…</code></td><td>Passwort neu setzen</td></tr>
-        <tr><td><code>/downloads.php?usercenter=comments&amp;release_id=N</code></td><td>Kommentar zu Release</td></tr>
-        <tr><td><code>/downloads.php?logout=1</code></td><td>Logout</td></tr>
-        <tr><td><code>/pdl-admin/</code></td><td>Admin-Panel (rechtegeschützt)</td></tr>
+        <tr><td><code>/downloads.php?usercenter=lost2&amp;remind_code=…</code></td><td>Neues Passwort setzen</td></tr>
+        <tr><td><code>/downloads.php?usercenter=comments&amp;release_id=N</code></td><td>Kommentar zu einem Release</td></tr>
+        <tr><td><code>/downloads.php?logout=1&amp;csrf_token=…</code></td><td>Abmelden (auch per Formular)</td></tr>
+        <tr><td><code>/pdl-admin/</code></td><td>Adminbereich (rechtegeschützt)</td></tr>
+        <tr><td><code>/install.php</code></td><td>Web-Installer (gesperrt nach der Installation)</td></tr>
+        <tr><td><code>/update.php</code></td><td>Datenbank-Update (nur Admins)</td></tr>
     </table>
-    <p>Alle Form-Submits gehen an <code>downloads.php</code> mit den Steuerparametern als Hidden-Inputs (kein Query-String im Action-Attribut).</p>
+    <p>Formulare senden an <code>downloads.php</code>, die Steuerparameter stehen in versteckten Feldern.</p>
 
     <h2>Sicherheit</h2>
     <ul>
-        <li><strong><code>password_hash</code> / <code>password_verify</code></strong> mit <code>PASSWORD_DEFAULT</code> (bcrypt).</li>
-        <li><strong>Transparente Migration</strong> alter MD5-Hashes nach erfolgreichem Login.</li>
-        <li><strong>Session-Token im Cookie</strong> (statt Passwort-Hash); Token in <code>pdl3_user.session_token</code>.</li>
-        <li><strong><code>session_regenerate_id</code></strong> nach Login.</li>
-        <li><strong>Cookie-Flags:</strong> <code>HttpOnly</code>, <code>SameSite=Lax</code>, <code>Secure</code> (automatisch bei HTTPS).</li>
-        <li><strong>CSRF-Schutz</strong> auf allen POST-Endpunkten via <code>csrf_token()</code> / <code>csrf_verify()</code>.</li>
-        <li><strong>Rate-Limit</strong> für Login: 5 Fehlversuche pro IP / 15 min, persistiert in <code>pdl3_iplock</code>.</li>
-        <li><strong>User-Enumeration verhindert:</strong> generische Antwort bei Passwort-vergessen.</li>
-        <li><strong>Server-Validierung</strong> für E-Mail (<code>FILTER_VALIDATE_EMAIL</code>) und Homepage (<code>FILTER_VALIDATE_URL</code>, Whitelist <code>http</code>/<code>https</code>).</li>
-        <li><strong>Path-Traversal-Schutz</strong> bei Modul-Includes (Whitelist statt direkte File-Inclusion).</li>
-        <li><strong><code>utf8mb4</code></strong> als Datenbank-Charset.</li>
+        <li><strong><code>password_hash</code> / <code>password_verify</code></strong> mit <code>PASSWORD_DEFAULT</code> (bcrypt), alte MD5-Hashes werden nach erfolgreicher Anmeldung umgestellt.</li>
+        <li><strong>Sitzungs-Token im Cookie</strong> (kein Passwort-Hash), <code>session_regenerate_id</code> nach der Anmeldung.</li>
+        <li><strong>Mehrere Geräte:</strong> Eine Anmeldung auf einem zweiten Gerät meldet das erste nicht ab. <strong>„Abmelden“ meldet alle Geräte ab</strong>, ebenso „Passwort vergessen“; ein Passwortwechsel im Profil meldet alle anderen Geräte ab.</li>
+        <li><strong>Cookie-Flags:</strong> <code>HttpOnly</code>, <code>SameSite=Lax</code>, <code>Secure</code> bei HTTPS.</li>
+        <li><strong>CSRF-Schutz</strong> auf allen POST-Formularen, auch bei Anmeldung, Abmeldung und im gesamten Adminbereich. Zerstörende Aktionen nur per POST nach Bestätigungsseite.</li>
+        <li><strong>Rate-Limits:</strong> Anmeldung 5 Fehlversuche je IP in 15 Minuten, Registrierung 5 und „Passwort vergessen“ 3 je IP und Stunde; IPv4 und IPv6.</li>
+        <li><strong>Kein Ausforschen von Adressen:</strong> „Passwort vergessen“ antwortet immer gleich.</li>
+        <li><strong>Rechte:</strong> einheitliche Prüfung in Menü und Seiten; Gäste erhalten nie Admin-Rechte; Spaltennamen der Rechte nur aus <code>pdl3_rights</code>.</li>
+        <li><strong>Versteckte Releases</strong> erscheinen weder in Listen, Suche, Statistik und Newsletter noch über <code>load_file</code>.</li>
+        <li><strong>BBCode-Links</strong> nur mit <code>http</code>, <code>https</code>, <code>mailto</code>.</li>
+        <li><strong>Uploads:</strong> ausführbare Endungen gesperrt, doppelte Endungen wie <code>datei.php.zip</code> beim Speichern entschärft (<code>datei_php.zip</code>); <code>pdl-files/</code>, <code>pdl-gfx/screens/</code> und <code>pdl-gfx/smilies/</code> ohne PHP-Ausführung.</li>
+        <li><strong><code>pdl-files/</code> nicht direkt abrufbar</strong> (HTTP 403): Downloads nur über <code>downloads.php?load_file=N</code> mit Rechteprüfung, Hotlink-Schutz und Zähler. Direktlinks auf <code>pdl-files/…</code> funktionieren seit 3.6.0 nicht mehr.</li>
+        <li><strong>Sicherung</strong> ohne Anmelde-Tokens und Reset-Codes.</li>
+        <li><strong>Installer:</strong> gesperrt nach dem Abschluss, schreibt die Konfiguration ohne Überschreiben, legt keine Standardkonten an.</li>
+        <li><strong>Fehlermeldungen:</strong> Datenbankfehler mit Serverdetails nur im Fehlerprotokoll, Passwörter und Tokens dort maskiert.</li>
+        <li><strong><code>utf8mb4</code></strong> als Zeichensatz.</li>
     </ul>
 
     <h2>Entwicklung</h2>
+    <p>Alle Befehle im laufenden Docker-Stack.</p>
 
     <h3>Komponenten installieren</h3>
     <pre><code>docker exec powerdownload_web composer install</code></pre>
 
     <h3>Test-Suite</h3>
     <pre><code>docker exec powerdownload_web composer phpunit</code></pre>
+    <p>Der Integrationstest des Installers (<code>tests/Integration/InstallerDatabaseTest.php</code>) legt eine eigene Datenbank <code>&lt;PDL_DB_NAME&gt;_installer_test</code> an und entfernt sie wieder. Ohne Recht <code>CREATE DATABASE</code> überspringt er sich.</p>
 
     <h3>Static Analysis</h3>
     <pre><code>docker exec powerdownload_web composer phpstan
@@ -265,55 +344,59 @@ docker exec powerdownload_web composer phpmd</code></pre>
 
     <h3>Code-Style</h3>
     <pre><code>docker exec powerdownload_web composer cs        # Prüfen (Dry-Run)
-docker exec powerdownload_web composer cs:fix    # Automatisch fixen</code></pre>
+docker exec powerdownload_web composer cs:fix    # Automatisch korrigieren</code></pre>
 
     <h3>Rector (Refactoring)</h3>
     <pre><code>docker exec powerdownload_web composer rector       # Dry-Run
 docker exec powerdownload_web composer rector:fix   # Anwenden</code></pre>
 
-    <h3>Quality-Bundle (alle Static-Analyse-Tools)</h3>
+    <h3>Quality-Bundle (alle Static-Analyse-Werkzeuge)</h3>
     <pre><code>docker exec powerdownload_web composer quality</code></pre>
 
-    <h2>Konfiguration im Admin-Panel</h2>
+    <h2>Konfiguration im Adminbereich</h2>
     <ul>
-        <li><strong>Settings:</strong> über <code>$settings['&lt;name&gt;']</code> abrufbar.</li>
-        <li><strong>Templates:</strong> über <code>$template['&lt;name&gt;']</code>; HTML-Schnipsel mit <code>{platzhalter}</code>.</li>
-        <li><strong>Rechte:</strong> über <code>$user_rights['&lt;name&gt;']</code> pro Benutzergruppe.</li>
-        <li><strong>User:</strong> über <code>$user_details[...]</code> – leer = nicht eingeloggt.</li>
+        <li><strong>Einstellungen:</strong> über <code>$settings['&lt;name&gt;']</code>, Verwaltung unter <strong>System → Einstellungen</strong> (Reiter je Gruppe).</li>
+        <li><strong>Vorlagen:</strong> über <code>$template['&lt;name&gt;']</code>; HTML-Schnipsel mit <code>{platzhalter}</code>.</li>
+        <li><strong>Rechte:</strong> über <code>$user_rights['&lt;name&gt;']</code> je Benutzergruppe.</li>
+        <li><strong>Benutzer:</strong> über <code>$user_details[...]</code>; leer heißt nicht angemeldet.</li>
     </ul>
 
     <table>
-        <tr><th>Setting</th><th>Bedeutung</th></tr>
-        <tr><td><code>script_file</code></td><td>URL-Präfix der Hauptseite</td></tr>
-        <tr><td><code>enable_comments</code></td><td>Y/N – Kommentare global aktivieren</td></tr>
-        <tr><td><code>bb_code</code></td><td>Y/N – BBCode in Kommentaren erlauben</td></tr>
-        <tr><td><code>smilies</code></td><td>Y/N – Smilies in Kommentaren</td></tr>
-        <tr><td><code>mail_fromname</code></td><td>Absender-Name für System-Mails</td></tr>
-        <tr><td><code>mail_fromaddr</code></td><td>Absender-Adresse für System-Mails</td></tr>
-        <tr><td><code>dlspeed</code></td><td>Geschätzte Download-Geschwindigkeit (kB/s)</td></tr>
-        <tr><td><code>perpage</code></td><td>Standard-Anzahl Releases pro Seite</td></tr>
-        <tr><td><code>orderby</code> / <code>orderseq</code></td><td>Standard-Sortierung in Ordnerlisten</td></tr>
+        <tr><th>Einstellung</th><th>Bedeutung</th></tr>
+        <tr><td><code>site_url</code></td><td>Adresse der Download-Seite mit <code>https://</code>, Grundlage für Links in Mails und Newsletter</td></tr>
+        <tr><td><code>sitename</code></td><td>Name der Download-Seite (erscheint in Mails)</td></tr>
+        <tr><td><code>mail_fromname</code>, <code>mail_fromaddr</code></td><td>Absendername und -adresse aller Mails</td></tr>
+        <tr><td><code>guest_group_id</code></td><td>Benutzergruppe für nicht angemeldete Besucher (Vorgabe 3 „Gast“)</td></tr>
+        <tr><td><code>script_file</code></td><td>Aufruf der Download-Seite, ab Werk <code>downloads.php?</code> (relativ lassen)</td></tr>
+        <tr><td><code>enable_comments</code>, <code>enable_search</code></td><td>Kommentare bzw. Suche ein/aus</td></tr>
+        <tr><td><code>bb_code</code>, <code>smilies</code></td><td>BBCode bzw. Smileys in Texten und Kommentaren</td></tr>
+        <tr><td><code>captcha_enabled</code></td><td>Rechenaufgabe bei Registrierung und „Passwort vergessen“</td></tr>
+        <tr><td><code>orderby</code>, <code>orderseq</code>, <code>perpage</code></td><td>Sortierung und Releases pro Seite</td></tr>
+        <tr><td><code>dlspeed</code></td><td>angenommene Geschwindigkeit (KB/s) für die geschätzte Downloadzeit</td></tr>
     </table>
 
     <h2>Datenbank-Schema (Auszug)</h2>
     <table>
         <tr><th>Tabelle</th><th>Zweck</th></tr>
-        <tr><td><code>pdl3_user</code></td><td>Benutzer (inkl. <code>passwort</code>, <code>session_token</code>, <code>remind_code</code>, <code>remind_expires</code>)</td></tr>
-        <tr><td><code>pdl3_usergroup</code></td><td>Benutzergruppen + Rechte</td></tr>
+        <tr><td><code>pdl3_user</code></td><td>Benutzer (u. a. <code>passwort</code>, <code>session_token</code>, <code>remind_code</code>, <code>remind_expires</code>, <code>get_letter</code>)</td></tr>
+        <tr><td><code>pdl3_usergroup</code></td><td>Benutzergruppen und Rechte: 1 Mitglied, 2 Administrator, 3 Gast</td></tr>
+        <tr><td><code>pdl3_rights</code></td><td>Rechte-Definitionen (Name, Beschreibung, Spalte)</td></tr>
         <tr><td><code>pdl3_ordner</code></td><td>Ordner-Hierarchie</td></tr>
-        <tr><td><code>pdl3_release</code></td><td>Releases (Downloads)</td></tr>
-        <tr><td><code>pdl3_files</code></td><td>Einzelne Dateien je Release</td></tr>
-        <tr><td><code>pdl3_screens</code></td><td>Screenshots je Release</td></tr>
-        <tr><td><code>pdl3_comments</code></td><td>Benutzer-Kommentare</td></tr>
-        <tr><td><code>pdl3_iplock</code></td><td>IP-Lock für Voting + Login-Rate-Limit</td></tr>
-        <tr><td><code>pdl3_settings</code></td><td>Konfigurations-Werte</td></tr>
-        <tr><td><code>pdl3_template</code></td><td>HTML-Templates</td></tr>
-        <tr><td><code>pdl3_rights</code></td><td>Rechte-Definitionen</td></tr>
+        <tr><td><code>pdl3_release</code></td><td>Releases</td></tr>
+        <tr><td><code>pdl3_files</code></td><td>Dateien und Spiegel-Server je Release</td></tr>
+        <tr><td><code>pdl3_screens</code></td><td>Screenshots je Release (mit <code>text</code>, <code>views</code>)</td></tr>
+        <tr><td><code>pdl3_comments</code></td><td>Kommentare</td></tr>
+        <tr><td><code>pdl3_iplock</code></td><td>IP-Sperren für Bewertung, Kommentar, Anmeldung, Registrierung, „Passwort vergessen“ und Downloadzähler</td></tr>
+        <tr><td><code>pdl3_replacements</code></td><td>Zensur, Glossar, Smileys</td></tr>
+        <tr><td><code>pdl3_settings</code>, <code>pdl3_settingsgroup</code></td><td>Einstellungen und ihre Gruppen</td></tr>
+        <tr><td><code>pdl3_template</code>, <code>pdl3_templategroup</code></td><td>Vorlagen und ihre Gruppen</td></tr>
+        <tr><td><code>pdl3_admin_log</code></td><td>Audit-Log der Admin-Aktionen</td></tr>
     </table>
+    <p>Schema und Grunddaten: <code>pdl-inc/pdl3_schema.sql</code>.</p>
 
     <h2>Ports (Docker)</h2>
     <table>
-        <tr><th>Service</th><th>Port</th><th>Beschreibung</th></tr>
+        <tr><th>Dienst</th><th>Port</th><th>Beschreibung</th></tr>
         <tr><td>Web</td><td>8092</td><td>Apache + PHP</td></tr>
         <tr><td>MySQL</td><td>3319</td><td>Datenbank-Hostport</td></tr>
         <tr><td>phpMyAdmin</td><td>8094</td><td>Datenbank-Verwaltung</td></tr>
@@ -321,23 +404,25 @@ docker exec powerdownload_web composer rector:fix   # Anwenden</code></pre>
 
     <h2>Troubleshooting</h2>
     <ul>
-        <li><strong>„Database not initialized"</strong> → <code>install_303.php</code> aufrufen oder Compose-Stack mit <code>--force-recreate</code> neu starten.</li>
-        <li><strong>Login schlägt mit Bestandsuser fehl</strong> → Passwort über „Passwort vergessen" zurücksetzen; alte MD5-Hashes werden beim ersten erfolgreichen Login automatisch migriert.</li>
-        <li><strong>„Zu viele Fehlversuche"</strong> → Rate-Limit erreicht; in MySQL <code>DELETE FROM pdl3_iplock WHERE ip='&lt;IP&gt;' AND art='login';</code> oder 15 Minuten warten.</li>
-        <li><strong>Mailversand schlägt fehl</strong> → Im Container ist <code>sendmail</code> nicht installiert; in Produktion einen MTA bereitstellen oder <code>mail()</code> durch externen Mailer ersetzen. Fehler werden mit <code>error_log()</code> protokolliert.</li>
-        <li><strong>Leere Info-Boxen auf Startseite</strong> → DB-Templates wurden 2026-04 ergänzt; bei alten Installationen <code>docs/superpowers/plans/2026-04-23-seed-templates.sql</code> einspielen.</li>
-        <li><strong>Schema-Inkonsistenz nach Update</strong> → Spalten <code>session_token</code>, <code>remind_expires</code>, <code>signatur (NULL)</code> in <code>pdl3_user</code> und <code>addcomments</code> in <code>pdl3_usergroup</code> prüfen, ggf. per <code>ALTER TABLE</code> ergänzen.</li>
+        <li><strong>„PowerDownload ist noch nicht eingerichtet“</strong> → Neuinstallation: <code>install.php</code> aufrufen. Nach einem Update: <code>pdl-inc/pdl_config.local.php</code> fehlt oder enthält falsche Zugangsdaten (Vorlage <code>pdl_config.local.example.php</code>). Die genaue Meldung des Datenbankservers steht im Fehlerprotokoll.</li>
+        <li><strong>„Installer gesperrt“</strong> → Die Installation ist abgeschlossen (<code>install.lock</code> oder <code>pdl_config.local.php</code> vorhanden) oder in <code>pdl-files/</code> bzw. <code>pdl-gfx/screens/</code> liegen schon hochgeladene Dateien. <code>install.php</code> vom Server löschen; ein Update läuft über <code>update.php</code>.</li>
+        <li><strong>Direktlink auf <code>pdl-files/…</code> liefert 403</strong> → So gewollt. Verlinken Sie <code>downloads.php?load_file=N</code> (die Download-Knöpfe der Release-Seite tun das bereits).</li>
+        <li><strong>Neue Funktionen fehlen nach einem Update</strong> (z. B. Gruppe „Gast“, Mail-Vorlagen, „Adresse der Download-Seite“) → <code>update.php</code> als Admin aufrufen.</li>
+        <li><strong>Links in Mails falsch</strong> → Unter Einstellungen → Allgemein die „Adresse der Download-Seite“ (<code>site_url</code>) mit <code>https://</code> eintragen.</li>
+        <li><strong>Bestandsuser kann sich nicht anmelden</strong> → „Passwort vergessen“ nutzen; alte MD5-Hashes werden bei der nächsten Anmeldung umgestellt.</li>
+        <li><strong>„Zu viele Fehlversuche“</strong> → 15 Minuten warten oder in MySQL <code>DELETE FROM pdl3_iplock WHERE ip='&lt;IP&gt;' AND art='login';</code>.</li>
+        <li><strong>Mailversand schlägt fehl</strong> → PowerDownload verschickt über PHP-<code>mail()</code>. Im Docker-Container ist kein <code>sendmail</code> installiert; in Produktion braucht der Server einen funktionierenden Mailversand. Fehler stehen im Fehlerprotokoll.</li>
+        <li><strong>Upload oder Screenshot scheitert</strong> → Schreibrechte für <code>pdl-files/</code> bzw. <code>pdl-gfx/screens/</code> prüfen; die Systemprüfung des Installers zeigt sie ebenfalls.</li>
     </ul>
 
     <h2>Audit &amp; Dokumentation</h2>
-    <p>Im Verzeichnis <code>docs/</code>:</p>
+    <p>Im Verzeichnis <code>docs/</code> (nur im Repository):</p>
     <ul>
-        <li><code>2026-04-23-Userbereichs-bugs.md</code> – vollständige Bug-Liste des Userbereichs</li>
+        <li><code>2026-04-23-Userbereichs-bugs.md</code> – Bug-Liste des Benutzerbereichs</li>
         <li><code>2026-04-23-Userbereichs-improvements.md</code> – Verbesserungsvorschläge</li>
-        <li><code>2026-04-23-Userbereichs-test-coverage.md</code> – Testabdeckung &amp; Routenmatrix</li>
-        <li><code>2026-04-23-Userbereichs-abschlussbericht.md</code> – Management-Zusammenfassung</li>
-        <li><code>superpowers/plans/2026-04-23-userbereich-bugfixes.md</code> – Implementierungsplan der Fixes</li>
-        <li><code>superpowers/plans/2026-04-23-seed-templates.sql</code> – idempotente Migration für fehlende Templates</li>
+        <li><code>2026-04-23-Userbereichs-test-coverage.md</code> – Testabdeckung und Routenmatrix</li>
+        <li><code>2026-04-23-Userbereichs-abschlussbericht.md</code> – Zusammenfassung</li>
+        <li><code>superpowers/plans/</code> – Implementierungspläne und historische Migrationen</li>
     </ul>
 
     <h2>Lizenz</h2>

@@ -1,9 +1,9 @@
 /*
  * PowerDownload - Public Bootstrap 5 Theme Overrides
  *
- * Dunkles Theme mit hohen Kontrasten (WCAG AA / AAA fuer Body-Text).
+ * Dunkles Theme mit hohen Kontrasten (WCAG AA / AAA für Body-Text).
  * Alle Bootstrap-Defaults (blaue Links, graues text-muted, etc.) werden
- * ueberschrieben, damit Text auf dunklem Hintergrund klar lesbar bleibt.
+ * überschrieben, damit Text auf dunklem Hintergrund klar lesbar bleibt.
  */
 
 :root {
@@ -25,7 +25,7 @@
 }
 
 body.pdl-public {
-    /* Bootstrap-Variablen ueberschreiben, damit Bootstrap-eigene Komponenten
+    /* Bootstrap-Variablen überschreiben, damit Bootstrap-eigene Komponenten
        (z.B. utility classes) den dunklen Body-Background nutzen. */
     --bs-body-bg: var(--pdl-bg);
     --bs-body-color: var(--pdl-text);
@@ -61,7 +61,7 @@ body.pdl-public a:focus {
     color: var(--pdl-accent-link-hover);
 }
 
-/* Bootstrap-Utility-Klassen, die haeufig blaue Farben setzen */
+/* Bootstrap-Utility-Klassen, die häufig blaue Farben setzen */
 body.pdl-public .text-primary,
 body.pdl-public .link-primary {
     color: var(--pdl-accent-link) !important;
@@ -464,7 +464,7 @@ body.pdl-public .list-group-item-action:focus {
     color: #00263a !important;
 }
 
-/* Alerts mit hohem Kontrast (heller Text auf dunklen Untergruenden) */
+/* Alerts mit hohem Kontrast (heller Text auf dunklen Untergründen) */
 .pdl-public .alert-info {
     background-color: #0f3a4a !important;
     color: #cdeefb !important;
@@ -527,7 +527,7 @@ body.pdl-public .list-group-item-action:focus {
     color: var(--pdl-muted);
 }
 
-/* Nav-Pills (z.B. fuer Sprungnav in Settings/Templates) */
+/* Nav-Pills (z. B. für Sprungnav in Settings/Templates) */
 .pdl-public .nav-pills .nav-link {
     color: var(--pdl-text);
     background-color: var(--pdl-surface-alt);
@@ -609,9 +609,9 @@ body.pdl-public .list-group-item-action:focus {
 }
 
 /*
- * Override fuer die in der DB hinterlegten Legacy-Templates, die noch alte
+ * Override für die in der DB hinterlegten Legacy-Templates, die noch alte
  * Tabellen mit bgcolor- und cellpadding-Attributen verwenden. Die DB-Templates
- * koennen ohne Migration ueber CSS auf Bootstrap-Look gebracht werden.
+ * können ohne Migration über CSS auf Bootstrap-Look gebracht werden.
  */
 .pdl-public .card-body table[bgcolor],
 .pdl-public .card-body table table {
@@ -666,7 +666,7 @@ body.pdl-public .list-group-item-action:focus {
 }
 
 /*
- * Der DB-Template-Output enthaelt teilweise verschachtelte Tabellen mit
+ * Der DB-Template-Output enthält teilweise verschachtelte Tabellen mit
  * sehr engen Paddings. Wir geben ihnen einen einheitlichen Rahmen.
  */
 .pdl-public .card-body > table:first-child {
@@ -690,7 +690,102 @@ body.pdl-public .visually-hidden-focusable:focus-within {
     left: 0.5rem;
 }
 
-/* Button-Group + flex-wrap fuer Mobile */
+/* Button-Group + flex-wrap für Mobile */
 .pdl-public .btn-group.flex-wrap > .btn {
     margin-bottom: 0.25rem;
+}
+
+/* Startseiten-Widgets (Vorlagen stats, top_*, flop_*, latest_*, rated_*) */
+.pdl-public .pdl-stats-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.3rem 0.25rem;
+    border-bottom: 1px solid var(--pdl-border);
+}
+
+.pdl-public .pdl-stats-list li:last-child {
+    border-bottom: 0;
+}
+
+.pdl-public .pdl-stats-list strong {
+    white-space: nowrap;
+}
+
+.pdl-public .pdl-widget-list .list-group-item {
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+}
+
+.pdl-public .pdl-widget-list .list-group-item::before {
+    color: var(--pdl-muted);
+    margin-right: 0.35rem;
+}
+
+.pdl-public .pdl-widget-list a {
+    overflow-wrap: anywhere;
+}
+
+/* Release-Seite: Dateien, Spiegel-Server, Eckdaten, Screenshots */
+.pdl-public .pdl-file-name {
+    overflow-wrap: anywhere;
+}
+
+.pdl-public .pdl-mirror-list {
+    color: var(--pdl-muted);
+}
+
+.pdl-public .pdl-release-facts dt {
+    font-weight: 700;
+}
+
+.pdl-public .pdl-screen-thumb img {
+    max-width: 200px;
+    max-height: 150px;
+    background-color: var(--pdl-surface-alt);
+    border-color: var(--pdl-border);
+}
+
+.pdl-public .figure-caption {
+    color: var(--pdl-text);
+}
+
+.pdl-public .pdl-www-icon {
+    vertical-align: text-bottom;
+}
+
+/* Kommentare */
+.pdl-public .pdl-comment:last-child article {
+    border-bottom: 0 !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.pdl-public .pdl-comment-text {
+    overflow-wrap: anywhere;
+}
+
+.pdl-public .pdl-comment-text img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Blätterlinks (seiten()) */
+.pdl-public .pdl-pagination {
+    gap: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.pdl-public .pdl-pagination a,
+.pdl-public .pdl-pagination b {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border: 1px solid var(--pdl-border);
+    border-radius: 0.25rem;
+    text-decoration: none;
+}
+
+.pdl-public .pdl-pagination b {
+    background-color: var(--pdl-accent-strong);
+    color: #fff;
 }

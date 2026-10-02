@@ -70,4 +70,14 @@ class MockDbHandler
     public function sql_close(): void
     {
     }
+
+    public function sql_error(): string
+    {
+        return '';
+    }
+
+    public function sql_errno(): int
+    {
+        return 0;
+    }
 }

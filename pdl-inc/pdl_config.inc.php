@@ -3,6 +3,18 @@
 /**
  * PowerDownload - Configuration
  *
+ * Enthält keine Zugangsdaten. Die Zugangsdaten zur Datenbank kommen aus
+ * (höchste Priorität zuerst):
+ *   1. den Umgebungsvariablen PDL_DB_HOST, PDL_DB_PORT, PDL_DB_USER,
+ *      PDL_DB_PASS, PDL_DB_NAME (Docker, SetEnv beim Hoster),
+ *   2. pdl-inc/pdl_config.local.php (schreibt der Web-Installer install.php;
+ *      Vorlage zum Anlegen von Hand: pdl_config.local.example.php),
+ *   3. den Vorgaben in PowerDownload\LocalConfig::DEFAULT_DB. Damit gilt
+ *      PowerDownload als nicht eingerichtet.
+ *
+ * Diese Datei wird bei jedem Update überschrieben. Eigene Zugangsdaten
+ * gehören deshalb nie hierher, sondern in pdl_config.local.php.
+ *
  * @package    PowerDownload
  * @author     PowerScripts
  * @copyright  2001-2002 PowerScripts, 2025 Nico Schubert
@@ -11,13 +23,23 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/pdl_localconfig.inc.php';
+
+$pdl_local_config = \PowerDownload\LocalConfig::load(
+    static fn (string $name): string|false => getenv($name),
+    __DIR__ . '/' . \PowerDownload\LocalConfig::FILENAME
+);
+
 // SQL Zugangsdaten
-$config_sql_server = "db";           // SQL Server (use "db" for Docker, "localhost" for local)
-$config_sql_database = "pdl3";       // SQL Datenbank
-$config_sql_user = "pdl_user";       // SQL Benutzer
-$config_sql_password = "pdl_password"; // SQL Passwort
-$config_sql_persistent = false;      // Soll eine persistente Verbindung aufgebaut werden?
-$config_sql_type = "MySQL";          // SQL Typ
+$config_sql_server = $pdl_local_config['db']['host'];         // SQL Server
+$config_sql_port = $pdl_local_config['db']['port'];           // SQL Port
+$config_sql_database = $pdl_local_config['db']['database'];   // SQL Datenbank
+$config_sql_user = $pdl_local_config['db']['user'];           // SQL Benutzer
+$config_sql_password = $pdl_local_config['db']['password'];   // SQL Passwort
+$config_sql_persistent = $pdl_local_config['db']['persistent']; // Persistente Verbindung?
+$config_sql_type = "MySQL";                                   // SQL Typ
+$config_source = $pdl_local_config['source'];                 // environment, file oder defaults
+unset($pdl_local_config);
 
 // Tabellen Namen
 $sql_table = [

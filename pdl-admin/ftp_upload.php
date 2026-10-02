@@ -1,74 +1,89 @@
 <?php
 include("header.inc.php");
 
-// Extract POST/GET variables
 $submit = isset($_GET['submit']) ? (int)$_GET['submit'] : 0;
-$upload_to = isset($_GET['upload_to']) ? $_GET['upload_to'] : '';
+$upload_to = isset($_GET['upload_to']) && is_string($_GET['upload_to']) ? $_GET['upload_to'] : '';
 $release_id = isset($_GET['release_id']) ? (int)$_GET['release_id'] : 0;
+$csrf_token_post = (string) ($_POST['csrf_token'] ?? '');
 
-// Handle file upload variables
-$upload = isset($_FILES['upload']['tmp_name']) ? $_FILES['upload']['tmp_name'] : '';
-$upload_name = isset($_FILES['upload']['name']) ? $_FILES['upload']['name'] : '';
+// Hochgeladene Datei
+$upload = isset($_FILES['upload']['tmp_name']) ? (string) $_FILES['upload']['tmp_name'] : '';
+$upload_name = isset($_FILES['upload']['name']) ? pdl_sanitize_upload_filename((string) $_FILES['upload']['name']) : '';
 
-if($user_rights['adminaccess'] == "Y")
+if (!pdl_admin_require_right('addfiles', 'editfiles')) {
+    include("footer.inc.php");
+    return;
+}
+
+$browser_href = 'ftp_browser.php?chdir=' . urlencode($upload_to) . '&release_id=' . (int) $release_id;
+pdl_admin_breadcrumb([
+    ['title' => 'Adminbereich', 'href' => 'index.php'],
+    ['title' => 'FTP-Browser', 'href' => $browser_href],
+    ['title' => 'Datei hochladen'],
+]);
+
+if (($settings['ftp_on'] ?? '') == "Y" && function_exists("ftp_connect"))
  {
-  if($settings['ftp_on'] == "Y" && function_exists("ftp_connect"))
-   {
-    set_time_limit(300);
-    $ftp_handler = ftp_connect($settings['ftp_server']);
-    if(!ftp_login($ftp_handler,$settings['ftp_user'],$settings['ftp_passwort'])) {
-        echo pdl_admin_alert('danger', 'Login fehlgeschlagen. Bitte ueberprüfen Sie die Login-Daten.');
-    } else {
-      if($submit == 1) {
-        if(is_uploaded_file($upload)) {
-          if(ftp_size($ftp_handler,$upload_to.$upload_name) != -1) {
-            echo pdl_admin_alert('warning', 'Datei mit selbem Namen existiert bereits.');
-          } else {
-            $upload_result = ftp_put($ftp_handler, $upload_to.$upload_name, $upload, FTP_BINARY);
-            echo pdl_admin_alert('success', '<strong>Datei wurde hochgeladen.</strong>');
-            echo '<a class="btn btn-outline-light" href="ftp_browser.php?chdir=' . htmlspecialchars(urlencode($upload_to)) . '&amp;release_id=' . (int)$release_id . '">Zurück zum FTP-Browser</a>';
-          }
-        } else {
-          echo pdl_admin_alert('warning', 'Bitte eine Datei auswählen.');
-        }
+  set_time_limit(300);
+  $ftp_handler = @ftp_connect((string) $settings['ftp_server']);
+  if ($ftp_handler === false || !@ftp_login($ftp_handler, (string) $settings['ftp_user'], (string) $settings['ftp_passwort'])) {
+      echo pdl_admin_alert('danger', 'Die Anmeldung am FTP-Server ist fehlgeschlagen. Bitte überprüfen Sie Server, Benutzername und Passwort unter Einstellungen → FTP.');
+  } else {
+    if ($submit == 1) {
+      echo '<h1 class="h3 pdl-page-title">Datei hochladen</h1>';
+      if (!csrf_verify($csrf_token_post)) {
+        echo pdl_admin_alert('danger', 'Sicherheits-Token ungültig oder abgelaufen. Bitte wählen Sie die Datei erneut aus und senden Sie das Formular noch einmal ab.');
+      } elseif (!is_uploaded_file($upload)) {
+        echo pdl_admin_alert('warning', 'Bitte wählen Sie eine Datei aus.');
+      } elseif (($blocked = pdl_validate_file_upload($_FILES['upload'] ?? [], PHP_INT_MAX)) !== null) {
+        echo pdl_admin_alert('warning', htmlspecialchars($blocked));
+      } elseif (ftp_size($ftp_handler, $upload_to . $upload_name) != -1) {
+        echo pdl_admin_alert('warning', 'Im Zielordner gibt es bereits eine Datei mit diesem Namen. Bitte benennen Sie die Datei um.');
+      } elseif (!@ftp_put($ftp_handler, $upload_to . $upload_name, $upload, FTP_BINARY)) {
+        echo pdl_admin_alert('danger', 'Die Datei konnte nicht auf den FTP-Server übertragen werden. Bitte prüfen Sie die Schreibrechte im Zielordner.');
       } else {
-        $max = get_cfg_var("upload_max_filesize");
-        if(substr($max,strlen($max)-1,strlen($max)) == "M") $max = substr($max,0,strlen($max)-1)*1024*1024;
-        elseif(substr($max,strlen($max)-1,strlen($max)) == "K") $max = substr($max,0,strlen($max)-1)*1024;
-
-        pdl_admin_breadcrumb([
-            ['title' => 'Admin-Center', 'href' => 'index.php'],
-            ['title' => 'FTP-Browser', 'href' => 'ftp_browser.php?release_id=' . (int)$release_id],
-            ['title' => 'Datei uploaden'],
-        ]);
-        echo '<h1 class="h3 pdl-page-title">Upload in den Ordner ' . htmlspecialchars($settings['ftp_server_url'].$upload_to) . '</h1>';
+        $file_url = (string) ($settings['ftp_server_url'] ?? '') . $upload_to . $upload_name;
+        $actions = [['label' => 'Zurück zum FTP-Browser', 'href' => $browser_href, 'id' => 'pdlNextFtpBrowser']];
+        if ($release_id > 0) {
+            array_unshift($actions, [
+                'label' => 'Zum Release hinzufügen',
+                'href' => 'addfile.php?release_id=' . $release_id . '&url=' . urlencode($file_url) . '&size=' . (int) filesize($upload),
+                'id' => 'pdlNextAddFile',
+                'primary' => true,
+            ]);
+        }
+        echo pdl_admin_result('success', '<strong>Die Datei „' . htmlspecialchars($upload_name, ENT_QUOTES, 'UTF-8') . '“ wurde hochgeladen.</strong>', $actions);
+      }
+    } else {
+      $max = pdl_ini_size_in_bytes((string) ini_get("upload_max_filesize"));
+      echo '<h1 class="h3 pdl-page-title">Datei hochladen</h1>';
+      echo '<p class="text-muted">Zielordner: <code>' . htmlspecialchars((string) ($settings['ftp_server_url'] ?? '') . $upload_to) . '</code></p>';
 ?>
 <form enctype="multipart/form-data" action="ftp_upload.php?upload_to=<?php echo htmlspecialchars(urlencode($upload_to)); ?>&amp;release_id=<?php echo (int)$release_id; ?>&amp;submit=1" method="post" novalidate>
+    <?php echo csrf_input(); ?>
     <section class="card pdl-card mb-4">
-        <header class="card-header"><h2 class="h5 mb-0">Datei hochladen</h2></header>
+        <header class="card-header"><h2 class="h5 mb-0">Datei</h2></header>
         <div class="card-body">
             <div class="mb-3">
                 <label for="pdlFtpUpload" class="form-label">Datei</label>
-                <input type="hidden" name="MAX_FILE_SIZE" value="<?php echo htmlspecialchars($max); ?>">
+                <input type="hidden" name="MAX_FILE_SIZE" value="<?php echo (int) $max; ?>">
                 <input type="file" id="pdlFtpUpload" name="upload" class="form-control" required>
-                <div class="form-text">Wählen Sie die hochzuladende Datei. Maximale Dateigröße: <strong><?php echo size($max); ?></strong>.</div>
+                <div class="form-text">Wählen Sie die Datei aus. Sie wird zuerst auf diesen Webserver und dann per FTP übertragen; höchstens <strong><?php echo size($max); ?></strong>.</div>
             </div>
         </div>
     </section>
     <div class="d-grid d-md-flex gap-2 justify-content-md-end">
-        <a href="ftp_browser.php?release_id=<?php echo (int)$release_id; ?>" class="btn btn-outline-light">Abbrechen</a>
+        <a href="<?php echo htmlspecialchars($browser_href); ?>" class="btn btn-outline-light">Abbrechen</a>
         <button type="submit" class="btn btn-primary">Hochladen</button>
     </div>
 </form>
 <?php
-      }
     }
-    ftp_quit($ftp_handler);
-   } else {
-    echo pdl_admin_alert('warning', 'Der Server unterstützt keine FTP-Funktionen oder ein Admin hat den FTP-Browser ausgeschaltet.');
-   }
+  }
+  if ($ftp_handler !== false) {
+      ftp_quit($ftp_handler);
+  }
+ } else {
+  echo pdl_admin_alert('warning', 'Der Server unterstützt keine FTP-Funktionen oder der FTP-Browser ist ausgeschaltet (Einstellungen → FTP).');
  }
-else
- { echo pdl_admin_alert('warning', 'Sie haben keine Berechtigung diese Seite zu sehen.'); }
 include("footer.inc.php");
-?>

@@ -3,8 +3,8 @@
  *
  * Dunkles Theme mit hohen Kontrasten (WCAG AA / AAA für Body-Text).
  * Alle Bootstrap-Defaults (blaue Links, dunkles text-muted, etc.) werden
- * ueberschrieben. Bedeutung wird nicht nur ueber Farbe vermittelt -
- * gefaehrliche Aktionen tragen zusaetzlich Klartext-Label und Border.
+ * überschrieben. Bedeutung wird nicht nur über Farbe vermittelt -
+ * gefährliche Aktionen tragen zusätzlich Klartext-Label und Border.
  */
 
 :root {
@@ -202,11 +202,22 @@ body.pdl-admin hr {
     border-right: 1px solid var(--pdl-admin-border);
 }
 
+/* Ab 992 px ist .offcanvas-body bei Bootstrap ein Flex-Container. Ohne
+   flex/width wäre das Menü nur so breit wie sein längster Eintrag; bei
+   kurzen Menüs (wenige Rechte) endeten Trennlinien und Hervorhebung dann
+   mitten in der Seitenleiste. */
 .pdl-admin-sidebar .pdl-admin-nav {
     background-color: var(--pdl-admin-surface);
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
 }
 
 @media (min-width: 992px) {
+    /* Feste Seitenleiste mit eigenem Scrollbalken. Die Höhe ergibt sich aus
+       top/bottom statt aus 100vh: Bei Seitenzoom (CSS `zoom` auf body > *)
+       würde 100vh mitvergrößert und die Leiste unten abgeschnitten, top und
+       bottom dagegen beziehen sich immer auf das echte Fenster. */
     .pdl-admin-sidebar,
     .pdl-admin-sidebar.offcanvas-lg {
         position: fixed;
@@ -214,8 +225,10 @@ body.pdl-admin hr {
         bottom: 0;
         left: 0;
         width: 280px;
-        height: calc(100vh - 56px);
+        height: auto;
+        max-height: none;
         overflow-y: auto;
+        overscroll-behavior: contain;
         transform: none !important;
         visibility: visible !important;
     }
@@ -250,6 +263,19 @@ body.pdl-admin hr {
 .pdl-admin-nav .pdl-menu-link:focus {
     background-color: var(--pdl-admin-surface-alt);
     color: var(--pdl-admin-link-hover) !important;
+}
+
+/* Aktueller Menüpunkt: Hintergrund plus Balken links (nicht nur Farbe). */
+.pdl-admin-nav .pdl-menu-link.active,
+.pdl-admin-nav .pdl-menu-link[aria-current="page"] {
+    background-color: var(--pdl-admin-surface-alt);
+    border-left: 4px solid var(--pdl-admin-accent-soft);
+    padding-left: calc(1.25rem - 4px);
+    font-weight: 600;
+}
+
+.pdl-admin-nav .pdl-menu-home {
+    border-bottom: 1px solid var(--pdl-admin-border);
 }
 
 .pdl-admin-footer {
@@ -789,10 +815,46 @@ body.pdl-admin hr {
     outline-offset: 2px;
 }
 
-/* Danger-Action Markierung (zusaetzlich zur Farbe) */
+/* Danger-Action Markierung (zusätzlich zur Farbe) */
 .pdl-admin .pdl-danger-action {
     border-left: 4px solid var(--pdl-admin-danger);
     padding-left: 0.6rem;
+}
+
+/* Bestätigungsseiten (makedialog) */
+.pdl-admin .pdl-confirm-card {
+    max-width: 720px;
+}
+
+/* Übersicht: Zahlenkacheln */
+.pdl-admin .pdl-stat-tile {
+    display: block;
+    text-decoration: none;
+    color: var(--pdl-admin-text);
+    border-top: 4px solid var(--pdl-admin-accent-soft);
+}
+
+.pdl-admin a.pdl-stat-tile:hover,
+.pdl-admin a.pdl-stat-tile:focus {
+    background-color: var(--pdl-admin-surface-alt);
+    color: var(--pdl-admin-text);
+}
+
+.pdl-admin .pdl-stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--pdl-admin-text);
+}
+
+.pdl-admin .pdl-stat-label {
+    color: var(--pdl-admin-muted);
+    font-size: 0.95rem;
+}
+
+/* Größenangabe: Zahl und Einheit nebeneinander */
+.pdl-admin .pdl-size-input {
+    max-width: 22rem;
 }
 
 /*

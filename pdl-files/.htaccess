@@ -1,20 +1,34 @@
-# Datei-Uploads aus dem Admin-Bereich.
+# Download-Dateien aus dem Adminbereich von PowerDownload.
 #
-# Hier liegen vom Admin hochgeladene Download-Dateien.
-# Aus Sicherheitsgründen darf der Webserver hier keinerlei serverseitigen
-# Code ausführen. Dateien werden nur als statische Downloads ausgeliefert.
+# Hier liegen hochgeladene Download-Dateien (auch ZIP, RAR, 7z, TAR.GZ).
+# PowerDownload liefert sie ausschließlich über downloads.php?load_file=…
+# aus: Nur so greifen das Recht „Downloads erlaubt“, versteckte Releases,
+# der Hotlink-Schutz und der Download-Zähler. PHP liest die Dateien direkt
+# aus dem Dateisystem, ein Webzugriff ist dafür nicht nötig. Direkte
+# Aufrufe von pdl-files/… beantwortet der Webserver deshalb mit 403.
 
-# PHP-Ausführung in jedem Fall deaktivieren (Apache <= 2.4 und Apache >= 2.4).
-<FilesMatch "\.(php|php3|php4|php5|php7|php8|phtml|phps|phar|pl|py|cgi|sh|bat|cmd|asp|aspx)$">
+# Jeden Direktzugriff sperren (Apache 2.4 bzw. 2.2).
+<IfModule mod_authz_core.c>
     Require all denied
-</FilesMatch>
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
 
-# Schutz gegen versteckte System-Dateien.
-<FilesMatch "^\.">
-    Require all denied
-</FilesMatch>
+# Zusätzlich: In diesem Verzeichnis nie Code ausführen, auch nicht bei
+# doppelten Endungen wie datei.php.zip (Webspaces mit „AddHandler … .php“).
+<IfModule mod_mime.c>
+    RemoveHandler .php .php3 .php4 .php5 .php7 .php8 .pht .phtml .phar .phps .cgi .pl .py .sh
+    RemoveType .php .php3 .php4 .php5 .php7 .php8 .pht .phtml .phar .phps .cgi .pl .py .sh
+</IfModule>
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
 Options -ExecCGI -Indexes -MultiViews
-AddType text/plain .php .phtml .phps .phar .pl .py .cgi .sh .bat .cmd
 
 # Verzeichnis-Index unterdrücken, falls Apache trotzdem listen wollte.
 IndexIgnore *

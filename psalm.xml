@@ -17,15 +17,21 @@
             <directory name="logs" />
             <directory name="tests" />
             <directory name="tools" />
-            <file name="install_303.php" />
-            <file name="update_301to303.php" />
-            <file name="update_224to303.php" />
+            <directory name=".ralph-loop" />
             <file name="rector.php" />
             <file name="phpstan-bootstrap.php" />
             <file name="pdl-admin/ftp_browser.php" />
             <file name="pdl-admin/ftp_upload.php" />
         </ignoreFiles>
     </projectFiles>
+
+    <globals>
+        <!-- Psalm kennt $_FILES nur mit Einzeldateien (name, tmp_name usw. als
+             string/int). Bei Feldnamen wie name="datei[]" liefert PHP dort
+             verschachtelte Arrays; die is_string()/is_int()-Prüfungen im Code
+             sind deshalb nötig und dürfen nicht als überflüssig gelten. -->
+        <var name="_FILES" type="array&lt;non-empty-string, array&lt;string, mixed&gt;&gt;" />
+    </globals>
 
     <issueHandlers>
         <!-- Legacy global functions and variables -->

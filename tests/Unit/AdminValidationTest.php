@@ -235,13 +235,24 @@ class AdminValidationTest extends TestCase
     }
 
     #[Test]
-    public function screenUploadDetectsNonJpegMime(): void
+    public function screenUploadRejectsUnsupportedFormat(): void
+    {
+        // GIF ist kein erlaubtes Screenshot-Format (erlaubt: JPG, PNG, WebP)
+        $tmp = tempnam(sys_get_temp_dir(), 'pdltest');
+        file_put_contents($tmp, 'GIF89a' . str_repeat("\0", 100));
+        $err = pdl_validate_screen_upload(['error' => UPLOAD_ERR_OK, 'tmp_name' => $tmp]);
+        $this->assertNotNull($err);
+        unlink($tmp);
+    }
+
+    #[Test]
+    public function screenUploadRejectsPngWhenOnlyJpegAllowed(): void
     {
         // create a PNG-temp file
         $tmp = tempnam(sys_get_temp_dir(), 'pdltest');
         // Minimal PNG header
         file_put_contents($tmp, hex2bin('89504E470D0A1A0A0000000D49484452000000010000000108020000') . str_repeat("\0", 100));
-        $err = pdl_validate_screen_upload(['error' => UPLOAD_ERR_OK, 'tmp_name' => $tmp]);
+        $err = pdl_validate_screen_upload(['error' => UPLOAD_ERR_OK, 'tmp_name' => $tmp], ['image/jpeg']);
         $this->assertNotNull($err);
         unlink($tmp);
     }

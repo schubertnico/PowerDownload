@@ -102,7 +102,9 @@ class WidgetsTest extends TestCase
         $db_handler->addResult([]); // no releases
 
         $output = $this->includeWidget('pdl_top.inc.php');
-        $this->assertStringContainsString('TOP:', $output);
+        $this->assertStringNotContainsString('TOP:', $output);
+        $this->assertStringContainsString('Noch keine Releases mit Dateien.', $output);
+        $this->assertStringContainsString('id="pdlWidgetTop"', $output);
     }
 
     #[Test]
@@ -143,7 +145,7 @@ class WidgetsTest extends TestCase
         ]);
 
         $output = $this->includeWidget('pdl_top.inc.php');
-        $this->assertStringContainsString('...', $output);
+        $this->assertStringContainsString('…', $output);
     }
 
     #[Test]
@@ -161,7 +163,7 @@ class WidgetsTest extends TestCase
         ]);
 
         $output = $this->includeWidget('pdl_top.inc.php');
-        $this->assertStringContainsString('...', $output);
+        $this->assertStringContainsString('…', $output);
     }
 
     #[Test]
@@ -209,7 +211,8 @@ class WidgetsTest extends TestCase
         $db_handler->addResult([]);
 
         $output = $this->includeWidget('pdl_flop.inc.php');
-        $this->assertStringContainsString('FLOP:', $output);
+        $this->assertStringNotContainsString('FLOP:', $output);
+        $this->assertStringContainsString('Noch keine Releases mit Dateien.', $output);
     }
 
     #[Test]
@@ -247,7 +250,7 @@ class WidgetsTest extends TestCase
         ]);
 
         $output = $this->includeWidget('pdl_flop.inc.php');
-        $this->assertStringContainsString('...', $output);
+        $this->assertStringContainsString('…', $output);
     }
 
     #[Test]
@@ -280,7 +283,7 @@ class WidgetsTest extends TestCase
         ]);
 
         $output = $this->includeWidget('pdl_flop.inc.php');
-        $this->assertStringContainsString('...', $output);
+        $this->assertStringContainsString('…', $output);
     }
 
     #[Test]
@@ -311,7 +314,8 @@ class WidgetsTest extends TestCase
         $db_handler->addResult([]);
 
         $output = $this->includeWidget('pdl_latest.inc.php');
-        $this->assertStringContainsString('LATEST:', $output);
+        $this->assertStringNotContainsString('LATEST:', $output);
+        $this->assertStringContainsString('Noch keine Releases.', $output);
     }
 
     #[Test]
@@ -350,7 +354,7 @@ class WidgetsTest extends TestCase
         ]);
 
         $output = $this->includeWidget('pdl_latest.inc.php');
-        $this->assertStringContainsString('...', $output);
+        $this->assertStringContainsString('…', $output);
     }
 
     #[Test]
@@ -383,7 +387,7 @@ class WidgetsTest extends TestCase
         ]);
 
         $output = $this->includeWidget('pdl_latest.inc.php');
-        $this->assertStringContainsString('...', $output);
+        $this->assertStringContainsString('…', $output);
     }
 
     #[Test]
@@ -414,7 +418,8 @@ class WidgetsTest extends TestCase
         $db_handler->addResult([]);
 
         $output = $this->includeWidget('pdl_rated.inc.php');
-        $this->assertStringContainsString('RATED:', $output);
+        $this->assertStringNotContainsString('RATED:', $output);
+        $this->assertStringContainsString('Noch keine Bewertungen.', $output);
     }
 
     #[Test]
@@ -453,7 +458,7 @@ class WidgetsTest extends TestCase
         ]);
 
         $output = $this->includeWidget('pdl_rated.inc.php');
-        $this->assertStringContainsString('...', $output);
+        $this->assertStringContainsString('…', $output);
     }
 
     #[Test]
@@ -500,7 +505,7 @@ class WidgetsTest extends TestCase
         ]);
 
         $output = $this->includeWidget('pdl_rated.inc.php');
-        $this->assertStringContainsString('...', $output);
+        $this->assertStringContainsString('…', $output);
     }
 
     #[Test]

@@ -55,7 +55,7 @@ function pdl_audit_log(
     $table = (string) ($sqlTable['admin_log'] ?? 'pdl3_admin_log');
     $userId = (int) ($userDetails['user_id'] ?? 0);
     $time = time();
-    $ipAddr = $ip ?? (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+    $ipAddr = $ip ?? ($_SERVER['REMOTE_ADDR'] ?? '');
 
     $db->sql_query(
         "INSERT INTO `" . $table . "` (user_id, action, target_type, target_id, time, ip) VALUES ("

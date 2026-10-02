@@ -133,6 +133,14 @@ class ModulesTest extends TestCase
         ];
 
         $db_handler = new MockDbHandler();
+
+        // Mails nicht verschicken, sondern mitschreiben (siehe pdl_send_mail()).
+        $GLOBALS['pdl_test_mails'] = [];
+        $GLOBALS['pdl_mail_transport'] = static function (string $to, string $subject, string $body, array $headers): bool {
+            $GLOBALS['pdl_test_mails'][] = ['to' => $to, 'subject' => $subject, 'body' => $body, 'headers' => $headers];
+            return true;
+        };
+        $_POST = [];
     }
 
     /**
@@ -203,7 +211,7 @@ class ModulesTest extends TestCase
         $user_details = null;
 
         $output = $this->includeModule('pdl_uregister.modul.php');
-        $this->assertStringContainsString('Nickname', $output);
+        $this->assertStringContainsString('Bitte geben Sie einen Benutzernamen ein.', $output);
     }
 
     #[Test]
@@ -264,14 +272,13 @@ class ModulesTest extends TestCase
         $pw_new2 = 'pass1234';
         $user_details = null;
         $db_handler = new MockDbHandler();
+        $db_handler->addResult([]); // DELETE abgelaufene iplock-Einträge
         $db_handler->addResult([['c' => 0]]); // rate-limit counter
-        $db_handler->addResult([]); // INSERT iplock (no-op)
-        $db_handler->addResult([['nick' => 'ExistingUser']]); // nick exists
+        $db_handler->addResult([['user_id' => 7]]); // nick exists
 
         $output = $this->includeModule('pdl_uregister.modul.php');
-        // Modul liefert "Es ist bereits ein Benutzer mit diesem Nickname registriert."
-        $this->assertStringContainsString('Nickname', $output);
-        $this->assertStringContainsString('bereits ein Benutzer', $output);
+        $this->assertStringContainsString('Dieser Benutzername ist bereits vergeben.', $output);
+        $this->assertSame([], $GLOBALS['pdl_test_mails']);
     }
 
     #[Test]
@@ -286,8 +293,8 @@ class ModulesTest extends TestCase
         $pw_new2 = 'pass1234';
         $user_details = null;
         $db_handler = new MockDbHandler();
+        $db_handler->addResult([]); // DELETE abgelaufene iplock-Einträge
         $db_handler->addResult([['c' => 0]]); // rate-limit counter
-        $db_handler->addResult([]); // INSERT iplock (no-op)
         $db_handler->addResult([]); // nick check (no match)
         $db_handler->addResult([['email' => 'existing@test.com']]); // email exists
 
@@ -299,7 +306,8 @@ class ModulesTest extends TestCase
     #[Test]
     public function registerModuleSuccess(): void
     {
-        global $submit, $nick, $email, $pw_new, $pw_new2, $db_handler, $user_details, $homepage, $icq, $get_letter;
+        global $submit, $nick, $email, $pw_new, $pw_new2, $db_handler, $user_details, $homepage, $icq, $get_letter, $template;
+        $template['mail_register'] = ''; // leere Vorlage: eingebauter Standardtext
         $submit = 1;
         $nick = 'NewUser';
         $_POST['nick'] = 'NewUser';
@@ -311,14 +319,24 @@ class ModulesTest extends TestCase
         $get_letter = 'Y';
         $user_details = null;
         $db_handler = new MockDbHandler();
+        $db_handler->addResult([]); // DELETE abgelaufene iplock-Einträge
         $db_handler->addResult([['c' => 0]]); // rate-limit counter
-        $db_handler->addResult([]); // INSERT iplock (no-op)
         $db_handler->addResult([]); // nick check
         $db_handler->addResult([]); // email check
         $db_handler->addResult([]); // insert
 
         $output = $this->includeModule('pdl_uregister.modul.php');
         $this->assertStringContainsString('erfolgreich', $output);
+        // P13: nach der Registrierung nur „Jetzt anmelden“, kein „Zum Profil“
+        $this->assertStringContainsString('Jetzt anmelden', $output);
+        $this->assertStringNotContainsString('Zum Profil', $output);
+        // P01/P03: Mail mit Text, absolutem Link und kodiertem Betreff
+        $this->assertCount(1, $GLOBALS['pdl_test_mails']);
+        $mail = $GLOBALS['pdl_test_mails'][0];
+        $this->assertSame('newuser@test.com', $mail['to']);
+        $this->assertStringContainsString('Hallo NewUser,', $mail['body']);
+        $this->assertMatchesRegularExpression('#https?://[^/\s]+/\S*downloads\.php\?usercenter=login#', $mail['body']);
+        $this->assertSame('text/plain; charset=UTF-8', $mail['headers']['Content-Type']);
     }
 
     // ==================== pdl_uprofil.modul.php ====================
@@ -331,7 +349,7 @@ class ModulesTest extends TestCase
         $submit = 0;
 
         $output = $this->includeModule('pdl_uprofil.modul.php');
-        $this->assertStringContainsString('eingeloggt', $output);
+        $this->assertStringContainsString('melden Sie sich an', $output);
     }
 
     #[Test]
@@ -393,7 +411,7 @@ class ModulesTest extends TestCase
         $db_handler->addResult([]);
 
         $output = $this->includeModule('pdl_uprofil.modul.php');
-        $this->assertStringContainsString('erfolgreich', $output);
+        $this->assertStringContainsString('Ihr Profil wurde gespeichert.', $output);
     }
 
     #[Test]
@@ -415,7 +433,7 @@ class ModulesTest extends TestCase
         $get_letter = 'N';
 
         $output = $this->includeModule('pdl_uprofil.modul.php');
-        $this->assertStringContainsString('stimmt nicht', $output);
+        $this->assertStringContainsString('stimmen nicht überein', $output);
     }
 
     #[Test]
@@ -439,7 +457,7 @@ class ModulesTest extends TestCase
         $db_handler->addResult([]);
 
         $output = $this->includeModule('pdl_uprofil.modul.php');
-        $this->assertStringContainsString('erfolgreich', $output);
+        $this->assertStringContainsString('Ihr Profil wurde gespeichert.', $output);
     }
 
     #[Test]
@@ -463,7 +481,7 @@ class ModulesTest extends TestCase
         $db_handler->addResult([]);
 
         $output = $this->includeModule('pdl_uprofil.modul.php');
-        $this->assertStringContainsString('erfolgreich', $output);
+        $this->assertStringContainsString('Ihr Profil wurde gespeichert.', $output);
     }
 
     #[Test]
@@ -487,7 +505,7 @@ class ModulesTest extends TestCase
         $db_handler->addResult([]);
 
         $output = $this->includeModule('pdl_uprofil.modul.php');
-        $this->assertStringContainsString('erfolgreich', $output);
+        $this->assertStringContainsString('Ihr Profil wurde gespeichert.', $output);
     }
 
     // ==================== pdl_ucomments.modul.php ====================
@@ -495,11 +513,15 @@ class ModulesTest extends TestCase
     #[Test]
     public function commentsModuleNoRights(): void
     {
-        global $user_rights;
+        // Angemeldet, aber die Benutzergruppe darf nicht kommentieren (P26)
+        global $user_rights, $settings, $user_details;
+        $settings['enable_comments'] = 'Y';
         $user_rights['addcomments'] = 'N';
+        $user_details = ['nick' => 'TestUser', 'user_id' => 1];
 
         $output = $this->includeModule('pdl_ucomments.modul.php');
-        $this->assertStringContainsString('keine Rechte', $output);
+        $this->assertStringContainsString('Ihre Benutzergruppe darf keine Kommentare schreiben.', $output);
+        $this->assertStringNotContainsString('pdlCommentForm', $output);
     }
 
     #[Test]
@@ -510,28 +532,32 @@ class ModulesTest extends TestCase
         $settings['enable_comments'] = 'N';
 
         $output = $this->includeModule('pdl_ucomments.modul.php');
-        $this->assertStringContainsString('keine Rechte', $output);
+        $this->assertStringContainsString('Kommentare sind auf dieser Seite ausgeschaltet.', $output);
     }
 
     #[Test]
     public function commentsModuleShowsFormLoggedIn(): void
     {
-        global $user_rights, $settings, $submit, $user_details, $release_id;
+        global $user_rights, $settings, $submit, $user_details, $release_id, $db_handler;
         $user_rights['addcomments'] = 'Y';
         $settings['enable_comments'] = 'Y';
         $submit = 0;
         $release_id = 1;
         $user_details = ['nick' => 'TestUser', 'user_id' => 1];
+        $db_handler = new MockDbHandler();
+        $db_handler->addResult([['release_id' => 1, 'name' => 'Rel']]); // Release-Prüfung
 
         $output = $this->includeModule('pdl_ucomments.modul.php');
         $this->assertStringContainsString('TestUser', $output);
+        $this->assertStringContainsString('id="pdlCommentForm"', $output);
+        $this->assertStringContainsString('name="csrf_token"', $output);
+        $this->assertStringNotContainsString('bgcolor', $output);
     }
 
     #[Test]
     public function commentsModuleShowsLoginPromptForGuest(): void
     {
-        // Gäste sehen keinen Kommentar-Editor mehr, sondern eine Anmelde-Aufforderung
-        // (Konsequenz aus User-Area-Bugfixes BUG-011/BUG-023).
+        // P26: Gäste bekommen nur den Hinweis mit Anmelde- und Registrierungslink
         global $user_rights, $settings, $submit, $user_details, $release_id;
         $user_rights['addcomments'] = 'Y';
         $settings['enable_comments'] = 'Y';
@@ -540,14 +566,31 @@ class ModulesTest extends TestCase
         $user_details = null;
 
         $output = $this->includeModule('pdl_ucomments.modul.php');
-        $this->assertStringContainsString('einloggen', $output);
-        $this->assertStringContainsString('kommentieren', $output);
+        $this->assertStringContainsString('melden Sie sich an', $output);
+        $this->assertStringContainsString('usercenter=register', $output);
+        $this->assertStringContainsString('Kommentar zu schreiben', $output);
+    }
+
+    #[Test]
+    public function commentsModuleRejectsHiddenOrUnknownRelease(): void
+    {
+        global $user_rights, $settings, $submit, $user_details, $release_id, $db_handler;
+        $user_rights['addcomments'] = 'Y';
+        $settings['enable_comments'] = 'Y';
+        $submit = 0;
+        $release_id = 99;
+        $user_details = ['nick' => 'TestUser', 'user_id' => 1];
+        $db_handler = new MockDbHandler();
+        $db_handler->addResult([]); // Release nicht gefunden oder versteckt
+
+        $output = $this->includeModule('pdl_ucomments.modul.php');
+        $this->assertStringContainsString('nicht öffentlich', $output);
     }
 
     #[Test]
     public function commentsModuleSubmitEmpty(): void
     {
-        global $user_rights, $settings, $submit, $user_details, $release_id, $titel, $text;
+        global $user_rights, $settings, $submit, $user_details, $release_id, $titel, $text, $db_handler;
         $user_rights['addcomments'] = 'Y';
         $settings['enable_comments'] = 'Y';
         $submit = 1;
@@ -555,9 +598,12 @@ class ModulesTest extends TestCase
         $titel = '';
         $text = '';
         $user_details = ['nick' => 'TestUser', 'user_id' => 1];
+        $db_handler = new MockDbHandler();
+        $db_handler->addResult([['release_id' => 1, 'name' => 'Rel']]);
 
         $output = $this->includeModule('pdl_ucomments.modul.php');
         $this->assertStringContainsString('Titel und Text', $output);
+        $this->assertStringContainsString('Bitte prüfen Sie Ihre Eingaben', $output);
     }
 
     #[Test]
@@ -572,10 +618,39 @@ class ModulesTest extends TestCase
         $text = 'Test Content';
         $user_details = ['nick' => 'TestUser', 'user_id' => 1];
         $db_handler = new MockDbHandler();
-        $db_handler->addResult([]);
+        $db_handler->addResult([['release_id' => 1, 'name' => 'Rel']]); // Release-Prüfung
+        $db_handler->addResult([]); // keine Sperre (1 Minute)
+        $db_handler->addResult([]); // INSERT Kommentar
+
+        unset($_SESSION['pdl_comment_flash']);
+        $output = $this->includeModule('pdl_ucomments.modul.php');
+        $this->assertStringContainsString('<div id="pdlCommentSaved">', $output);
+        $this->assertStringContainsString('Ihr Kommentar wurde veröffentlicht.', $output);
+        // Ohne Vorabverarbeitung im Header (Tests): Link zum Release mit Rückmeldung
+        $this->assertStringContainsString('href="downloads.php?release_id=1&amp;commented=1#pdlComments"', $output);
+        $this->assertSame(['release_id' => 1, 'comment_id' => 0], $_SESSION['pdl_comment_flash'] ?? null);
+        unset($_SESSION['pdl_comment_flash']);
+    }
+
+    #[Test]
+    public function commentsModuleSubmitIsRateLimited(): void
+    {
+        global $user_rights, $settings, $submit, $user_details, $release_id, $titel, $text, $db_handler;
+        $user_rights['addcomments'] = 'Y';
+        $settings['enable_comments'] = 'Y';
+        $submit = 1;
+        $release_id = 1;
+        $titel = 'Noch einer';
+        $text = 'Text';
+        $user_details = ['nick' => 'TestUser', 'user_id' => 1];
+        $db_handler = new MockDbHandler();
+        $db_handler->addResult([['release_id' => 1, 'name' => 'Rel']]);
+        $db_handler->addResult([['file_id' => 1]]); // Kommentar vor weniger als einer Minute
 
         $output = $this->includeModule('pdl_ucomments.modul.php');
-        $this->assertStringContainsString('gepostet', $output);
+        $this->assertStringContainsString('Bitte warten Sie eine Minute', $output);
+        // Eingaben bleiben im Formular stehen
+        $this->assertStringContainsString('value="Noch einer"', $output);
     }
 
     // ==================== pdl_showscreen.modul.php ====================
@@ -585,28 +660,50 @@ class ModulesTest extends TestCase
     {
         global $db_handler, $screen_id;
         $db_handler = new MockDbHandler();
-        $db_handler->addResult([]); // update
         $db_handler->addResult([]); // select
         $screen_id = 999;
 
         $output = $this->includeModule('pdl_showscreen.modul.php');
-        $this->assertStringContainsString('nicht gefunden', $output);
+        $this->assertStringContainsString('Screenshot nicht gefunden', $output);
     }
 
     #[Test]
     public function showscreenModuleDisplaysScreen(): void
     {
         global $db_handler, $screen_id;
+        $_SESSION['pdl_viewed_screen'] = [];
         $db_handler = new MockDbHandler();
-        $db_handler->addResult([]); // update
         $db_handler->addResult([
-            ['screen_id' => 1, 'release_id' => 5, 'views' => 42, 'text' => 'Screenshot text'],
+            ['screen_id' => 1, 'release_id' => 5, 'views' => 42, 'text' => 'Screenshot text',
+             'release_name' => 'ScreenRel', 'released' => 'Y'],
         ]);
+        $db_handler->addResult([]); // views update
         $screen_id = 1;
 
         $output = $this->includeModule('pdl_showscreen.modul.php');
         $this->assertStringContainsString('Screenshot text', $output);
-        $this->assertStringContainsString('42', $output);
+        $this->assertStringContainsString('<figcaption', $output);
+        $this->assertStringContainsString('Aufrufe: 43', $output);
+        $this->assertStringContainsString('Zurück zum Release', $output);
+        $this->assertStringContainsString('release_id=5', $output);
+        // Ohne Bilddatei kein kaputtes Bildsymbol, sondern ein Hinweis
+        $this->assertStringContainsString('Die Bilddatei zu diesem Screenshot fehlt.', $output);
+        $this->assertStringNotContainsString('<img', $output);
+    }
+
+    #[Test]
+    public function showscreenModuleHidesScreensOfHiddenReleases(): void
+    {
+        global $db_handler, $screen_id;
+        $db_handler = new MockDbHandler();
+        $db_handler->addResult([
+            ['screen_id' => 2, 'release_id' => 3, 'views' => 0, 'text' => 'Geheim', 'release_name' => 'Versteckt', 'released' => 'N'],
+        ]);
+        $screen_id = 2;
+
+        $output = $this->includeModule('pdl_showscreen.modul.php');
+        $this->assertStringContainsString('Screenshot nicht gefunden', $output);
+        $this->assertStringNotContainsString('Geheim', $output);
     }
 
     // ==================== pdl_ulost.modul.php ====================
@@ -634,8 +731,9 @@ class ModulesTest extends TestCase
         $db_handler->addResult([]);
 
         $output = $this->includeModule('pdl_ulost.modul.php');
-        $this->assertStringContainsString('Konto mit dieser E-Mail existiert', $output);
-        $this->assertStringContainsString('weiteren Schritten', $output);
+        $this->assertStringContainsString('Benutzerkonto existiert', $output);
+        $this->assertStringContainsString('60 Minuten', $output);
+        $this->assertSame([], $GLOBALS['pdl_test_mails']);
     }
 
     #[Test]
@@ -647,13 +745,23 @@ class ModulesTest extends TestCase
         $submit = 1;
         $email = 'found@test.com';
         $db_handler = new MockDbHandler();
+        $db_handler->addResult([]); // DELETE abgelaufene iplock-Einträge
+        $db_handler->addResult([['c' => 0]]); // rate-limit counter
+        $db_handler->addResult([]); // INSERT iplock
         $db_handler->addResult([
             ['user_id' => 1, 'nick' => 'TestUser', 'email' => 'found@test.com'],
         ]);
         $db_handler->addResult([]); // update remind_code
 
         $output = $this->includeModule('pdl_ulost.modul.php');
-        $this->assertStringContainsString('Konto mit dieser E-Mail existiert', $output);
+        $this->assertStringContainsString('Benutzerkonto existiert', $output);
+        // P01/P02/P14: Mail mit absolutem Reset-Link und richtiger Gültigkeit
+        $this->assertCount(1, $GLOBALS['pdl_test_mails']);
+        $mail = $GLOBALS['pdl_test_mails'][0];
+        $this->assertSame('found@test.com', $mail['to']);
+        // Angepasste Vorlage mit alten Platzhaltern {user}/{url} aus 3.5.0
+        $this->assertMatchesRegularExpression('#^Dear TestUser, https?://\S+downloads\.php\?usercenter=lost2&remind_code=[0-9a-f]{32}$#', $mail['body']);
+        $this->assertStringStartsWith('=?UTF-8?B?', $mail['subject']);
     }
 
     // ==================== pdl_ulost2.modul.php ====================
@@ -667,8 +775,7 @@ class ModulesTest extends TestCase
         $db_handler->addResult([]);
 
         $output = $this->includeModule('pdl_ulost2.modul.php');
-        // Modul liefert "Ungültiger oder abgelaufener Code." (UTF-8)
-        $this->assertStringContainsString('Ungültiger oder abgelaufener Code', $output);
+        $this->assertStringContainsString('Der Link ist ungültig oder abgelaufen.', $output);
     }
 
     #[Test]
@@ -676,7 +783,7 @@ class ModulesTest extends TestCase
     {
         global $remind_code, $db_handler, $submit;
         $submit = 0;
-        $remind_code = 'validcode123';
+        $remind_code = '0123456789abcdef0123456789abcdef';
         $db_handler = new MockDbHandler();
         $db_handler->addResult([
             ['user_id' => 1, 'nick' => 'TestUser', 'email' => 'test@test.com'],
@@ -762,19 +869,24 @@ class ModulesTest extends TestCase
     {
         global $db_handler, $ordner_id, $page;
         $db_handler = new MockDbHandler();
-        $db_handler->addResult([['release_id' => 1]]); // files_check
+        $db_handler->addResult([['release_id' => 1]]); // files_check (nur veröffentlichte)
         $db_handler->addResult([]); // ordner_check
-        $db_handler->addResult([['release_id' => 1]]); // total
         $db_handler->addResult([
             ['release_id' => 1, 'name' => 'TestRelease', 'text' => '', 'ordner_id' => 0,
              'votes' => 0, 'voted' => 0, 'views' => 10, 'downloads' => 5, 'time' => time(), 'uploader' => 0],
         ]);
-        $db_handler->addResult([['tsize' => 1024]]); // size
+        $db_handler->addResult([['tsize' => 1536, 'cnt' => 1]]); // Größe und Anzahl Dateien
         $ordner_id = 0;
         $page = 1;
+        global $template;
+        $template['release_row'] = '';
+        $template['release_box'] = '';
 
         $output = $this->includeModule('pdl_ordner.modul.php');
         $this->assertStringContainsString('TestRelease', $output);
+        $this->assertStringContainsString('1 Datei &middot; 1,5 KB', $output);
+        // Kein leeres Sortierformular mehr um die Liste
+        $this->assertStringNotContainsString('change_list=1', $output);
     }
 
     #[Test]
@@ -787,17 +899,57 @@ class ModulesTest extends TestCase
         $db_handler = new MockDbHandler();
         $db_handler->addResult([['release_id' => 1]]); // files_check
         $db_handler->addResult([]); // ordner_check
-        $db_handler->addResult([['release_id' => 1]]); // total
         $db_handler->addResult([
             ['release_id' => 1, 'name' => 'TestRelease', 'text' => 'This is a very long description that should be truncated',
              'ordner_id' => 0, 'votes' => 0, 'voted' => 0, 'views' => 10, 'downloads' => 5, 'time' => time(), 'uploader' => 0],
         ]);
-        $db_handler->addResult([['tsize' => 2048]]); // size
+        $db_handler->addResult([['tsize' => 2048, 'cnt' => 1]]); // size
         $ordner_id = 0;
         $page = 1;
 
         $output = $this->includeModule('pdl_ordner.modul.php');
-        $this->assertStringContainsString('...', $output);
+        // Gekürzt an der Wortgrenze, mit Auslassungszeichen
+        $this->assertStringContainsString('This is a…', $output);
+    }
+
+    #[Test]
+    public function ordnerModuleTruncatesUmlautsSafely(): void
+    {
+        global $db_handler, $ordner_id, $page, $settings;
+        $settings['trenn_durch'] = 'zeichen';
+        $settings['trenn_zeichen'] = 15;
+        $settings['trenn_string'] = '';
+        $db_handler = new MockDbHandler();
+        $db_handler->addResult([['release_id' => 1]]);
+        $db_handler->addResult([]);
+        $db_handler->addResult([
+            ['release_id' => 1, 'name' => 'Umlaute', 'text' => 'Größenprüfung über [b]Äußerungen[/b] und mehr',
+             'ordner_id' => 0, 'votes' => 0, 'voted' => 0, 'views' => 0, 'downloads' => 0, 'time' => time(), 'uploader' => 0],
+        ]);
+        $db_handler->addResult([['tsize' => 0, 'cnt' => 0]]);
+        $ordner_id = 0;
+        $page = 1;
+
+        $output = $this->includeModule('pdl_ordner.modul.php');
+        $this->assertTrue(mb_check_encoding($output, 'UTF-8'));
+        $this->assertStringContainsString('Größenprüfung…', $output);
+        $this->assertStringNotContainsString('[b]', $output);
+    }
+
+    #[Test]
+    public function ordnerModuleUnknownFolderShowsNotFound(): void
+    {
+        global $db_handler, $ordner_id, $page, $pdl_current_ordner;
+        $pdl_current_ordner = null;
+        $db_handler = new MockDbHandler();
+        $db_handler->addResult([]); // Ordner existiert nicht
+        $ordner_id = 999;
+        $page = 1;
+
+        $output = $this->includeModule('pdl_ordner.modul.php');
+        $this->assertStringContainsString('Ordner nicht gefunden', $output);
+        $this->assertStringNotContainsString('noch leer', $output);
+        $ordner_id = 0;
     }
 
     #[Test]
@@ -809,12 +961,11 @@ class ModulesTest extends TestCase
         $db_handler = new MockDbHandler();
         $db_handler->addResult([['release_id' => 1]]); // files_check
         $db_handler->addResult([]); // ordner_check
-        $db_handler->addResult([['release_id' => 1]]); // total
         $db_handler->addResult([
             ['release_id' => 1, 'name' => 'Test', 'text' => 'Short text---Rest hidden',
              'ordner_id' => 0, 'votes' => 0, 'voted' => 0, 'views' => 10, 'downloads' => 5, 'time' => time(), 'uploader' => 0],
         ]);
-        $db_handler->addResult([['tsize' => 512]]); // size
+        $db_handler->addResult([['tsize' => 512, 'cnt' => 1]]); // size
         $ordner_id = 0;
         $page = 1;
 
@@ -873,16 +1024,19 @@ class ModulesTest extends TestCase
         $in = 'titel';
         $page = 1;
         $db_handler = new MockDbHandler();
-        $db_handler->addResult([['release_id' => 1]]);
+        $db_handler->addResult([['c' => 1]]); // COUNT(*)
         $db_handler->addResult([
             ['release_id' => 1, 'name' => 'TestApp', 'text' => 'Desc', 'ordner_id' => 0,
              'votes' => 0, 'voted' => 0, 'views' => 0, 'downloads' => 0, 'time' => time(), 'uploader' => 0],
         ]);
-        $db_handler->addResult([['tsize' => 2048]]);
+        $db_handler->addResult([['tsize' => 2048, 'cnt' => 1]]);
 
         $output = $this->includeModule('pdl_search.modul.php');
-        $this->assertStringContainsString('1', $output);
-        $this->assertStringContainsString('Treffer', $output);
+        $this->assertStringContainsString('ergab <strong>1</strong> Treffer', $output);
+        $this->assertStringContainsString('TestApp', $output);
+        // Formular bleibt über den Ergebnissen, vorbefüllt
+        $this->assertStringContainsString('value="test"', $output);
+        $this->assertStringContainsString('<option value="titel" selected>', $output);
     }
 
     #[Test]
@@ -903,62 +1057,72 @@ class ModulesTest extends TestCase
 
     // ==================== pdl_release.modul.php ====================
 
+    /**
+     * Release-Datensatz für die Tests.
+     */
+    private function releaseRow(array $overrides = []): array
+    {
+        return array_merge([
+            'release_id' => 1, 'name' => 'TestRelease', 'text' => 'Description', 'released' => 'Y',
+            'votes' => 0, 'voted' => 0, 'ordner_id' => 0, 'views' => 100,
+            'time' => 1790000000, 'uploader' => 0, 'autor' => -1, 'autor_email' => '', 'autor_nick' => '',
+            'autor_homepage' => '',
+        ], $overrides);
+    }
+
+    /**
+     * Bootstrap-Ansicht erzwingen (keine eigenen Vorlagen) und Sitzungswerte zurücksetzen.
+     */
+    private function useBootstrapReleaseView(): void
+    {
+        global $template;
+        $template['file_detail'] = '';
+        $template['dfiles_row'] = '';
+        $template['comments'] = '';
+        unset($_SESSION['pdl_viewed'], $_SESSION['pdl_vote_flash']);
+        unset($_GET['voted']);
+    }
+
     #[Test]
     public function releaseModuleNotFound(): void
     {
-        global $db_handler, $release_id, $vote, $vote_id;
+        global $db_handler, $release_id;
         $db_handler = new MockDbHandler();
-        $db_handler->addResult([]); // iplock
         $db_handler->addResult([]); // release query
         $release_id = 999;
-        $vote = 0;
-        $vote_id = 0;
 
         $output = $this->includeModule('pdl_release.modul.php');
-        $this->assertStringContainsString('nicht gefunden', $output);
+        $this->assertStringContainsString('Release nicht gefunden', $output);
     }
 
     #[Test]
     public function releaseModuleHiddenRelease(): void
     {
-        global $db_handler, $release_id, $vote, $vote_id;
+        global $db_handler, $release_id;
         $db_handler = new MockDbHandler();
-        $db_handler->addResult([]); // iplock
-        $db_handler->addResult([
-            ['release_id' => 1, 'name' => 'Hidden', 'released' => 'N'],
-        ]);
+        $db_handler->addResult([$this->releaseRow(['name' => 'GeheimName', 'released' => 'N'])]);
         $release_id = 1;
-        $vote = 0;
-        $vote_id = 0;
 
         $output = $this->includeModule('pdl_release.modul.php');
-        $this->assertStringContainsString('versteckt', $output);
+        $this->assertStringContainsString('Dieses Release ist nicht öffentlich.', $output);
+        $this->assertStringNotContainsString('GeheimName', $output);
     }
 
     #[Test]
     public function releaseModuleDisplaysRelease(): void
     {
-        global $db_handler, $release_id, $vote, $vote_id, $user_rights, $settings, $showcomments;
+        // Eigene Vorlage file_detail (Platzhalter) wird weiterhin unterstützt
+        global $db_handler, $release_id, $user_rights, $settings;
+        unset($_SESSION['pdl_viewed']);
         $db_handler = new MockDbHandler();
-        $db_handler->addResult([]); // iplock check
-        $db_handler->addResult([ // release
-            ['release_id' => 1, 'name' => 'TestRelease', 'text' => 'Description', 'released' => 'Y',
-             'votes' => 5, 'voted' => 40, 'ordner_id' => 0, 'views' => 100, 'downloads' => 50,
-             'time' => time(), 'uploader' => 0, 'autor' => -1, 'autor_email' => '', 'autor_nick' => '',
-             'autor_icq' => 0, 'autor_homepage' => ''],
-        ]);
+        $db_handler->addResult([$this->releaseRow()]);
         $db_handler->addResult([]); // views update
-        $db_handler->addResult([ // first file
+        $db_handler->addResult([ // files
             ['file_id' => 1, 'url' => 'files/test.zip', 'size' => 1024, 'downloads' => 10, 'mirror' => 0, 'release_id' => 1],
         ]);
-        $db_handler->addResult([ // files loop
-            ['file_id' => 1, 'url' => 'files/test.zip', 'size' => 1024, 'downloads' => 10, 'mirror' => 0, 'release_id' => 1],
-        ]);
+        $db_handler->addResult([]); // iplock (Bewertung)
         $db_handler->addResult([]); // screens
         $release_id = 1;
-        $vote = 0;
-        $vote_id = 0;
-        $showcomments = 0;
         $user_rights['vote'] = 'Y';
         $settings['enable_comments'] = 'N';
 
@@ -968,270 +1132,87 @@ class ModulesTest extends TestCase
     }
 
     #[Test]
+    public function releaseModuleCountsViewsOncePerSession(): void
+    {
+        global $db_handler, $release_id, $user_rights, $settings;
+        $this->useBootstrapReleaseView();
+        $user_rights['vote'] = 'N';
+        $settings['enable_comments'] = 'N';
+        $release_id = 1;
+
+        $db_handler = new MockDbHandler();
+        $db_handler->addResult([$this->releaseRow()]);
+        $db_handler->addResult([]); // views update
+        $db_handler->addResult([]); // files
+        $db_handler->addResult([]); // screens
+        $first = $this->includeModule('pdl_release.modul.php');
+        $this->assertStringContainsString('<dt class="mb-0">Aufrufe:</dt><dd class="mb-0">101</dd>', $first);
+        $this->assertSame(4, $db_handler->querys);
+
+        // Neuladen in derselben Sitzung: kein UPDATE mehr
+        $db_handler = new MockDbHandler();
+        $db_handler->addResult([$this->releaseRow()]);
+        $db_handler->addResult([]); // files
+        $db_handler->addResult([]); // screens
+        $second = $this->includeModule('pdl_release.modul.php');
+        $this->assertStringContainsString('<dt class="mb-0">Aufrufe:</dt><dd class="mb-0">100</dd>', $second);
+        $this->assertSame(3, $db_handler->querys);
+    }
+
+    #[Test]
     public function releaseModuleWithAutorUser(): void
     {
-        global $db_handler, $release_id, $vote, $vote_id, $user_rights, $settings, $users, $showcomments;
-        $users[5] = ['nick' => 'AuthorUser', 'email' => 'author@test.com', 'icq' => 0, 'homepage' => ''];
+        global $db_handler, $release_id, $user_rights, $settings, $users;
+        $this->useBootstrapReleaseView();
+        $users[5] = ['nick' => 'AuthorUser', 'email' => 'author@test.com', 'homepage' => ''];
         $db_handler = new MockDbHandler();
-        $db_handler->addResult([]); // iplock
-        $db_handler->addResult([
-            ['release_id' => 1, 'name' => 'Test', 'text' => '', 'released' => 'Y',
-             'votes' => 0, 'voted' => 0, 'ordner_id' => 0, 'views' => 0, 'downloads' => 0,
-             'time' => time(), 'uploader' => 0, 'autor' => 5, 'autor_email' => '', 'autor_nick' => '',
-             'autor_icq' => 0, 'autor_homepage' => ''],
-        ]);
+        $db_handler->addResult([$this->releaseRow(['autor' => 5])]);
         $db_handler->addResult([]); // views update
-        $db_handler->addResult([ // first file
-            ['file_id' => 1, 'url' => 'files/t.zip', 'size' => 512, 'downloads' => 0, 'mirror' => 0, 'release_id' => 1],
-        ]);
-        $db_handler->addResult([ // files
-            ['file_id' => 1, 'url' => 'files/t.zip', 'size' => 512, 'downloads' => 0, 'mirror' => 0, 'release_id' => 1],
-        ]);
+        $db_handler->addResult([]); // files
         $db_handler->addResult([]); // screens
         $release_id = 1;
-        $vote = 0;
-        $vote_id = 0;
-        $showcomments = 0;
         $user_rights['vote'] = 'N';
         $settings['enable_comments'] = 'N';
 
         $output = $this->includeModule('pdl_release.modul.php');
         $this->assertStringContainsString('AuthorUser', $output);
+        $this->assertStringNotContainsString('mailto:', $output);
     }
 
     #[Test]
     public function releaseModuleWithExternalAutor(): void
     {
-        global $db_handler, $release_id, $vote, $vote_id, $user_rights, $settings, $showcomments;
+        // P41: Name und Homepage, aber keine E-Mail-Adresse als mailto-Link
+        global $db_handler, $release_id, $user_rights, $settings;
+        $this->useBootstrapReleaseView();
         $db_handler = new MockDbHandler();
-        $db_handler->addResult([]); // iplock
-        $db_handler->addResult([
-            ['release_id' => 1, 'name' => 'Test', 'text' => 'Desc', 'released' => 'Y',
-             'votes' => 0, 'voted' => 0, 'ordner_id' => 0, 'views' => 0, 'downloads' => 0,
-             'time' => time(), 'uploader' => 0, 'autor' => 0, 'autor_email' => 'ext@test.com',
-             'autor_nick' => 'ExtAuthor', 'autor_icq' => 12345, 'autor_homepage' => 'https://ext.com'],
-        ]);
+        $db_handler->addResult([$this->releaseRow(['autor' => 0, 'autor_email' => 'ext@test.com',
+            'autor_nick' => 'ExtAuthor', 'autor_homepage' => 'https://ext.com'])]);
         $db_handler->addResult([]); // views update
-        $db_handler->addResult([ // first file
-            ['file_id' => 1, 'url' => 'files/t.zip', 'size' => 512, 'downloads' => 0, 'mirror' => 0, 'release_id' => 1],
-        ]);
-        $db_handler->addResult([ // files
-            ['file_id' => 1, 'url' => 'files/t.zip', 'size' => 512, 'downloads' => 0, 'mirror' => 0, 'release_id' => 1],
-        ]);
+        $db_handler->addResult([]); // files
         $db_handler->addResult([]); // screens
         $release_id = 1;
-        $vote = 0;
-        $vote_id = 0;
-        $showcomments = 0;
         $user_rights['vote'] = 'N';
         $settings['enable_comments'] = 'N';
 
         $output = $this->includeModule('pdl_release.modul.php');
         $this->assertStringContainsString('ExtAuthor', $output);
-    }
-
-    #[Test]
-    public function releaseModuleWithMirrorFile(): void
-    {
-        global $db_handler, $release_id, $vote, $vote_id, $user_rights, $settings, $showcomments;
-        $db_handler = new MockDbHandler();
-        $db_handler->addResult([]); // iplock
-        $db_handler->addResult([
-            ['release_id' => 1, 'name' => 'Test', 'text' => '', 'released' => 'Y',
-             'votes' => 0, 'voted' => 0, 'ordner_id' => 0, 'views' => 0, 'downloads' => 0,
-             'time' => time(), 'uploader' => 0, 'autor' => -1, 'autor_email' => '',
-             'autor_nick' => '', 'autor_icq' => 0, 'autor_homepage' => ''],
-        ]);
-        $db_handler->addResult([]); // views update
-        $db_handler->addResult([ // first file
-            ['file_id' => 1, 'url' => 'files/t.zip', 'size' => 1024, 'downloads' => 10, 'mirror' => 0, 'release_id' => 1],
-        ]);
-        $db_handler->addResult([ // files loop - one original, one mirror
-            ['file_id' => 1, 'url' => 'files/t.zip', 'size' => 1024, 'downloads' => 10, 'mirror' => 0, 'release_id' => 1],
-            ['file_id' => 2, 'url' => 'files/mirror.zip', 'size' => 0, 'downloads' => 5, 'mirror' => 1, 'release_id' => 1],
-        ]);
-        // mirror lookup
-        $db_handler->addResult([
-            ['file_id' => 1, 'size' => 1024],
-        ]);
-        $db_handler->addResult([]); // screens
-        $release_id = 1;
-        $vote = 0;
-        $vote_id = 0;
-        $showcomments = 0;
-        $user_rights['vote'] = 'N';
-        $settings['enable_comments'] = 'N';
-
-        $output = $this->includeModule('pdl_release.modul.php');
-        $this->assertStringContainsString('Test', $output);
-    }
-
-    #[Test]
-    public function releaseModuleWithCommentsEnabled(): void
-    {
-        global $db_handler, $release_id, $vote, $vote_id, $user_rights, $settings, $showcomments, $user_details;
-        $db_handler = new MockDbHandler();
-        $db_handler->addResult([]); // iplock
-        $db_handler->addResult([
-            ['release_id' => 1, 'name' => 'Commented', 'text' => '', 'released' => 'Y',
-             'votes' => 0, 'voted' => 0, 'ordner_id' => 0, 'views' => 0, 'downloads' => 0,
-             'time' => time(), 'uploader' => 0, 'autor' => -1, 'autor_email' => '',
-             'autor_nick' => '', 'autor_icq' => 0, 'autor_homepage' => ''],
-        ]);
-        $db_handler->addResult([]); // views update
-        $db_handler->addResult([
-            ['file_id' => 1, 'url' => 'files/t.zip', 'size' => 1024, 'downloads' => 0, 'mirror' => 0, 'release_id' => 1],
-        ]);
-        $db_handler->addResult([
-            ['file_id' => 1, 'url' => 'files/t.zip', 'size' => 1024, 'downloads' => 0, 'mirror' => 0, 'release_id' => 1],
-        ]);
-        $db_handler->addResult([]); // screens
-        $db_handler->addResult([['comment_id' => 1], ['comment_id' => 2]]); // comments count
-        $release_id = 1;
-        $vote = 0;
-        $vote_id = 0;
-        $showcomments = 0;
-        $user_details = ['nick' => 'User', 'user_id' => 1];
-        $user_rights['vote'] = 'N';
-        $settings['enable_comments'] = 'Y';
-
-        $output = $this->includeModule('pdl_release.modul.php');
-        $this->assertStringContainsString('Kommentare', $output);
-        $this->assertStringContainsString('Kommentar schreiben', $output);
-    }
-
-    #[Test]
-    public function releaseModuleWithCommentsShown(): void
-    {
-        global $db_handler, $release_id, $vote, $vote_id, $user_rights, $settings, $showcomments, $user_details;
-        $db_handler = new MockDbHandler();
-        $db_handler->addResult([]); // iplock
-        $db_handler->addResult([
-            ['release_id' => 1, 'name' => 'WithComments', 'text' => '', 'released' => 'Y',
-             'votes' => 0, 'voted' => 0, 'ordner_id' => 0, 'views' => 0, 'downloads' => 0,
-             'time' => time(), 'uploader' => 0, 'autor' => -1, 'autor_email' => '',
-             'autor_nick' => '', 'autor_icq' => 0, 'autor_homepage' => ''],
-        ]);
-        $db_handler->addResult([]); // views update
-        $db_handler->addResult([
-            ['file_id' => 1, 'url' => 'files/t.zip', 'size' => 512, 'downloads' => 0, 'mirror' => 0, 'release_id' => 1],
-        ]);
-        $db_handler->addResult([
-            ['file_id' => 1, 'url' => 'files/t.zip', 'size' => 512, 'downloads' => 0, 'mirror' => 0, 'release_id' => 1],
-        ]);
-        $db_handler->addResult([]); // screens
-        $db_handler->addResult([ // comments
-            ['comment_id' => 1, 'user_id' => 0, 'titel' => 'Comment1', 'text' => 'Content1', 'time' => time()],
-            ['comment_id' => 2, 'user_id' => 1, 'titel' => 'Comment2', 'text' => 'Content2', 'time' => time()],
-        ]);
-        $release_id = 1;
-        $vote = 0;
-        $vote_id = 0;
-        $showcomments = 1;
-        $user_details = null;
-        $user_rights['vote'] = 'N';
-        $settings['enable_comments'] = 'Y';
-
-        $output = $this->includeModule('pdl_release.modul.php');
-        // Release-Template enthält Platzhalter; aktuelle Test-Configuration nutzt
-        // ein minimales Template, deshalb prüfen wir nur, dass das Modul ohne
-        // Fehler durchläuft und den Release-Namen ausgibt.
-        $this->assertStringContainsString('WithComments', $output);
-    }
-
-    #[Test]
-    public function releaseModuleWithVoting(): void
-    {
-        global $db_handler, $release_id, $vote, $vote_id, $user_rights, $settings, $showcomments, $user_details, $ip;
-        $ip = '127.0.0.1';
-        $db_handler = new MockDbHandler();
-        $db_handler->addResult([]); // iplock check - not locked
-        $db_handler->addResult([]); // insert iplock
-        $db_handler->addResult([]); // update votes
-        $db_handler->addResult([
-            ['release_id' => 1, 'name' => 'VotedRelease', 'text' => '', 'released' => 'Y',
-             'votes' => 1, 'voted' => 8, 'ordner_id' => 0, 'views' => 0, 'downloads' => 0,
-             'time' => time(), 'uploader' => 0, 'autor' => -1, 'autor_email' => '',
-             'autor_nick' => '', 'autor_icq' => 0, 'autor_homepage' => ''],
-        ]);
-        $db_handler->addResult([]); // views update
-        $db_handler->addResult([
-            ['file_id' => 1, 'url' => 'files/t.zip', 'size' => 512, 'downloads' => 0, 'mirror' => 0, 'release_id' => 1],
-        ]);
-        $db_handler->addResult([
-            ['file_id' => 1, 'url' => 'files/t.zip', 'size' => 512, 'downloads' => 0, 'mirror' => 0, 'release_id' => 1],
-        ]);
-        $db_handler->addResult([]); // screens
-        $release_id = 1;
-        $vote = 1;
-        $vote_id = 8;
-        $showcomments = 0;
-        $user_details = ['nick' => 'Voter', 'user_id' => 2];
-        $user_rights['vote'] = 'Y';
-        $settings['enable_comments'] = 'N';
-
-        $output = $this->includeModule('pdl_release.modul.php');
-        $this->assertStringContainsString('VotedRelease', $output);
-    }
-
-    #[Test]
-    public function releaseModuleWithScreenshots(): void
-    {
-        global $db_handler, $release_id, $vote, $vote_id, $user_rights, $settings, $showcomments;
-        $db_handler = new MockDbHandler();
-        $db_handler->addResult([]); // iplock
-        $db_handler->addResult([
-            ['release_id' => 1, 'name' => 'WithScreens', 'text' => '', 'released' => 'Y',
-             'votes' => 0, 'voted' => 0, 'ordner_id' => 0, 'views' => 0, 'downloads' => 0,
-             'time' => time(), 'uploader' => 0, 'autor' => -1, 'autor_email' => '',
-             'autor_nick' => '', 'autor_icq' => 0, 'autor_homepage' => ''],
-        ]);
-        $db_handler->addResult([]); // views
-        $db_handler->addResult([
-            ['file_id' => 1, 'url' => 'files/t.zip', 'size' => 512, 'downloads' => 0, 'mirror' => 0, 'release_id' => 1],
-        ]);
-        $db_handler->addResult([
-            ['file_id' => 1, 'url' => 'files/t.zip', 'size' => 512, 'downloads' => 0, 'mirror' => 0, 'release_id' => 1],
-        ]);
-        $db_handler->addResult([ // screens
-            ['screen_id' => 1, 'release_id' => 1],
-            ['screen_id' => 2, 'release_id' => 1],
-        ]);
-        $release_id = 1;
-        $vote = 0;
-        $vote_id = 0;
-        $showcomments = 0;
-        $user_rights['vote'] = 'N';
-        $settings['enable_comments'] = 'N';
-
-        $output = $this->includeModule('pdl_release.modul.php');
-        $this->assertStringContainsString('WithScreens', $output);
+        $this->assertStringContainsString('href="https://ext.com"', $output);
+        $this->assertStringNotContainsString('mailto:', $output);
+        $this->assertStringNotContainsString('ext@test.com', $output);
     }
 
     #[Test]
     public function releaseModuleExternalAutorNoEmail(): void
     {
-        global $db_handler, $release_id, $vote, $vote_id, $user_rights, $settings, $showcomments;
+        global $db_handler, $release_id, $user_rights, $settings;
+        $this->useBootstrapReleaseView();
         $db_handler = new MockDbHandler();
-        $db_handler->addResult([]); // iplock
-        $db_handler->addResult([
-            ['release_id' => 1, 'name' => 'Test', 'text' => '', 'released' => 'Y',
-             'votes' => 0, 'voted' => 0, 'ordner_id' => 0, 'views' => 0, 'downloads' => 0,
-             'time' => time(), 'uploader' => 0, 'autor' => 0, 'autor_email' => '',
-             'autor_nick' => 'JustNick', 'autor_icq' => 0, 'autor_homepage' => ''],
-        ]);
-        $db_handler->addResult([]); // views
-        $db_handler->addResult([
-            ['file_id' => 1, 'url' => 'files/t.zip', 'size' => 512, 'downloads' => 0, 'mirror' => 0, 'release_id' => 1],
-        ]);
-        $db_handler->addResult([
-            ['file_id' => 1, 'url' => 'files/t.zip', 'size' => 512, 'downloads' => 0, 'mirror' => 0, 'release_id' => 1],
-        ]);
+        $db_handler->addResult([$this->releaseRow(['autor' => 0, 'autor_nick' => 'JustNick'])]);
+        $db_handler->addResult([]); // views update
+        $db_handler->addResult([]); // files
         $db_handler->addResult([]); // screens
         $release_id = 1;
-        $vote = 0;
-        $vote_id = 0;
-        $showcomments = 0;
         $user_rights['vote'] = 'N';
         $settings['enable_comments'] = 'N';
 
@@ -1240,35 +1221,310 @@ class ModulesTest extends TestCase
     }
 
     #[Test]
-    public function releaseModuleWithBbcodeText(): void
+    public function releaseModuleFileLinksUseLoadFileAndGroupMirrors(): void
     {
-        global $db_handler, $release_id, $vote, $vote_id, $user_rights, $settings, $showcomments;
-        $settings['bb_code'] = 'Y';
+        // P07/P09: alle Dateilinks über load_file, Spiegel als "Alternativ: Spiegel-Server"
+        global $db_handler, $release_id, $user_rights, $settings;
+        $this->useBootstrapReleaseView();
         $db_handler = new MockDbHandler();
-        $db_handler->addResult([]); // iplock
-        $db_handler->addResult([
-            ['release_id' => 1, 'name' => 'BBTest', 'text' => '[b]Bold desc[/b]', 'released' => 'Y',
-             'votes' => 0, 'voted' => 0, 'ordner_id' => 0, 'views' => 0, 'downloads' => 0,
-             'time' => time(), 'uploader' => 0, 'autor' => -1, 'autor_email' => '',
-             'autor_nick' => '', 'autor_icq' => 0, 'autor_homepage' => ''],
-        ]);
-        $db_handler->addResult([]); // views
-        $db_handler->addResult([
-            ['file_id' => 1, 'url' => 'files/t.zip', 'size' => 512, 'downloads' => 0, 'mirror' => 0, 'release_id' => 1],
-        ]);
-        $db_handler->addResult([
-            ['file_id' => 1, 'url' => 'files/t.zip', 'size' => 512, 'downloads' => 0, 'mirror' => 0, 'release_id' => 1],
+        $db_handler->addResult([$this->releaseRow()]);
+        $db_handler->addResult([]); // views update
+        $db_handler->addResult([ // files: Hauptdatei und Spiegel
+            ['file_id' => 1, 'url' => 'pdl-files/1/t.zip', 'size' => 1536, 'downloads' => 10, 'mirror' => 0, 'release_id' => 1, 'name' => 'Programm'],
+            ['file_id' => 2, 'url' => 'https://mirror.example/t.zip', 'size' => 0, 'downloads' => 5, 'mirror' => 1, 'release_id' => 1, 'name' => 'Spiegel A'],
         ]);
         $db_handler->addResult([]); // screens
         $release_id = 1;
-        $vote = 0;
-        $vote_id = 0;
-        $showcomments = 0;
+        $user_rights['vote'] = 'N';
+        $settings['enable_comments'] = 'N';
+
+        $output = $this->includeModule('pdl_release.modul.php');
+        $this->assertStringContainsString('href="downloads.php?load_file=1"', $output);
+        $this->assertStringContainsString('href="downloads.php?load_file=2"', $output);
+        $this->assertStringContainsString('class="btn btn-primary btn-sm pdl-download-btn"', $output);
+        $this->assertStringContainsString('Alternativ: <a class="pdl-mirror-link"', $output);
+        $this->assertStringContainsString('>Spiegel-Server</a>', $output);
+        $this->assertStringNotContainsString('pdl-files/1/t.zip', $output);
+        $this->assertStringNotContainsString('mirror.example', $output);
+        // Eckdaten: 1 Datei, Downloads inkl. Spiegel, Größe ohne Spiegel
+        $this->assertStringContainsString('<dt class="mb-0">Anzahl Dateien:</dt><dd class="mb-0">1</dd>', $output);
+        $this->assertStringContainsString('<dt class="mb-0">Downloads:</dt><dd class="mb-0">15</dd>', $output);
+        $this->assertStringContainsString('<dt class="mb-0">Gesamtgröße:</dt><dd class="mb-0">1,5 KB</dd>', $output);
+        $this->assertStringContainsString('1,5 KB &middot; 10 Downloads', $output);
+    }
+
+    #[Test]
+    public function releaseModuleCustomFileTemplateStillUsesLoadFile(): void
+    {
+        global $db_handler, $release_id, $user_rights, $settings, $template;
+        $this->useBootstrapReleaseView();
+        $template['dfiles_row'] = '<a href="{url}">{filename}</a>';
+        $db_handler = new MockDbHandler();
+        $db_handler->addResult([$this->releaseRow()]);
+        $db_handler->addResult([]); // views update
+        $db_handler->addResult([
+            ['file_id' => 7, 'url' => 'pdl-files/1/t.zip', 'size' => 10, 'downloads' => 0, 'mirror' => 0, 'release_id' => 1],
+        ]);
+        $db_handler->addResult([]); // screens
+        $release_id = 1;
+        $user_rights['vote'] = 'N';
+        $settings['enable_comments'] = 'N';
+
+        $output = $this->includeModule('pdl_release.modul.php');
+        $this->assertStringContainsString('<a href="downloads.php?load_file=7">t.zip</a>', $output);
+    }
+
+    #[Test]
+    public function releaseModuleWithMirrorOfOtherRelease(): void
+    {
+        global $db_handler, $release_id, $user_rights, $settings;
+        $this->useBootstrapReleaseView();
+        $db_handler = new MockDbHandler();
+        $db_handler->addResult([$this->releaseRow()]);
+        $db_handler->addResult([]); // views update
+        $db_handler->addResult([
+            ['file_id' => 3, 'url' => 'https://m.example/x.zip', 'size' => 0, 'downloads' => 2, 'mirror' => 9, 'release_id' => 1, 'name' => 'Fremder Spiegel'],
+        ]);
+        $db_handler->addResult([['size' => 2048]]); // Größe des Originals
+        $db_handler->addResult([]); // screens
+        $release_id = 1;
+        $user_rights['vote'] = 'N';
+        $settings['enable_comments'] = 'N';
+
+        $output = $this->includeModule('pdl_release.modul.php');
+        $this->assertStringContainsString('Fremder Spiegel', $output);
+        $this->assertStringContainsString('badge text-bg-secondary ms-1">Spiegel-Server', $output);
+        $this->assertStringContainsString('2 KB &middot; 2 Downloads', $output);
+    }
+
+    #[Test]
+    public function releaseModuleVoteFormIsSeparateAndHasCsrf(): void
+    {
+        // P04: eigenes kleines Formular mit CSRF-Token, nicht um die ganze Karte
+        global $db_handler, $release_id, $user_rights, $settings, $user_details;
+        $this->useBootstrapReleaseView();
+        $db_handler = new MockDbHandler();
+        $db_handler->addResult([$this->releaseRow()]);
+        $db_handler->addResult([]); // views update
+        $db_handler->addResult([
+            ['file_id' => 1, 'url' => 'pdl-files/1/t.zip', 'size' => 512, 'downloads' => 0, 'mirror' => 0, 'release_id' => 1],
+        ]);
+        $db_handler->addResult([]); // iplock: noch nicht bewertet
+        $db_handler->addResult([]); // screens
+        $release_id = 1;
+        $user_details = ['nick' => 'Voter', 'user_id' => 2];
+        $user_rights['vote'] = 'Y';
+        $settings['enable_comments'] = 'N';
+
+        $output = $this->includeModule('pdl_release.modul.php');
+        $this->assertStringContainsString('id="pdlVoteForm"', $output);
+        $this->assertStringContainsString('name="csrf_token"', $output);
+        $this->assertStringContainsString('name="vote" value="1"', $output);
+        $this->assertStringContainsString('<select id="pdlVoteId" name="vote_id"', $output);
+        $this->assertStringContainsString('id="pdlVoteSubmit">Bewerten</button>', $output);
+        $this->assertStringContainsString('Noch keine Bewertungen.', $output);
+        $this->assertSame(1, substr_count($output, '<form'));
+        $this->assertGreaterThan(strpos($output, 'id="pdlFileList"'), strpos($output, '<form'));
+    }
+
+    #[Test]
+    public function releaseModuleShowsThanksAfterVoteRedirect(): void
+    {
+        global $db_handler, $release_id, $user_rights, $settings, $user_details;
+        $this->useBootstrapReleaseView();
+        $_SESSION['pdl_vote_flash'] = ['release_id' => 1, 'status' => 'ok', 'vote' => 8];
+        $_GET['voted'] = '1';
+        $db_handler = new MockDbHandler();
+        $db_handler->addResult([$this->releaseRow(['votes' => 1, 'voted' => 8])]);
+        $db_handler->addResult([]); // views update
+        $db_handler->addResult([]); // files
+        $db_handler->addResult([['file_id' => 1]]); // iplock: bereits bewertet
+        $db_handler->addResult([]); // screens
+        $release_id = 1;
+        $user_details = ['nick' => 'Voter', 'user_id' => 2];
+        $user_rights['vote'] = 'Y';
+        $settings['enable_comments'] = 'N';
+
+        $output = $this->includeModule('pdl_release.modul.php');
+        unset($_GET['voted']);
+        $this->assertStringContainsString('Danke für Ihre Bewertung (8/10).', $output);
+        $this->assertStringContainsString('Durchschnitt: <strong>8</strong> von 10 (1 Stimme)', $output);
+        $this->assertStringNotContainsString('id="pdlVoteForm"', $output);
+        $this->assertArrayNotHasKey('pdl_vote_flash', $_SESSION);
+    }
+
+    #[Test]
+    public function releaseModuleVoteAlreadyLocked(): void
+    {
+        global $db_handler, $release_id, $user_rights, $settings, $user_details;
+        $this->useBootstrapReleaseView();
+        $db_handler = new MockDbHandler();
+        $db_handler->addResult([$this->releaseRow(['votes' => 2, 'voted' => 15])]);
+        $db_handler->addResult([]); // views update
+        $db_handler->addResult([]); // files
+        $db_handler->addResult([['file_id' => 1]]); // iplock: bereits bewertet
+        $db_handler->addResult([]); // screens
+        $release_id = 1;
+        $user_details = ['nick' => 'Voter', 'user_id' => 2];
+        $user_rights['vote'] = 'Y';
+        $settings['enable_comments'] = 'N';
+
+        $output = $this->includeModule('pdl_release.modul.php');
+        $this->assertStringContainsString('Sie haben dieses Release bereits bewertet.', $output);
+        $this->assertStringContainsString('Durchschnitt: <strong>7,5</strong> von 10 (2 Stimmen)', $output);
+        $this->assertStringNotContainsString('id="pdlVoteForm"', $output);
+    }
+
+    #[Test]
+    public function releaseModuleGuestWithoutVoteRightSeesLoginHint(): void
+    {
+        global $db_handler, $release_id, $user_rights, $settings, $user_details;
+        $this->useBootstrapReleaseView();
+        $db_handler = new MockDbHandler();
+        $db_handler->addResult([$this->releaseRow()]);
+        $db_handler->addResult([]); // views update
+        $db_handler->addResult([]); // files
+        $db_handler->addResult([]); // screens
+        $release_id = 1;
+        $user_details = null;
+        $user_rights['vote'] = 'N';
+        $settings['enable_comments'] = 'N';
+
+        $output = $this->includeModule('pdl_release.modul.php');
+        $this->assertStringContainsString('melden Sie sich an</a>, um dieses Release zu bewerten.', $output);
+        $this->assertStringNotContainsString('Vote!', $output);
+    }
+
+    #[Test]
+    public function releaseModuleWithCommentsEnabled(): void
+    {
+        global $db_handler, $release_id, $user_rights, $settings, $user_details;
+        $this->useBootstrapReleaseView();
+        $db_handler = new MockDbHandler();
+        $db_handler->addResult([$this->releaseRow(['name' => 'Commented'])]);
+        $db_handler->addResult([]); // views update
+        $db_handler->addResult([]); // files
+        $db_handler->addResult([]); // screens
+        $db_handler->addResult([]); // comments
+        $release_id = 1;
+        $user_details = ['nick' => 'User', 'user_id' => 1];
+        $user_rights['vote'] = 'N';
+        $user_rights['addcomments'] = 'Y';
+        $settings['enable_comments'] = 'Y';
+
+        $output = $this->includeModule('pdl_release.modul.php');
+        $this->assertStringContainsString('Noch keine Kommentare.', $output);
+        $this->assertSame(1, substr_count($output, 'Kommentar schreiben'));
+        $this->assertStringContainsString('id="pdlCommentForm"', $output);
+        $this->assertStringContainsString('id="pdlCommentHelp"', $output);
+        $this->assertStringNotContainsString('bgcolor', $output);
+    }
+
+    #[Test]
+    public function releaseModuleShowsCommentsWithoutButton(): void
+    {
+        // P05: Kommentare stehen sofort da, kein Knopf "Anzeigen"; P26: Gäste ohne "Anonym posten"
+        global $db_handler, $release_id, $user_rights, $settings, $user_details, $users;
+        $this->useBootstrapReleaseView();
+        $users[1] = ['nick' => 'Poster', 'email' => 'poster@example.org', 'homepage' => ''];
+        $db_handler = new MockDbHandler();
+        $db_handler->addResult([$this->releaseRow(['name' => 'WithComments'])]);
+        $db_handler->addResult([]); // views update
+        $db_handler->addResult([]); // files
+        $db_handler->addResult([]); // screens
+        $db_handler->addResult([ // comments
+            ['comment_id' => 1, 'user_id' => 0, 'titel' => 'Comment1', 'text' => 'Content1', 'time' => 1790000000],
+            ['comment_id' => 2, 'user_id' => 1, 'titel' => 'Comment2', 'text' => "Zeile 1\nZeile 2", 'time' => 1790000000],
+        ]);
+        $release_id = 1;
+        $user_details = null;
+        $user_rights['vote'] = 'N';
+        $settings['enable_comments'] = 'Y';
+
+        $output = $this->includeModule('pdl_release.modul.php');
+        $this->assertStringContainsString('id="pdlCommentList"', $output);
+        $this->assertStringContainsString('Comment1', $output);
+        $this->assertStringContainsString('Content1', $output);
+        $this->assertStringContainsString('Zeile 1<br>', $output);
+        $this->assertStringContainsString('von Poster', $output);
+        $this->assertStringNotContainsString('poster@example.org', $output);
+        $this->assertStringNotContainsString('Anzeigen', $output);
+        $this->assertStringNotContainsString('Anonym', $output);
+        $this->assertStringContainsString('registrieren Sie sich</a>, um einen Kommentar zu schreiben.', $output);
+    }
+
+    #[Test]
+    public function releaseModuleCommentBbcodeLinksAreSafe(): void
+    {
+        // P19: nur http/https/mailto werden verlinkt
+        global $db_handler, $release_id, $user_rights, $settings, $user_details;
+        $this->useBootstrapReleaseView();
+        $settings['bb_code'] = 'Y';
+        $db_handler = new MockDbHandler();
+        $db_handler->addResult([$this->releaseRow()]);
+        $db_handler->addResult([]); // views update
+        $db_handler->addResult([]); // files
+        $db_handler->addResult([]); // screens
+        $db_handler->addResult([
+            ['comment_id' => 1, 'user_id' => 0, 'titel' => '<script>x</script>', 'time' => 1790000000,
+             'text' => '[url=javascript:alert(1)]böse[/url] [url=https://ok.example/?a=1&b=2]gut[/url] [img]javascript:alert(2)[/img]'],
+        ]);
+        $release_id = 1;
+        $user_details = null;
+        $user_rights['vote'] = 'N';
+        $settings['enable_comments'] = 'Y';
+
+        $output = $this->includeModule('pdl_release.modul.php');
+        $this->assertStringNotContainsString('href="javascript', $output);
+        $this->assertStringNotContainsString('src="javascript', $output);
+        $this->assertStringContainsString('böse', $output);
+        $this->assertStringContainsString('<a href="https://ok.example/?a=1&amp;b=2" target="_blank" rel="noopener nofollow ugc">gut</a>', $output);
+        $this->assertStringNotContainsString('<script>', $output);
+    }
+
+    #[Test]
+    public function releaseModuleWithScreenshots(): void
+    {
+        global $db_handler, $release_id, $user_rights, $settings;
+        $this->useBootstrapReleaseView();
+        $db_handler = new MockDbHandler();
+        $db_handler->addResult([$this->releaseRow(['name' => 'WithScreens'])]);
+        $db_handler->addResult([]); // views
+        $db_handler->addResult([]); // files
+        $db_handler->addResult([ // screens ohne Bilddateien
+            ['screen_id' => 1, 'release_id' => 1, 'text' => 'Startfenster'],
+            ['screen_id' => 2, 'release_id' => 1, 'text' => ''],
+        ]);
+        $release_id = 1;
+        $user_rights['vote'] = 'N';
+        $settings['enable_comments'] = 'N';
+
+        $output = $this->includeModule('pdl_release.modul.php');
+        $this->assertStringContainsString('WithScreens', $output);
+        $this->assertStringContainsString('href="downloads.php?screen_id=1"', $output);
+        $this->assertStringContainsString('Startfenster', $output);
+        $this->assertStringContainsString('Screenshot 2', $output);
+        // Fehlende Bilddateien: kein kaputtes Bildsymbol
+        $this->assertStringNotContainsString('<img src="pdl-gfx/screens/', $output);
+    }
+
+    #[Test]
+    public function releaseModuleWithBbcodeText(): void
+    {
+        global $db_handler, $release_id, $user_rights, $settings;
+        $this->useBootstrapReleaseView();
+        $settings['bb_code'] = 'Y';
+        $db_handler = new MockDbHandler();
+        $db_handler->addResult([$this->releaseRow(['name' => 'BBTest', 'text' => '[b]Bold desc[/b]'])]);
+        $db_handler->addResult([]); // views
+        $db_handler->addResult([]); // files
+        $db_handler->addResult([]); // screens
+        $release_id = 1;
         $user_rights['vote'] = 'N';
         $settings['enable_comments'] = 'N';
 
         $output = $this->includeModule('pdl_release.modul.php');
         $this->assertStringContainsString('BBTest', $output);
-        $this->assertStringContainsString('Bold desc', $output);
+        $this->assertStringContainsString('<b>Bold desc</b>', $output);
     }
 }

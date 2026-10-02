@@ -10,6 +10,7 @@
  */
 
 declare(strict_types=1);
+ini_set('display_errors', '0');
 
 // Backwards compatibility: file_id → release_id
 if (isset($_GET['file_id'])) {
@@ -28,23 +29,39 @@ if (!isset($incdir)) {
     $incdir = "";
 }
 require($incdir . "pdl-inc/pdl_config.inc.php");
+require_once($incdir . "pdl-inc/pdl_setup_required.inc.php");
+
+// Noch keine Zugangsdaten (weder PDL_DB_* noch pdl_config.local.php):
+// Hinweisseite mit Verweis auf den Web-Installer statt Verbindungsfehler.
+if ($config_source === \PowerDownload\LocalConfig::SOURCE_DEFAULTS) {
+    pdl_setup_required_page('defaults', $incdir);
+}
+
 require($incdir . "pdl-inc/pdl_db_class_" . strtolower($config_sql_type) . ".inc.php");
 require($incdir . "pdl-inc/pdl_functions.inc.php");
 require($incdir . "pdl-inc/pdl_csrf.inc.php");
 require($incdir . "pdl-inc/pdl_admin_validation.inc.php");
 require($incdir . "pdl-inc/pdl_admin_audit.inc.php");
+require_once($incdir . "pdl-inc/pdl_locks.inc.php");
 require_once($incdir . "pdl-inc/pdl_layout.inc.php");
 
 // Initialize SQL Class
 $db_handler = new pdl_db_class();
 
 $db_handler->config_sql_server = $config_sql_server;
+$db_handler->config_sql_port = $config_sql_port;
 $db_handler->config_sql_database = $config_sql_database;
 $db_handler->config_sql_user = $config_sql_user;
 $db_handler->config_sql_password = $config_sql_password;
 $db_handler->config_sql_persistent = $config_sql_persistent;
 
-$db_handler->sql_connect();
+try {
+    $db_handler->sql_connect();
+} catch (\RuntimeException $e) {
+    // Die Originalmeldung nennt Server und Benutzer: nur ins Fehlerprotokoll.
+    error_log('PowerDownload: ' . $e->getMessage());
+    pdl_setup_required_page('connection', $incdir);
+}
 
 $config_sql_password = "";
 $db_handler->config_sql_password = "";
@@ -60,36 +77,9 @@ try {
         $settings[$settings_row['variablenname']] = $settings_row['wert'];
     }
 } catch (mysqli_sql_exception|Exception $e) {
-    // Database not initialized - show friendly error
-    http_response_code(503);
-    $setup_link = ($incdir === '' ? '' : $incdir) . 'setup.php';
-    echo '<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PowerDownload - Setup erforderlich</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-dark text-light min-vh-100 d-flex align-items-center justify-content-center p-3">
-    <main class="container" style="max-width: 540px;">
-        <div class="card bg-secondary-subtle text-dark shadow">
-            <div class="card-header bg-danger text-white">
-                <h1 class="h4 mb-0">Setup erforderlich</h1>
-            </div>
-            <div class="card-body">
-                <p class="mb-3">Die Datenbank-Tabellen wurden noch nicht erstellt.</p>
-                <p class="mb-3">Bitte fuehre zuerst das Setup aus:</p>
-                <p class="mb-3"><a class="btn btn-danger" href="' . htmlspecialchars($setup_link, ENT_QUOTES, 'UTF-8') . '">setup.php aufrufen</a></p>
-                <hr>
-                <p class="small text-muted mb-0">Fehler: ' . htmlspecialchars($e->getMessage()) . '</p>
-            </div>
-        </div>
-    </main>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>';
-    exit;
+    // Datenbank erreichbar, aber ohne PowerDownload-Tabellen
+    error_log('PowerDownload: ' . $e->getMessage());
+    pdl_setup_required_page('tables', $incdir);
 }
 
 $script_file_raw = $settings['script_file'] ?? '';
@@ -101,7 +91,7 @@ if ($script_file_raw === '' || substr($script_file_raw, -1) === '?' || substr($s
     $settings['script_file'] = $script_file_raw . "?";
 }
 
-$settings['pdlversion'] = "v3.5.0";
+$settings['pdlversion'] = "v3.6.0";
 $settings['debug'] = false;
 $settings['showcopy'] = true;
 $settings['phpversion'] = str_replace(".", "", phpversion());
@@ -157,14 +147,14 @@ $ordner_id = isset($_GET['ordner_id']) ? (int) $_GET['ordner_id'] : (isset($_POS
 $release_id = isset($_GET['release_id']) ? (int) $_GET['release_id'] : (isset($_POST['release_id']) ? (int) $_POST['release_id'] : ($release_id ?? 0));
 $screen_id = isset($_GET['screen_id']) ? (int) $_GET['screen_id'] : 0;
 $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
-$usercenter = $_GET['usercenter'] ?? $_POST['usercenter'] ?? '';
+$usercenter = is_string($_GET['usercenter'] ?? null) ? $_GET['usercenter'] : (is_string($_POST['usercenter'] ?? null) ? $_POST['usercenter'] : '');
 $show_search = isset($_GET['show_search']) ? (int) $_GET['show_search'] : 0;
 $show_stats = isset($_GET['show_stats']) ? (int) $_GET['show_stats'] : 0;
 $wrong_referer = isset($_GET['wrong_referer']) ? (int) $_GET['wrong_referer'] : 0;
 $wrong_rights = isset($_GET['wrong_rights']) ? (int) $_GET['wrong_rights'] : 0;
 $login = isset($_POST['login']) ? (int) $_POST['login'] : (isset($_GET['login']) ? (int) $_GET['login'] : 0);
 $logout = isset($_GET['logout']) ? (int) $_GET['logout'] : 0;
-$load_file = isset($_GET['load_file']) ? (int) $_GET['load_file'] : 0;
+$load_file = isset($_GET['load_file']) && is_scalar($_GET['load_file']) ? (int) $_GET['load_file'] : 0;
 $nick = $_POST['nick'] ?? '';
 $pw = $_POST['pw'] ?? '';
 $submit = isset($_POST['submit']) ? 1 : (isset($_GET['submit']) ? (int) $_GET['submit'] : 0);
@@ -180,10 +170,26 @@ $pw_new = $_POST['pw_new'] ?? '';
 $pw_new2 = $_POST['pw_new2'] ?? '';
 $homepage = $_POST['homepage'] ?? '';
 $get_letter = $_POST['get_letter'] ?? '';
-$titel = $_POST['titel'] ?? '';
-$text = $_POST['text'] ?? '';
+$titel = is_string($_POST['titel'] ?? null) ? $_POST['titel'] : '';
+// Kommentartext (POST) bzw. Suchbegriff (POST beim Absenden, GET beim Blättern)
+$text = pdl_request_string('text');
 $remind_code = $_GET['remind_code'] ?? $_POST['remind_code'] ?? '';
-$csrf_token = $_POST['csrf_token'] ?? $_GET['csrf_token'] ?? '';
+$csrf_token = pdl_request_string('csrf_token');
+
+// Suche: Bereich (Whitelist im Suchmodul)
+$in = pdl_request_string('in', 'texttitel');
+
+// Bewertung (nur per POST) und Rückmeldung nach der Weiterleitung
+$vote = isset($_POST['vote']) && is_scalar($_POST['vote']) ? (int) $_POST['vote'] : 0;
+$vote_id = isset($_POST['vote_id']) && is_scalar($_POST['vote_id']) ? (int) $_POST['vote_id'] : 0;
+$vote_feedback = isset($_GET['voted']) ? (int) $_GET['voted'] : 0;
+
+// Echte Startseite (GET ohne Unterseiten-Parameter)? Nur dort erscheinen die
+// Startseiten-Widgets, siehe pdl_show_dashboard_widgets().
+$pdl_is_start_page = ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST'
+    && $usercenter === '' && $release_id === 0 && $screen_id === 0 && $ordner_id <= 0
+    && $show_search === 0 && $show_stats === 0 && $wrong_referer === 0 && $wrong_rights === 0
+    && $load_file === 0;
 
 /** @psalm-suppress RedundantCondition */
 $inadmin = $inadmin ?? 0;
@@ -226,8 +232,8 @@ $ugroup_id = 0;
 $user_rights = [];
 
 // Check Cookie (Session-Token-basiert statt Password-Hash)
-$login_id = $_COOKIE['login_id'] ?? '';
-$login_token = $_COOKIE['login_token'] ?? '';
+$login_id = is_string($_COOKIE['login_id'] ?? null) ? $_COOKIE['login_id'] : '';
+$login_token = is_string($_COOKIE['login_token'] ?? null) ? $_COOKIE['login_token'] : '';
 
 if ($login_id !== '' && $login_token !== '') {
     $login_id_escaped = $db_handler->sql_escape_int($login_id);
@@ -242,25 +248,64 @@ if ($login_id !== '' && $login_token !== '') {
     }
 }
 
+// Rechte: Angemeldete bekommen die Rechte ihrer Benutzergruppe, nicht
+// angemeldete Besucher die der Gastgruppe aus der Einstellung guest_group_id
+// (Vorgabe 3 „Gast“). Fehlt die Gruppe oder die Einstellung (z. B. vor
+// update.php), gelten sichere Vorgaben: nur Download. Gäste erhalten nie
+// Admin-Rechte, auch wenn die Gastgruppe sie hätte.
+$user_rights = [
+    'download' => 'Y', 'vote' => 'N', 'addcomments' => 'N', 'comment' => 'N',
+    'adminaccess' => 'N', 'addfiles' => 'N', 'editfiles' => 'N', 'delfiles' => 'N',
+    'adddirs' => 'N', 'editdirs' => 'N', 'deldirs' => 'N', 'adduser' => 'N',
+    'edituser' => 'N', 'deluser' => 'N', 'settings' => 'N', 'templates' => 'N',
+    'replacements' => 'N', 'backup' => 'N',
+];
 if ($user_details) {
     $ugroup_id = (int) $user_details['ugroup_id'];
+} else {
+    $ugroup_id = (int) ($settings['guest_group_id'] ?? 0);
 }
 
-$ugroup_id_escaped = $db_handler->sql_escape_int($ugroup_id);
-$rights_res = $db_handler->sql_query("SELECT * FROM " . $sql_table['usergroup'] . " WHERE ugroup_id='" . $ugroup_id_escaped . "'");
-$user_rights = $db_handler->sql_fetch_array($rights_res) ?? [];
+if ($ugroup_id > 0) {
+    $ugroup_id_escaped = $db_handler->sql_escape_int($ugroup_id);
+    $rights_row = $db_handler->sql_fetch_array($db_handler->sql_query("SELECT * FROM " . $sql_table['usergroup'] . " WHERE ugroup_id='" . $ugroup_id_escaped . "'"));
+    if (is_array($rights_row)) {
+        if ($user_details) {
+            $user_rights = $rights_row;
+        } else {
+            foreach (['download', 'vote', 'addcomments'] as $guest_right) {
+                $user_rights[$guest_right] = (($rights_row[$guest_right] ?? 'N') === 'Y') ? 'Y' : 'N';
+            }
+            $user_rights['ugroup_id'] = $rights_row['ugroup_id'] ?? $ugroup_id;
+            $user_rights['name'] = $rights_row['name'] ?? '';
+        }
+    }
+}
+
+// Anmeldung im Adminbereich (pdl-admin/index.php) oder im öffentlichen Bereich?
+$pdl_auth_admin_entry = (basename($_SERVER['PHP_SELF'] ?? '') === "index.php");
 
 // Login
-if ($login == 1 && $nick !== '' && $pw !== '') {
-    // Rate-Limit: Max 5 Fehlversuche pro IP in 15 Minuten
-    $ip_escaped = $db_handler->sql_escape_string($ip);
-    $limit_since = time() - 900;
-    $failed_res = $db_handler->sql_query("SELECT COUNT(*) AS c FROM " . $sql_table['iplock'] . " WHERE ip='" . $ip_escaped . "' AND art='login' AND time>" . $limit_since);
-    $failed_row = $db_handler->sql_fetch_array($failed_res);
-    $failed_count = (int) ($failed_row['c'] ?? 0);
+if ($login == 1 && is_string($nick) && is_string($pw) && $nick !== '' && $pw !== '') {
+    // Rücksprungziel: Release, von dem aus sich der Besucher anmeldet
+    // (back_release aus dem Anmeldeformular, siehe pdl_ulogin.modul.php).
+    // Der Anhang steht hinter login_error=N, damit pdl-admin/header.inc.php
+    // die Weiterleitung weiterhin erkennt.
+    $login_back = $pdl_auth_admin_entry ? 0 : pdl_back_release($_POST['back_release'] ?? null);
+    $login_back_query = pdl_back_release_query($login_back);
 
-    if ($failed_count >= 5) {
-        header("Location: " . $settings['script_file'] . "usercenter=login&login_error=2");
+    // CSRF: gültiges Token aus dem Formular. Ohne Token nur, wenn nichts auf
+    // eine fremde Seite hindeutet (Sec-Fetch-Site, Origin, Referer).
+    if (!csrf_verify(is_string($csrf_token) ? $csrf_token : null) && pdl_request_is_cross_site()) {
+        header("Location: " . ($pdl_auth_admin_entry ? "index.php" : $settings['script_file'] . "usercenter=login&login_error=3" . $login_back_query));
+        exit;
+    }
+
+    // Sperre: höchstens 5 Fehlversuche je IP-Adresse in 15 Minuten, gleich
+    // für welches Konto (pdl_locks.inc.php).
+    $login_ip = substr($ip, 0, 32);
+    if (pdl_login_failures($db_handler, $sql_table, $login_ip) >= 5) {
+        header("Location: " . $settings['script_file'] . "usercenter=login&login_error=2" . $login_back_query);
         exit;
     }
 
@@ -288,11 +333,18 @@ if ($login == 1 && $nick !== '' && $pw !== '') {
     }
 
     if ($password_ok && $login_temp) {
-        // Rate-Limit-Reset für diese IP
-        $db_handler->sql_query("DELETE FROM " . $sql_table['iplock'] . " WHERE ip='" . $ip_escaped . "' AND art='login'");
+        // Nur die Fehlversuche dieses Kontos von dieser Adresse löschen.
+        // Fehlversuche gegen andere Konten zählen weiter; sonst ließe sich
+        // die Sperre mit einer Anmeldung am eigenen Konto zurücksetzen.
+        pdl_login_failures_clear($db_handler, $sql_table, $login_ip, (int) ($login_temp['user_id'] ?? 0));
 
-        // Session-Token generieren und persistieren
-        $session_token = bin2hex(random_bytes(32));
+        // Sitzungs-Token: ein vorhandenes weiterverwenden, damit eine Anmeldung
+        // auf einem zweiten Gerät das erste nicht abmeldet. Abmelden, Passwort
+        // vergessen und Passwortwechsel setzen das Token neu (alle Geräte ab).
+        $session_token = (string) ($login_temp['session_token'] ?? '');
+        if (preg_match('/^[0-9a-f]{64}$/', $session_token) !== 1) {
+            $session_token = bin2hex(random_bytes(32));
+        }
         $session_token_safe = $db_handler->sql_escape_string($session_token);
         $user_id_safe = $db_handler->sql_escape_int($login_temp['user_id'] ?? 0);
         $db_handler->sql_query("UPDATE " . $sql_table['user'] . " SET session_token='" . $session_token_safe . "', lastactive='" . time() . "' WHERE user_id='" . $user_id_safe . "'");
@@ -301,22 +353,40 @@ if ($login == 1 && $nick !== '' && $pw !== '') {
         setcookie("login_id", (string) ($login_temp['user_id'] ?? ''), $cookie_opts);
         setcookie("login_token", $session_token, $cookie_opts);
 
-        if (basename($_SERVER['PHP_SELF'] ?? '') == "index.php") {
+        // Zurück zum Release, sofern es (noch) öffentlich ist
+        if ($login_back > 0 && $db_handler->sql_fetch_array($db_handler->sql_query(
+            "SELECT release_id FROM " . $sql_table['release'] . " WHERE release_id='" . $db_handler->sql_escape_int($login_back) . "' AND released='Y'"
+        )) === null) {
+            $login_back = 0;
+        }
+
+        if ($pdl_auth_admin_entry) {
             header("Location: index.php");
+        } elseif ($login_back > 0) {
+            // Rückmeldung „Sie sind jetzt angemeldet.“ auf der Release-Seite
+            header("Location: " . $settings['script_file'] . "release_id=" . $login_back . "&login_ok=1");
         } else {
-            header("Location: " . $settings['script_file']);
+            // Rückmeldung „Sie sind jetzt angemeldet.“ im Anmelde-Modul
+            header("Location: " . $settings['script_file'] . "usercenter=login&login_ok=1");
         }
         exit;
     } else {
-        // Fehlversuch loggen
-        $db_handler->sql_query("INSERT INTO " . $sql_table['iplock'] . " (ip,time,file_id,user_id,art) VALUES ('" . $ip_escaped . "','" . time() . "',0,0,'login')");
-        header("Location: " . $settings['script_file'] . "usercenter=login&login_error=1");
+        // Fehlversuch mit dem versuchten Konto speichern (0 = Benutzername unbekannt)
+        pdl_login_failure_add($db_handler, $sql_table, $login_ip, (int) ($login_temp['user_id'] ?? 0));
+        header("Location: " . $settings['script_file'] . "usercenter=login&login_error=1" . $login_back_query);
         exit;
     }
 }
 
-// Logout
-if ($logout == 1) {
+// Logout: per POST (Formular mit Token) oder per Link (logout=1, mit Token
+// siehe pdl_logout_url()). Kommt ein Link ohne gültiges Token nachweislich
+// von einer fremden Seite, wird nicht abgemeldet, sondern nachgefragt.
+$pdl_logout_post = (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') && is_scalar($_POST['logout'] ?? null) && (int) $_POST['logout'] === 1;
+if ($logout == 1 || $pdl_logout_post) {
+    if (!csrf_verify(is_string($csrf_token) ? $csrf_token : null) && pdl_request_is_cross_site()) {
+        header("Location: " . ($pdl_auth_admin_entry ? "index.php" : $settings['script_file'] . "usercenter=login&logout_confirm=1"));
+        exit;
+    }
     // Session-Token in DB löschen, damit Cookie auf anderen Geräten ungültig wird
     if ($user_details) {
         $user_id_safe = $db_handler->sql_escape_int($user_details['user_id'] ?? 0);
@@ -326,86 +396,177 @@ if ($logout == 1) {
     setcookie("login_token", "", $cookie_clear);
     // Alten (legacy) Cookie ebenfalls löschen, falls noch gesetzt
     setcookie("login_pw", "", $cookie_clear);
+    $_SESSION = [];
     session_destroy();
-    if (basename($_SERVER['PHP_SELF'] ?? '') == "index.php") {
+    if ($pdl_auth_admin_entry) {
         header("Location: index.php");
     } else {
-        header("Location: " . $settings['script_file']);
+        // Rückmeldung „Sie wurden abgemeldet.“ im Anmelde-Modul
+        header("Location: " . $settings['script_file'] . "usercenter=login&logout_ok=1");
     }
     exit;
 }
 
-// Download
-if ($load_file) {
+// Profil speichern und Konto löschen vor jeder Ausgabe verarbeiten, damit
+// Cookies gesetzt und Weiterleitungen gesendet werden können (die Navigation
+// zeigt danach sofort den richtigen Anmeldestatus). Bei Fehlern wird die
+// Ausgabe gepuffert und von pdl_uprofil.modul.php später ausgegeben.
+$pdl_uprofil_output = null;
+if ($user_details && $inadmin != 1 && strtolower($usercenter) === 'profil' && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+    $pdl_prerender = true;
+    ob_start();
+    include __DIR__ . '/pdl_uprofil.modul.php';
+    $pdl_uprofil_output = (string) ob_get_clean();
+    $pdl_prerender = false;
+}
+
+// Kommentar speichern ebenfalls vor jeder Ausgabe (Post/Redirect/Get): Nach
+// dem Speichern leitet pdl_ucomments.modul.php auf das Release um, Neuladen
+// schickt den Kommentar also nicht noch einmal. Bei Fehlern wird die Ausgabe
+// gepuffert und beim regulären Einbinden des Moduls ausgegeben.
+$pdl_ucomments_output = null;
+if ($inadmin != 1 && strtolower($usercenter) === 'comments' && $submit == 1 && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+    $pdl_prerender = true;
+    ob_start();
+    include __DIR__ . '/pdl_ucomments.modul.php';
+    $pdl_ucomments_output = (string) ob_get_clean();
+    $pdl_prerender = false;
+}
+
+// Download: Hotlink-Schutz, Recht "download", Existenz der Datei, Zählerschutz
+// und Auslieferung. Alle Dateilinks der Release-Seite laufen über load_file.
+$pdl_download_missing = false;
+$pdl_download_release_id = 0;
+if ($load_file > 0) {
     $file_id = $load_file;
-    $dl_allowed = false;
+    $dl_allowed = true;
     if (($settings['referer_check'] ?? 'N') == "Y") {
-        $all_referer = explode(" ", $settings['allowed_referer'] ?? '');
+        $dl_allowed = false;
         $http_referer = $_SERVER['HTTP_REFERER'] ?? '';
-        for ($i = 0; $i < count($all_referer); $i++) {
-            if ($all_referer[$i] !== '' && preg_match("/" . preg_quote($all_referer[$i], '/') . "/siU", $http_referer)) {
-                $dl_allowed = true;
-                break;
+        $referer_host = strtolower((string) parse_url($http_referer, PHP_URL_HOST));
+        $own_host = strtolower((string) preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
+        if ($referer_host !== '' && $referer_host === $own_host) {
+            // Klick auf der eigenen Seite ist immer erlaubt
+            $dl_allowed = true;
+        } else {
+            $all_referer = explode(" ", $settings['allowed_referer'] ?? '');
+            foreach ($all_referer as $allowed_referer) {
+                if ($allowed_referer !== '' && preg_match("/" . preg_quote($allowed_referer, '/') . "/siU", $http_referer)) {
+                    $dl_allowed = true;
+                    break;
+                }
             }
         }
-    } else {
-        $dl_allowed = true;
     }
 
-    if ($dl_allowed == true) {
-        if (($user_rights['download'] ?? 'Y') == "N") {
-            header("Location: " . $settings['script_file'] . "wrong_rights=1");
-            exit;
-        } else {
-            $file_id_escaped = $db_handler->sql_escape_int($file_id);
-            $dl_row = $db_handler->sql_fetch_array($db_handler->sql_query("SELECT * FROM " . $sql_table['files'] . " WHERE file_id='" . $file_id_escaped . "'"));
-            $db_handler->sql_query("UPDATE " . $sql_table['files'] . " SET downloads=downloads+1 WHERE file_id='" . $file_id_escaped . "'");
-            header("Location: " . ($dl_row['url'] ?? ''));
-            exit;
-        }
-    } else {
+    if (!$dl_allowed) {
         header("Location: " . $settings['script_file'] . "wrong_referer=1");
+        exit;
+    }
+
+    $file_id_escaped = $db_handler->sql_escape_int($file_id);
+    $dl_row = $db_handler->sql_fetch_array($db_handler->sql_query(
+        "SELECT f.file_id, f.url, f.release_id, r.released FROM " . $sql_table['files'] . " AS f"
+        . " LEFT JOIN " . $sql_table['release'] . " AS r ON r.release_id = f.release_id"
+        . " WHERE f.file_id='" . $file_id_escaped . "'"
+    ));
+    $dl_public = $dl_row !== null && ($dl_row['released'] ?? 'N') === 'Y';
+
+    if (($user_rights['download'] ?? 'Y') == "N") {
+        // Hinweisseite mit dem Release als Rücksprungziel (Anmelde-Link und
+        // „Zurück zum Release“); versteckte Releases werden nicht genannt.
+        $dl_back = $dl_public ? (int) ($dl_row['release_id'] ?? 0) : 0;
+        header("Location: " . $settings['script_file'] . "wrong_rights=1" . pdl_back_release_query($dl_back));
+        exit;
+    }
+
+    $dl_target = null;
+    if ($dl_public) {
+        $pdl_download_release_id = (int) ($dl_row['release_id'] ?? 0);
+        $dl_target = pdl_download_target((string) ($dl_row['url'] ?? ''), dirname(__DIR__));
+    }
+
+    if ($dl_target === null) {
+        // Unbekannte ID, verstecktes Release oder Datei fehlt: Hinweisseite statt leerer Weiterleitung.
+        http_response_code(404);
+        $pdl_download_missing = true;
+    } else {
+        // Zählerschutz: je Datei höchstens einmal pro Stunde, für Angemeldete
+        // je Konto, für Gäste je IP-Adresse (pdl_locks.inc.php).
+        $dl_since = time() - 3600;
+        $dl_user_id = (int) ($user_details['user_id'] ?? 0);
+        $db_handler->sql_query("DELETE FROM " . $sql_table['iplock'] . " WHERE art='download' AND time<" . $dl_since);
+        if (!pdl_lock_exists($db_handler, $sql_table, 'download', $file_id, $dl_user_id, $ip)) {
+            pdl_lock_add($db_handler, $sql_table, 'download', $file_id, $dl_user_id, $ip);
+            $db_handler->sql_query("UPDATE " . $sql_table['files'] . " SET downloads=downloads+1 WHERE file_id='" . $file_id_escaped . "'");
+        }
+
+        if ($dl_target['type'] === 'local') {
+            pdl_send_file($dl_target['path']);
+        }
+        header("Location: " . $dl_target['url']);
         exit;
     }
 }
 
-// individuelles Listen
+// Bewertung speichern (Post/Redirect/Get). Die Rückmeldung steht nach der
+// Weiterleitung über der Bewertung auf der Release-Seite (Sitzung).
+// Eine Bewertung je Release in 24 Stunden: für Angemeldete je Konto, für
+// Gäste je IP-Adresse (pdl_locks.inc.php).
+if ($vote === 1 && $release_id > 0 && $inadmin != 1) {
+    $vote_status = 'ok';
+    $vote_release_safe = $db_handler->sql_escape_int($release_id);
+    $vote_user_id = (int) ($user_details['user_id'] ?? 0);
+    if (!csrf_verify($csrf_token)) {
+        $vote_status = 'csrf';
+    } elseif (($user_rights['vote'] ?? 'N') !== 'Y') {
+        $vote_status = 'rights';
+    } elseif ($vote_id < 1 || $vote_id > 10) {
+        $vote_status = 'invalid';
+    } elseif ($db_handler->sql_fetch_array($db_handler->sql_query("SELECT release_id FROM " . $sql_table['release'] . " WHERE release_id='" . $vote_release_safe . "' AND released='Y'")) === null) {
+        $vote_status = 'invalid';
+    } elseif (pdl_lock_exists($db_handler, $sql_table, 'vote', $release_id, $vote_user_id, $ip)) {
+        $vote_status = 'locked';
+    } else {
+        $vote_saved = pdl_lock_add($db_handler, $sql_table, 'vote', $release_id, $vote_user_id, $ip)
+            && $db_handler->sql_query("UPDATE " . $sql_table['release'] . " SET votes=votes+1, voted=voted+" . $vote_id . " WHERE release_id='" . $vote_release_safe . "'") !== false;
+        $vote_status = $vote_saved ? 'ok' : 'error';
+    }
+    $_SESSION['pdl_vote_flash'] = ['release_id' => $release_id, 'status' => $vote_status, 'vote' => $vote_id];
+    header("Location: " . $settings['script_file'] . "release_id=" . $release_id . "&voted=1#pdlVote");
+    exit;
+}
+
+// Individuelle Sortierung je Besucher (Cookie). Nur bekannte Werte werden
+// übernommen; die Abfragen selbst prüfen zusätzlich gegen ihre Whitelist.
+$pdl_list_orderby = ['name', 'text', 'time', 'date', 'views', 'votes', 'voted', 'voted/votes'];
+$pdl_list_clean = static function (mixed $seq, mixed $by, mixed $per) use ($pdl_list_orderby): array {
+    $seq = is_string($seq) && strtoupper($seq) === 'DESC' ? 'DESC' : 'ASC';
+    $by = is_string($by) && in_array($by, $pdl_list_orderby, true) ? $by : 'name';
+    $per = is_scalar($per) ? (int) $per : 0;
+    $per = ($per >= 5 && $per <= 200) ? (string) $per : '';
+    return [$seq, $by, $per];
+};
+
 if ($change_list == 1) {
-    $pdl_list_value = $orderseq . "###" . $orderby . "###" . $perpage;
-    setcookie("pdl_list", $pdl_list_value, [
+    [$list_seq, $list_by, $list_per] = $pdl_list_clean($orderseq, $orderby, $perpage);
+    setcookie("pdl_list", $list_seq . "###" . $list_by . "###" . $list_per, [
         'expires' => time() + 8760 * 3600,
         'path' => '/',
         'httponly' => true,
         'samesite' => 'Strict'
     ]);
-    header("Location: " . ($_SERVER['HTTP_REFERER'] ?? $settings['script_file']));
+    header("Location: " . $settings['script_file']);
     exit;
 }
 
-$pdl_list = $_COOKIE['pdl_list'] ?? '';
+$pdl_list = is_string($_COOKIE['pdl_list'] ?? null) ? $_COOKIE['pdl_list'] : '';
 if ($pdl_list !== '' && $inadmin != 1) {
     $list_ops = explode("###", $pdl_list);
-    $settings['orderseq'] = $list_ops[0] ?? 'ASC';
-    $settings['orderby'] = $list_ops[1] ?? 'name';
-    $settings['perpage'] = $list_ops[2] ?? '10';
+    [$list_seq, $list_by, $list_per] = $pdl_list_clean($list_ops[0] ?? '', $list_ops[1] ?? '', $list_ops[2] ?? '');
+    $settings['orderseq'] = $list_seq;
+    $settings['orderby'] = $list_by;
+    if ($list_per !== '') {
+        $settings['perpage'] = $list_per;
+    }
 }
-
-$settings_orderby = htmlspecialchars($settings['orderby'] ?? 'name', ENT_QUOTES, 'UTF-8');
-$settings_orderseq = htmlspecialchars($settings['orderseq'] ?? 'ASC', ENT_QUOTES, 'UTF-8');
-$settings_perpage = htmlspecialchars($settings['perpage'] ?? '10', ENT_QUOTES, 'UTF-8');
-
-$list = 'Release sortieren nach
-<select name="orderby">
-<option value="name">Name</option>
-<option value="text"' . (($settings_orderby == "text") ? " selected" : "") . '>Beschreibung</option>
-<option value="time"' . (($settings_orderby == "time") ? " selected" : "") . '>Uploaddatum</option>
-<option value="views"' . (($settings_orderby == "views") ? " selected" : "") . '>Views</option>
-<option value="votes"' . (($settings_orderby == "votes") ? " selected" : "") . '>Bewertungen</option>
-<option value="voted/votes"' . (($settings_orderby == "voted/votes") ? " selected" : "") . '>Wertung</option>
-</select>
-in <select name="orderseq">
-<option value="ASC">aufsteigender</option>
-<option value="DESC"' . (($settings_orderseq == "DESC") ? " selected" : "") . '
->absteigender</option></select> Reihenfolge mit
-<input type="text" size="2" name="perpage" value="' . $settings_perpage . '">
-Releasen auf einer Seite <input type="submit" value="GO">';

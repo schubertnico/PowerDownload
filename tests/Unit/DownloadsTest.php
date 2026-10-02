@@ -24,7 +24,8 @@ class DownloadsTest extends TestCase
                $page, $list, $total, $install, $inadmin, $db_handler, $sql_table,
                $user_details, $user_rights, $rendertime1,
                $ordner_id, $release_id, $screen_id, $usercenter, $show_search, $show_stats,
-               $wrong_referer, $wrong_rights, $subfiles, $subdirs, $release;
+               $wrong_referer, $wrong_rights, $subfiles, $subdirs, $release,
+               $pdl_download_missing, $pdl_download_release_id, $pdl_current_ordner;
 
         $settings = [
             'dlspeed' => 56, 'date_format' => 'd.m.Y', 'script_file' => 'downloads.php?',
@@ -69,6 +70,10 @@ class DownloadsTest extends TestCase
         $subfiles = 0;
         $subdirs = 0;
         $release = null;
+        $pdl_download_missing = false;
+        $pdl_download_release_id = 0;
+        $pdl_current_ordner = null;
+        unset($_SESSION['pdl_viewed'], $_SESSION['pdl_viewed_screen']);
 
         $sql_table = [
             'comments' => 'pdl3_comments', 'files' => 'pdl3_files',
@@ -88,7 +93,7 @@ class DownloadsTest extends TestCase
                $page, $list, $total, $install, $inadmin, $db_handler, $sql_table,
                $user_details, $user_rights, $rendertime1,
                $ordner_id, $release_id, $screen_id, $usercenter, $show_search, $show_stats,
-               $wrong_referer, $wrong_rights, $subfiles, $subdirs, $release,
+               $wrong_referer, $wrong_rights, $subfiles, $subdirs, $release, $pdl_download_missing, $pdl_download_release_id, $pdl_current_ordner,
                $submit, $nick, $pw, $email, $text, $titel, $vote, $vote_id,
                $showcomments, $remind_code, $ip, $login_error;
 
@@ -179,7 +184,8 @@ class DownloadsTest extends TestCase
 
         $output = $this->includeDownloads();
 
-        $this->assertStringContainsString('illegal', $output);
+        $this->assertStringContainsString('Direktlinks auf Dateien sind nicht erlaubt.', $output);
+        $this->assertStringContainsString('Bitte laden Sie die Datei über die Release-Seite herunter.', $output);
     }
 
     #[Test]
@@ -191,7 +197,41 @@ class DownloadsTest extends TestCase
 
         $output = $this->includeDownloads();
 
-        $this->assertStringContainsString('keine Berechtigung', $output);
+        $this->assertStringContainsString('Sie dürfen diese Datei nicht herunterladen.', $output);
+        $this->assertStringContainsString('melden Sie sich an', $output);
+    }
+
+    #[Test]
+    public function downloadsShowsFileNotFoundPage(): void
+    {
+        // P09: unbekannte Datei-ID → Hinweisseite statt leerer Weiterleitung
+        global $db_handler, $pdl_download_missing, $pdl_download_release_id;
+        $pdl_download_missing = true;
+        $pdl_download_release_id = 4;
+        $db_handler = new MockDbHandler();
+
+        $output = $this->includeDownloads();
+
+        $this->assertStringContainsString('id="pdlDownloadMissing"', $output);
+        $this->assertStringContainsString('Datei nicht gefunden', $output);
+        $this->assertStringContainsString('href="downloads.php?release_id=4"', $output);
+        $this->assertStringNotContainsString('noch leer', $output);
+    }
+
+    #[Test]
+    public function downloadsShowsFolderNotFoundForUnknownId(): void
+    {
+        // P36: unbekannte Ordner-ID → "Ordner nicht gefunden"
+        global $db_handler, $ordner_id, $pdl_current_ordner;
+        $ordner_id = 999;
+        $pdl_current_ordner = false; // von downloads.php ermittelt
+        $db_handler = new MockDbHandler();
+
+        $output = $this->includeDownloads();
+
+        $this->assertStringContainsString('Ordner nicht gefunden', $output);
+        $this->assertStringNotContainsString('noch leer', $output);
+        $this->assertStringContainsString('href="downloads.php?ordner_id=0">Index</a>', $output);
     }
 
     #[Test]
@@ -228,15 +268,16 @@ class DownloadsTest extends TestCase
         $users[1] = ['nick' => 'Admin', 'email' => 'a@t.com', 'icq' => 0, 'homepage' => ''];
         $_SERVER['SERVER_SOFTWARE'] = 'TestServer';
         $db_handler = new MockDbHandler();
-        // stats module needs 10 query results
-        for ($i = 0; $i < 10; $i++) {
+        // Statistik ohne Admin-Recht: 8 Abfragen (keine Server-Abfragen)
+        for ($i = 0; $i < 8; $i++) {
             $db_handler->addResult([]);
         }
 
         $output = $this->includeDownloads();
 
-        // HTML-Ausgabe escaped das Ampersand: "Server &amp; DB Stats"
-        $this->assertStringContainsString('Server &amp; DB Stats', $output);
+        $this->assertStringContainsString('Server und Datenbank', $output);
+        $this->assertStringContainsString('nur für Administratoren sichtbar', $output);
+        $this->assertSame(8, $db_handler->querys);
     }
 
     #[Test]
@@ -266,10 +307,7 @@ class DownloadsTest extends TestCase
         $db_handler->addResult([
             ['release_id' => 1, 'name' => 'TestRel', 'ordner_id' => 0],
         ]);
-        // For treeview_pfeil (via downloads.inc.php) - not called when treeview=N but ordner_id=0
-        // For release module: iplock
-        $db_handler->addResult([]);
-        // release data
+        // release data (Release-Modul)
         $db_handler->addResult([
             ['release_id' => 1, 'name' => 'TestRel', 'text' => '', 'released' => 'Y',
              'votes' => 0, 'voted' => 0, 'ordner_id' => 0, 'views' => 0, 'downloads' => 0,
@@ -277,9 +315,6 @@ class DownloadsTest extends TestCase
              'autor_nick' => '', 'autor_icq' => 0, 'autor_homepage' => ''],
         ]);
         $db_handler->addResult([]); // views update
-        $db_handler->addResult([ // first file
-            ['file_id' => 1, 'url' => 'f.zip', 'size' => 512, 'downloads' => 0, 'mirror' => 0, 'release_id' => 1],
-        ]);
         $db_handler->addResult([ // files
             ['file_id' => 1, 'url' => 'f.zip', 'size' => 512, 'downloads' => 0, 'mirror' => 0, 'release_id' => 1],
         ]);
@@ -288,6 +323,22 @@ class DownloadsTest extends TestCase
         $output = $this->includeDownloads();
 
         $this->assertStringContainsString('TestRel', $output);
+        $this->assertStringContainsString('<span aria-current="page">TestRel</span>', $output);
+    }
+
+    #[Test]
+    public function downloadsHidesNameOfHiddenReleaseInBreadcrumb(): void
+    {
+        global $db_handler, $release_id;
+        $release_id = 3;
+        $db_handler = new MockDbHandler();
+        $db_handler->addResult([['release_id' => 3, 'name' => 'GeheimesRelease', 'ordner_id' => 0, 'released' => 'N']]);
+        $db_handler->addResult([['release_id' => 3, 'name' => 'GeheimesRelease', 'ordner_id' => 0, 'released' => 'N']]);
+
+        $output = $this->includeDownloads();
+
+        $this->assertStringNotContainsString('GeheimesRelease', $output);
+        $this->assertStringContainsString('Dieses Release ist nicht öffentlich.', $output);
     }
 
     #[Test]
@@ -334,7 +385,8 @@ class DownloadsTest extends TestCase
         $db_handler = new MockDbHandler();
         // treeview_ordner(0, '')
         $db_handler->addResult([]);
-        // ordner module: files_check, ordner_check
+        // ordner module: Existenz, files_check, ordner_check
+        $db_handler->addResult([['ordner_id' => 5, 'name' => 'Folder5']]);
         $db_handler->addResult([]);
         $db_handler->addResult([]);
 
@@ -342,6 +394,7 @@ class DownloadsTest extends TestCase
 
         $this->assertStringContainsString('folder.gif', $output);
         $this->assertStringContainsString('ordner_id=0', $output);
+        $this->assertStringContainsString('noch leer', $output);
     }
 
     #[Test]
@@ -354,13 +407,15 @@ class DownloadsTest extends TestCase
         $db_handler->addResult([
             ['ordner_id' => 5, 'sordner_id' => 0, 'name' => 'Folder5'],
         ]);
-        // ordner module: files_check, ordner_check
+        // ordner module: Existenz, files_check, ordner_check
+        $db_handler->addResult([['ordner_id' => 5, 'name' => 'Folder5']]);
         $db_handler->addResult([]);
         $db_handler->addResult([]);
 
         $output = $this->includeDownloads();
 
         $this->assertStringContainsString('Folder5', $output);
+        $this->assertStringContainsString('noch leer', $output);
     }
 
     #[Test]
@@ -380,15 +435,16 @@ class DownloadsTest extends TestCase
         $db_handler->addResult([
             ['ordner_id' => 5, 'sordner_id' => 0, 'name' => 'Folder5'],
         ]);
-        // ordner module
+        // ordner module: Existenz, files_check, ordner_check
+        $db_handler->addResult([['ordner_id' => 5, 'name' => 'Folder5']]);
         $db_handler->addResult([]);
         $db_handler->addResult([]);
 
         $output = $this->includeDownloads();
 
         $this->assertStringContainsString('Admin-Optionen', $output);
-        $this->assertStringContainsString('Sub-Ordner hinzufügen', $output);
-        $this->assertStringContainsString('Ordner editieren', $output);
+        $this->assertStringContainsString('Unterordner hinzufügen', $output);
+        $this->assertStringContainsString('Ordner bearbeiten', $output);
         $this->assertStringContainsString('Ordner löschen', $output);
     }
 
@@ -411,9 +467,7 @@ class DownloadsTest extends TestCase
         $db_handler->addResult([
             ['release_id' => 1, 'name' => 'AdminRel', 'ordner_id' => 0],
         ]);
-        // release module: iplock
-        $db_handler->addResult([]);
-        // release data
+        // release data (Release-Modul)
         $db_handler->addResult([
             ['release_id' => 1, 'name' => 'AdminRel', 'text' => '', 'released' => 'Y',
              'votes' => 0, 'voted' => 0, 'ordner_id' => 0, 'views' => 0, 'downloads' => 0,
@@ -422,13 +476,12 @@ class DownloadsTest extends TestCase
         ]);
         $db_handler->addResult([]); // views
         $db_handler->addResult([['file_id' => 1, 'url' => 'f.zip', 'size' => 512, 'downloads' => 0, 'mirror' => 0, 'release_id' => 1]]);
-        $db_handler->addResult([['file_id' => 1, 'url' => 'f.zip', 'size' => 512, 'downloads' => 0, 'mirror' => 0, 'release_id' => 1]]);
         $db_handler->addResult([]); // screens
 
         $output = $this->includeDownloads();
 
         $this->assertStringContainsString('Admin-Optionen', $output);
-        $this->assertStringContainsString('Release editieren', $output);
+        $this->assertStringContainsString('Release bearbeiten', $output);
         $this->assertStringContainsString('Datei hinzufügen', $output);
     }
 
@@ -442,14 +495,15 @@ class DownloadsTest extends TestCase
         $db_handler->addResult([['release_id' => 1]]);
         // release lookup
         $db_handler->addResult([['release_id' => 1, 'name' => 'ScreenRel', 'ordner_id' => 0]]);
-        // showscreen module: update views, select screen
-        $db_handler->addResult([]);
+        // showscreen module: select screen (mit Release), update views
         $db_handler->addResult([
-            ['screen_id' => 1, 'release_id' => 1, 'views' => 10, 'text' => 'Screen text'],
+            ['screen_id' => 1, 'release_id' => 1, 'views' => 10, 'text' => 'Screen text', 'release_name' => 'ScreenRel', 'released' => 'Y'],
         ]);
+        $db_handler->addResult([]);
 
         $output = $this->includeDownloads();
 
         $this->assertStringContainsString('Screen text', $output);
+        $this->assertStringContainsString('&raquo; <span aria-current="page">Screenshot</span>', $output);
     }
 }

@@ -3,8 +3,8 @@
 /**
  * PowerDownload - Bootstrap 5 Layout Helper
  *
- * Stellt zentrale Layout-Helfer für den oeffentlichen Bereich bereit.
- * Diese Funktionen rendern ein konsistentes Bootstrap-5-Geruest mit
+ * Stellt zentrale Layout-Helfer für den öffentlichen Bereich bereit.
+ * Diese Funktionen rendern ein konsistentes Bootstrap-5-Gerüst mit
  * Doctype, Head, Navbar und passendem Footer.
  *
  * @package    PowerDownload
@@ -17,33 +17,30 @@ declare(strict_types=1);
 
 if (!function_exists('pdl_show_dashboard_widgets')) {
     /**
-     * Liefert true, wenn die Dashboard-Widgets (Statistik/Top/Flop/Latest/Rated)
-     * auf der aktuellen Seite gezeigt werden duerfen.
+     * Liefert true, wenn die Startseiten-Widgets (Statistik, Top, Flop,
+     * Neueste, Bestbewertet) auf der aktuellen Seite erscheinen dürfen.
      *
-     * Widgets sollen nur auf der reinen Startseite erscheinen, also wenn
-     * keiner der typischen Subseiten-Parameter gesetzt ist.
+     * Maßgeblich ist $pdl_is_start_page aus pdl_header.inc.php. Sie gilt nur
+     * für die echte Startseite (GET ohne Unterseiten-Parameter), also nicht
+     * nach dem Absenden eines Formulars. Ohne Header (z. B. in Tests) werden
+     * GET und POST direkt geprüft.
      */
     function pdl_show_dashboard_widgets(): bool
     {
-        if (!empty($_GET['usercenter'])) {
+        if (isset($GLOBALS['pdl_is_start_page']) && is_bool($GLOBALS['pdl_is_start_page'])) {
+            return $GLOBALS['pdl_is_start_page'];
+        }
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             return false;
         }
-        if (!empty($_GET['show_stats'])) {
-            return false;
+        $subpage_keys = ['usercenter', 'show_stats', 'show_search', 'release_id', 'file_id', 'screen_id', 'load_file', 'wrong_referer', 'wrong_rights'];
+        foreach ($subpage_keys as $key) {
+            if (!empty($_GET[$key]) || !empty($_POST[$key])) {
+                return false;
+            }
         }
-        if (!empty($_GET['show_search'])) {
-            return false;
-        }
-        if (!empty($_GET['release_id'])) {
-            return false;
-        }
-        if (!empty($_GET['screen_id'])) {
-            return false;
-        }
-        if (!empty($_GET['ordner_id']) && (int) $_GET['ordner_id'] > 0) {
-            return false;
-        }
-        return true;
+        $ordner = $_GET['ordner_id'] ?? $_POST['ordner_id'] ?? 0;
+        return !(is_scalar($ordner) && (int) $ordner > 0);
     }
 }
 
@@ -57,26 +54,33 @@ if (!function_exists('pdl_layout_is_admin_context')) {
 
 if (!function_exists('pdl_layout_resolve_title')) {
     /**
-     * Ermittelt den Seitentitel anhand der Query-Parameter und ueberschreibt
-     * generische Default-Titel ("Download Center") sinnvoll.
+     * Ermittelt den Seitentitel für Benutzer-, Statistik- und Suchseiten und
+     * überschreibt damit den übergebenen Titel. GET und POST zählen gleich,
+     * damit auch nach dem Absenden eines Formulars der passende Titel steht.
      */
     function pdl_layout_resolve_title(string $title): string
     {
-        $usercenter = isset($_GET['usercenter']) ? strtolower((string) $_GET['usercenter']) : '';
+        $param = static function (string $key): string {
+            /** @var mixed $value auch Zahlen, wenn GET/POST im Code gesetzt werden */
+            $value = $_GET[$key] ?? $_POST[$key] ?? '';
+            return is_scalar($value) ? (string) $value : '';
+        };
+        $usercenter = strtolower($param('usercenter'));
         $usercenter_titles = [
-            'login' => 'Login',
+            'login' => 'Anmelden',
             'register' => 'Registrieren',
             'lost' => 'Passwort vergessen',
-            'lost2' => 'Passwort vergessen',
+            'lost2' => 'Neues Passwort setzen',
             'profil' => 'Profil',
+            'comments' => 'Kommentar schreiben',
         ];
         if ($usercenter !== '' && isset($usercenter_titles[$usercenter])) {
             return $usercenter_titles[$usercenter];
         }
-        if (!empty($_GET['show_stats'])) {
+        if (!in_array($param('show_stats'), ['', '0'], true)) {
             return 'Statistik';
         }
-        if (!empty($_GET['show_search'])) {
+        if (!in_array($param('show_search'), ['', '0'], true)) {
             return 'Suche';
         }
         return $title;
@@ -85,7 +89,11 @@ if (!function_exists('pdl_layout_resolve_title')) {
 
 if (!function_exists('pdl_layout_start')) {
     /**
-     * Rendert den Kopf der oeffentlichen Seite (Doctype, Head, Navbar).
+     * Rendert den Kopf der öffentlichen Seite (Doctype, Head, Navbar).
+     *
+     * Titel im Browser-Tab: auf der Startseite "<Name der Seite> – Download Center",
+     * sonst "<Seitentitel> – <Name der Seite>" (z. B. Release- oder Ordnername).
+     * Name der Seite: Einstellung sitename, Rückfall "PowerDownload".
      *
      * @param string               $title       Sichtbarer Seitentitel.
      * @param array<string, mixed> $settings    Settings-Array aus pdl_header.
@@ -103,11 +111,19 @@ if (!function_exists('pdl_layout_start')) {
         $original_title = $title;
         $title = pdl_layout_resolve_title($title);
         $is_homepage = ($title === $original_title) && pdl_show_dashboard_widgets();
-        $page_title = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
+        $site_name_raw = trim((string) ($settings['sitename'] ?? ''));
+        $site_name_raw = $site_name_raw !== '' ? $site_name_raw : 'PowerDownload';
+        $site_name = htmlspecialchars($site_name_raw, ENT_QUOTES, 'UTF-8');
+        $document_title = $is_homepage ? $site_name_raw . ' – ' . $title : $title . ' – ' . $site_name_raw;
+        $page_title = htmlspecialchars($document_title, ENT_QUOTES, 'UTF-8');
         $is_logged_in = !empty($userDetails);
+        // Abmelde-Link mit CSRF-Token (pdl_logout_url() aus pdl_csrf.inc.php)
+        $logout_href = (function_exists('pdl_logout_url') && session_status() === PHP_SESSION_ACTIVE)
+            ? htmlspecialchars(pdl_logout_url((string) ($settings['script_file'] ?? '')), ENT_QUOTES, 'UTF-8')
+            : $script_file . 'logout=1';
         $admin_access = (($userRights['adminaccess'] ?? 'N') === 'Y');
         $search_on = (($settings['enable_search'] ?? 'Y') === 'Y');
-        $description = (string) ($settings['site_description'] ?? 'PowerDownload - Datei- und Release-Verwaltung mit Statistik, Suche und Userbereich.');
+        $description = (string) ($settings['site_description'] ?? 'PowerDownload - Datei- und Release-Verwaltung mit Statistik, Suche und Benutzerbereich.');
         $description_escaped = htmlspecialchars($description, ENT_QUOTES, 'UTF-8');
         $nick = $is_logged_in
             ? htmlspecialchars((string)($userDetails['nick'] ?? ''), ENT_QUOTES, 'UTF-8')
@@ -119,7 +135,7 @@ if (!function_exists('pdl_layout_start')) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="<?php echo $description_escaped; ?>">
-    <title>PowerDownload - <?php echo $page_title; ?></title>
+    <title><?php echo $page_title; ?></title>
     <link rel="icon" href="pdl-gfx/favicon.svg" type="image/svg+xml">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="<?php echo (defined('PDL_LAYOUT_PUBLIC_CSS_PATH') ? htmlspecialchars(PDL_LAYOUT_PUBLIC_CSS_PATH, ENT_QUOTES, 'UTF-8') : 'pdl-gfx/pdl-public.css'); ?>" rel="stylesheet">
@@ -128,18 +144,18 @@ if (!function_exists('pdl_layout_start')) {
 <?php if (pdl_layout_is_admin_context($userRights)) { ?>
 <nav class="navbar navbar-dark bg-dark mb-4">
     <div class="container-fluid">
-        <a class="navbar-brand fw-bold" href="pdl-admin/index.php">PowerDownload</a>
+        <a class="navbar-brand fw-bold" href="pdl-admin/index.php"><?php echo $site_name; ?></a>
         <span class="navbar-text text-light">Mein Profil</span>
         <div class="ms-auto d-flex gap-2">
-            <a class="btn btn-sm btn-outline-light" href="pdl-admin/index.php">&larr; Admin-Center</a>
-            <a class="btn btn-sm btn-light" href="<?php echo $script_file; ?>logout=1">Logout</a>
+            <a class="btn btn-sm btn-outline-light" href="pdl-admin/index.php">&larr; Adminbereich</a>
+            <a class="btn btn-sm btn-light" href="<?php echo $logout_href; ?>">Abmelden</a>
         </div>
     </div>
 </nav>
 <?php } else { ?>
 <nav class="navbar navbar-expand-lg pdl-navbar mb-4">
     <div class="container-fluid">
-        <a class="navbar-brand fw-bold" href="<?php echo $script_file; ?>">PowerDownload</a>
+        <a class="navbar-brand fw-bold" href="<?php echo $script_file; ?>"><?php echo $site_name; ?></a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#pdlPublicNav" aria-controls="pdlPublicNav" aria-expanded="false" aria-label="Navigation umschalten">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -158,7 +174,7 @@ if (!function_exists('pdl_layout_start')) {
                 <?php } ?>
                 <?php if ($admin_access) { ?>
                 <li class="nav-item">
-                    <a class="nav-link" href="pdl-admin/">Admin Center</a>
+                    <a class="nav-link" href="pdl-admin/">Adminbereich</a>
                 </li>
                 <?php } ?>
             </ul>
@@ -171,11 +187,11 @@ if (!function_exists('pdl_layout_start')) {
                     <a class="nav-link" href="<?php echo $script_file; ?>usercenter=profil">Profil</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="<?php echo $script_file; ?>logout=1">Logout</a>
+                    <a class="nav-link" href="<?php echo $logout_href; ?>">Abmelden</a>
                 </li>
                 <?php } else { ?>
                 <li class="nav-item">
-                    <a class="nav-link" href="<?php echo $script_file; ?>usercenter=login">Login</a>
+                    <a class="nav-link" href="<?php echo $script_file; ?>usercenter=login">Anmelden</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="<?php echo $script_file; ?>usercenter=register">Registrieren</a>
@@ -188,17 +204,17 @@ if (!function_exists('pdl_layout_start')) {
 <?php } ?>
 <main class="container-fluid pdl-main pb-4">
         <?php if ($is_homepage) { ?>
-        <h1 class="visually-hidden">PowerDownload</h1>
+        <h1 class="visually-hidden"><?php echo $site_name; ?></h1>
         <?php }
         if (!empty($_GET['account_deleted'])) {
-            echo pdl_alert('success', '<strong>Dein Konto wurde gelöscht.</strong> Vielen Dank, dass du PowerDownload genutzt hast.');
+            echo pdl_alert('success', '<strong>Ihr Konto wurde gelöscht.</strong> Vielen Dank, dass Sie ' . $site_name . ' genutzt haben.');
         }
     }
 }
 
 if (!function_exists('pdl_layout_end')) {
     /**
-     * Rendert das Ende der oeffentlichen Seite (Footer + Bootstrap JS).
+     * Rendert das Ende der öffentlichen Seite (Footer + Bootstrap JS).
      *
      * @param array<string, mixed> $settings   Settings-Array aus pdl_header.
      * @param float                $rendertime Rohzeit aus pdl_header.
@@ -217,7 +233,7 @@ if (!function_exists('pdl_layout_end')) {
             $rendertime2 = microtime(true);
             $rendered = round($rendertime2 - $rendertime, 3);
             ?>
-        <div class="text-muted mb-2">Renderzeit: <?php echo htmlspecialchars((string) $rendered, ENT_QUOTES, 'UTF-8'); ?>s &middot; <?php echo (int) $querycount; ?> SQL-Anfragen</div>
+        <div class="text-muted mb-2">Renderzeit: <?php echo htmlspecialchars((string) $rendered, ENT_QUOTES, 'UTF-8'); ?>s &middot; <?php echo $querycount; ?> SQL-Anfragen</div>
         <?php } ?>
         <?php if ($showcopy) { ?>
         <div>&copy; <a href="https://www.powerscripts.org" target="_blank" rel="noopener">https://www.powerscripts.org</a></div>
@@ -251,10 +267,10 @@ if (!function_exists('pdl_alert')) {
 
 if (!function_exists('pdl_card_start')) {
     /**
-     * Oeffnet eine Bootstrap-Card mit Header.
+     * Öffnet eine Bootstrap-Card mit Header.
      *
      * @param string $title       Titel der Card (wird ge-escaped).
-     * @param string $extraClasses Zusaetzliche Klassen für .card.
+     * @param string $extraClasses Zusätzliche Klassen für .card.
      */
     function pdl_card_start(string $title, string $extraClasses = ''): string
     {
@@ -269,7 +285,7 @@ if (!function_exists('pdl_card_start')) {
 
 if (!function_exists('pdl_card_end')) {
     /**
-     * Schliesst eine zuvor mit pdl_card_start geoeffnete Card.
+     * Schließt eine zuvor mit pdl_card_start geöffnete Card.
      */
     function pdl_card_end(): string
     {

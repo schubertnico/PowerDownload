@@ -62,7 +62,12 @@ RewriteRule ^(\.docker|\.git|\.idea|\.claude|\.vscode|\.github|coverage-report|d
 # pdl-inc darf nicht direkt aufgerufen werden (Includes only)
 RewriteRule ^pdl-inc(/|$) - [F,L]
 
-# Backups/Archive
+# Download-Dateien nur über downloads.php?load_file=… (Recht „Downloads
+# erlaubt“, versteckte Releases, Hotlink-Schutz, Zähler). PHP liest sie aus
+# dem Dateisystem; pdl-files/.htaccess sperrt das Verzeichnis zusätzlich.
+RewriteRule ^pdl-files(/|$) - [F,L]
+
+# Backups/Archive sperren.
 RewriteRule \.(bak|backup|old|orig|previous|rej|swp|swo|sql|sql\.gz|sql\.bz2|dump|tar|tar\.gz|tgz|zip|7z|rar)$ - [F,L]
 
 # Block HTTP TRACE / TRACK
@@ -84,9 +89,11 @@ RewriteRule .* - [F,L]
     Require all denied
 </FilesMatch>
 
-# Setup- / Update-Scripts: nach erfolgreicher Installation am besten
-# vom Server löschen. Solange sie noch da sind: per .htaccess sperren.
-# Wenn du sie temporär brauchst, einzelne Zeile auskommentieren.
+# Alte Setup- und Update-Skripte (setup.php, install_303.php, update_*.php,
+# install_querys.inc) gehören seit 3.6.0 nicht mehr zum Paket; Installation
+# und Aktualisierung laufen über install.php bzw. update.php. Die Sperre
+# bleibt bestehen, weil diese Dateien nach einem Update per FTP oft noch
+# auf dem Server liegen. Bitte solche Reste löschen.
 <FilesMatch "^(install_.*\.php|setup\.php|update_.*\.php|install_querys\.inc)$">
     Require all denied
 </FilesMatch>

@@ -1,78 +1,87 @@
 <?php
+/**
+ * PowerDownload - Benutzer löschen (Bestätigungsseite, Löschen nur per POST
+ * mit CSRF-Token). Aufruf aus der Benutzerliste (users.php).
+ */
 include("header.inc.php");
+include_once("system_helpers.inc.php");
 
-// Extract POST/GET variables
-$user_id = isset($_REQUEST['user_id']) ? (int)$_REQUEST['user_id'] : 0;
-$submit = isset($_REQUEST['submit']) ? (int)$_REQUEST['submit'] : 0;
-$page = isset($_REQUEST['page']) ? (int)$_REQUEST['page'] : 0;
+if (!pdl_sys_can($user_rights, 'deluser')) {
+    echo pdl_admin_alert('warning', pdl_sys_denied_text('deluser'));
+    include("footer.inc.php");
+    return;
+}
 
-if($user_rights['deluser'] == "Y")
- {
-  if($submit == 1)
-   {
-    if((int)$user_id === 1) {
-        echo pdl_admin_alert('danger', 'Der Hauptadministrator (user_id 1) ist schreibgeschützt und kann nicht gelöscht werden.');
+$del_id = (int) ($_POST['user_id'] ?? ($_GET['user_id'] ?? 0));
+$current_user_id = (int) ($user_details['user_id'] ?? 0);
+$user_t = pdl_sys_ident($sql_table['user']);
+
+pdl_admin_breadcrumb([
+    ['title' => 'Adminbereich', 'href' => 'index.php'],
+    ['title' => 'Benutzer', 'href' => 'users.php'],
+    ['title' => 'Benutzer löschen'],
+]);
+echo '<h1 class="h3 pdl-page-title">Benutzer löschen</h1>';
+
+$back = '<a class="btn btn-outline-light" href="users.php" id="pdlDelUserBack">Zurück zur Benutzerliste</a>';
+$deluser = $del_id > 0
+    ? $db_handler->sql_fetch_array($db_handler->sql_query(
+        'SELECT u.user_id, u.nick, u.email, g.adminaccess FROM ' . $user_t . ' AS u'
+        . ' LEFT JOIN ' . pdl_sys_ident($sql_table['usergroup']) . ' AS g ON g.ugroup_id = u.ugroup_id'
+        . ' WHERE u.user_id = ' . $del_id
+    ))
+    : null;
+
+if ($deluser === null) {
+    echo pdl_admin_alert('info', 'Bitte wählen Sie den Benutzer in der Benutzerliste aus und klicken Sie dort auf „löschen“.');
+    echo $back;
+    include("footer.inc.php");
+    return;
+}
+$nick = (string) $deluser['nick'];
+if ($del_id === 1) {
+    echo pdl_admin_alert('warning', 'Der Hauptadministrator (Benutzer Nr. 1) ist geschützt und kann nicht gelöscht werden.');
+    echo $back;
+    include("footer.inc.php");
+    return;
+}
+if ($del_id === $current_user_id) {
+    echo pdl_admin_alert('warning', 'Ihr eigenes Konto können Sie hier nicht löschen. Melden Sie sich dafür mit einem anderen Administratorkonto an oder löschen Sie das Konto im Profil.');
+    echo $back;
+    include("footer.inc.php");
+    return;
+}
+// Konten mit Admin-Zugang darf nur löschen, wer auch die Einstellungen verwaltet.
+if (!pdl_sys_may_delete_user((string) ($deluser['adminaccess'] ?? 'N'), $user_rights)) {
+    echo pdl_admin_alert('warning', '<strong>' . htmlspecialchars($nick) . ' gehört zu einer Gruppe mit Admin-Zugang.</strong> '
+        . 'Solche Konten darf nur löschen, wer zusätzlich das Recht „Einstellungen verwalten“ hat. Bitte wenden Sie sich an einen Administrator.');
+    echo $back;
+    include("footer.inc.php");
+    return;
+}
+
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    if (!pdl_sys_csrf_ok()) {
+        echo pdl_admin_alert('danger', pdl_sys_csrf_error_text());
+    } elseif (pdl_sys_exec($db_handler, 'DELETE FROM ' . $user_t . ' WHERE user_id = ' . $del_id) && pdl_sys_affected_rows($db_handler) !== 0) {
+        pdl_audit_log($db_handler, $sql_table, $user_details, 'delete', 'user', $del_id);
+        echo pdl_admin_alert('success', '<strong>Benutzer „' . htmlspecialchars($nick) . '“ wurde gelöscht.</strong>');
+        echo $back;
+        include("footer.inc.php");
+        return;
     } else {
-        $db_handler->sql_query("DELETE FROM " . $sql_table['user'] . " WHERE user_id=" . $db_handler->sql_escape_int($user_id));
-        echo pdl_admin_alert('success', '<strong>User wurde gelöscht.</strong>');
+        echo pdl_admin_alert('danger', '<strong>Der Benutzer wurde nicht gelöscht.</strong> Die Datenbank hat den Vorgang abgelehnt. Bitte versuchen Sie es erneut.');
     }
-    echo '<a class="btn btn-outline-light" href="deluser.php">Zurück zur User-Liste</a>';
-   }
-  else
-   {
-    pdl_admin_breadcrumb([
-        ['title' => 'Admin-Center', 'href' => 'index.php'],
-        ['title' => 'User'],
-        ['title' => 'User löschen'],
-    ]);
-    echo '<h1 class="h3 pdl-page-title">User löschen</h1>';
+}
 
-    if(!$page) $page = 1;
-    $temp1=$page * 25 - 25;
-    $limit=$temp1.",25";
-    $count_query = "SELECT " . $sql_table['user'] . ".nick, " . $sql_table['user'] . ".user_id, " . $sql_table['usergroup'] . ".name AS ugroup_name FROM " . $sql_table['user'] . "," . $sql_table['usergroup'] . " WHERE " . $sql_table['usergroup'] . ".ugroup_id=" . $sql_table['user'] . ".ugroup_id AND " . $sql_table['usergroup'] . ".ugroup_id!='1' AND " . $sql_table['user'] . ".user_id!=" . $db_handler->sql_escape_int($user_details['user_id']);
-    $total = $db_handler->sql_num_rows($db_handler->sql_query($count_query));
-    $user_res = $db_handler->sql_query($count_query . " ORDER BY " . $sql_table['user'] . ".nick ASC LIMIT $limit");
-?>
-<section class="card pdl-card">
-    <header class="card-header"><h2 class="h5 mb-0">Zu löschende User</h2></header>
-    <?php if ($db_handler->sql_num_rows($user_res) > 0) { ?>
-    <div class="table-responsive">
-        <table class="table table-striped table-hover mb-0 align-middle">
-            <thead>
-                <tr>
-                    <th scope="col">Nick</th>
-                    <th scope="col">Usergruppe</th>
-                    <th scope="col" class="text-end">Aktion</th>
-                </tr>
-            </thead>
-            <tbody>
-            <?php while($user_row = $db_handler->sql_fetch_array($user_res)) { ?>
-                <tr>
-                    <td><?php echo htmlspecialchars($user_row['nick']); ?></td>
-                    <td><?php echo htmlspecialchars($user_row['ugroup_name']); ?></td>
-                    <td class="text-end">
-                        <a class="btn btn-sm btn-outline-danger" href="deluser.php?submit=1&amp;user_id=<?php echo (int)$user_row['user_id']; ?>"
-                            onclick="return confirm('User wirklich löschen?');">Löschen</a>
-                    </td>
-                </tr>
-            <?php } ?>
-            </tbody>
-        </table>
-    </div>
-    <?php } else { ?>
-    <div class="card-body"><p class="text-muted mb-0">Es sind keine loeschbaren User vorhanden.</p></div>
-    <?php } ?>
-    <?php if ($total > 25) { ?>
-    <div class="card-footer text-center">
-        <?php echo seiten($total, 25, "", "deluser.php?"); ?>
-    </div>
-    <?php } ?>
-</section>
-<?php
-   }
- }
-else
- { echo pdl_admin_alert('warning', 'Sie haben keine Berechtigung diese Seite zu sehen.'); }
+echo makedialog(
+    'Benutzer „' . $nick . '“ wirklich löschen?',
+    '<input type="hidden" name="user_id" value="' . $del_id . '">'
+    . '<p class="mb-2">Das Benutzerkonto <strong>' . htmlspecialchars($nick) . '</strong> (' . htmlspecialchars((string) $deluser['email']) . ') wird dauerhaft gelöscht. Der Benutzer kann sich danach nicht mehr anmelden.</p>'
+    . '<p class="mb-0">Kommentare und Releases dieses Benutzers bleiben erhalten; als Autor erscheint dann „Gelöscht“.</p>',
+    'Ja, Benutzer löschen',
+    'deluser.php',
+    'users.php'
+);
+
 include("footer.inc.php");
-?>

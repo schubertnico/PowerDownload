@@ -1,149 +1,218 @@
 <?php
+/**
+ * PowerDownload - Benutzer bearbeiten (Benutzername, E-Mail, Homepage,
+ * Newsletter, Benutzergruppe). Aufruf aus der Benutzerliste (users.php).
+ */
 include("header.inc.php");
+include_once("system_helpers.inc.php");
 
-// Extract variables from GET/POST for PHP 8.4 compatibility
-$user_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : (isset($_POST['user_id']) ? (int)$_POST['user_id'] : 0);
-$nick = isset($_POST['nick']) ? $_POST['nick'] : '';
-$email = isset($_POST['email']) ? $_POST['email'] : '';
-$homepage = isset($_POST['homepage']) ? $_POST['homepage'] : '';
-$get_letter = isset($_POST['get_letter']) ? $_POST['get_letter'] : '';
-$nugroup_id = isset($_POST['nugroup_id']) ? (int)$_POST['nugroup_id'] : 0;
-$submit = isset($_GET['submit']) ? (int)$_GET['submit'] : 0;
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 0;
+if (!pdl_sys_can($user_rights, 'edituser')) {
+    echo pdl_admin_alert('warning', pdl_sys_denied_text('edituser'));
+    include("footer.inc.php");
+    return;
+}
 
-if($user_rights['edituser'] == "Y")
- {
-  if($submit == 1)
-   {
-    $safe_user_id = $db_handler->sql_escape_int($user_id);
-    if((int)$user_id === 1) {
-        echo pdl_admin_alert('danger', 'Der Hauptadministrator (user_id 1) ist schreibgeschützt und kann nicht über dieses Formular geändert werden.');
-    } else {
-      if(!preg_match("!http:\/\/!",$homepage)) $homepage = "http://$homepage";
-      if($get_letter != "Y") $get_letter = "N";
-      $safe_nick = $db_handler->sql_escape_string($nick);
-      $safe_email = $db_handler->sql_escape_string($email);
-      $safe_homepage = $db_handler->sql_escape_string($homepage);
-      $safe_get_letter = $db_handler->sql_escape_string($get_letter);
-      $safe_nugroup_id = $db_handler->sql_escape_int($nugroup_id);
-      $db_handler->sql_query("UPDATE ".$sql_table['user']." SET nick='".$safe_nick."', email='".$safe_email."', homepage='".$safe_homepage."', get_letter='".$safe_get_letter."', ugroup_id='".$safe_nugroup_id."' WHERE user_id='".$safe_user_id."'");
-      echo pdl_admin_alert('success', '<strong>User wurde aktualisiert.</strong>');
+$edit_id = (int) ($_POST['user_id'] ?? ($_GET['user_id'] ?? 0));
+$current_user_id = (int) ($user_details['user_id'] ?? 0);
+$guest_group_id = pdl_sys_guest_group_id($settings);
+
+pdl_admin_breadcrumb([
+    ['title' => 'Adminbereich', 'href' => 'index.php'],
+    ['title' => 'Benutzer', 'href' => 'users.php'],
+    ['title' => 'Benutzer bearbeiten'],
+]);
+echo '<h1 class="h3 pdl-page-title">Benutzer bearbeiten</h1>';
+
+if ($edit_id <= 0) {
+    echo pdl_admin_alert('info', 'Bitte wählen Sie den Benutzer in der Benutzerliste aus und klicken Sie dort auf „bearbeiten“.');
+    echo '<a class="btn btn-primary" href="users.php" id="pdlEUBack">Zur Benutzerliste</a>';
+    include("footer.inc.php");
+    return;
+}
+
+$user_t = pdl_sys_ident($sql_table['user']);
+$getuser = $db_handler->sql_fetch_array($db_handler->sql_query('SELECT * FROM ' . $user_t . ' WHERE user_id = ' . $edit_id));
+if ($getuser === null) {
+    echo pdl_admin_alert('warning', 'Diesen Benutzer gibt es nicht (mehr). Vielleicht wurde er inzwischen gelöscht.');
+    echo '<a class="btn btn-primary" href="users.php" id="pdlEUBack">Zur Benutzerliste</a>';
+    include("footer.inc.php");
+    return;
+}
+if ($edit_id === 1) {
+    echo pdl_admin_alert('warning', 'Der Hauptadministrator (Benutzer Nr. 1) ist geschützt und kann hier nicht geändert werden. Sein Passwort und seine E-Mail-Adresse ändert er selbst im Profil.');
+    echo '<a class="btn btn-primary" href="users.php" id="pdlEUBack">Zur Benutzerliste</a>';
+    include("footer.inc.php");
+    return;
+}
+
+$groups = pdl_sys_groups($db_handler, $sql_table);
+$group_ids = [];
+foreach ($groups as $group) {
+    if ($group['ugroup_id'] !== $guest_group_id) {
+        $group_ids[] = $group['ugroup_id'];
     }
-    echo '<a class="btn btn-outline-light" href="edituser.php">Zurück zur User-Liste</a>';
-   }
-  elseif($user_id)
-   {
-    $safe_user_id = $db_handler->sql_escape_int($user_id);
-    $getuser = $db_handler->sql_fetch_array($db_handler->sql_query("SELECT * FROM ".$sql_table['user']." WHERE user_id='".$safe_user_id."'"));
-    if((int)$user_id === 1) {
-        echo pdl_admin_alert('warning', 'Der Hauptadministrator (user_id 1) ist schreibgeschützt und kann nicht über dieses Formular geändert werden.');
+}
+$is_self = $edit_id === $current_user_id;
+
+// Formularwerte: aus der Datenbank bzw. aus dem abgeschickten Formular
+$form = [
+    'nick' => (string) $getuser['nick'],
+    'email' => (string) $getuser['email'],
+    'homepage' => pdl_sys_normalize_homepage((string) $getuser['homepage']),
+    'get_letter' => (string) $getuser['get_letter'] === 'Y' ? 'Y' : 'N',
+    'ugroup_id' => (int) $getuser['ugroup_id'],
+];
+$errors = [];
+
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    $form['nick'] = trim(pdl_sys_post('nick'));
+    $form['email'] = trim(pdl_sys_post('email'));
+    $form['homepage'] = pdl_sys_normalize_homepage(pdl_sys_post('homepage'));
+    $form['get_letter'] = pdl_sys_post('get_letter') === 'Y' ? 'Y' : 'N';
+    if (!$is_self) {
+        $form['ugroup_id'] = (int) pdl_sys_post('nugroup_id', '0');
+    }
+
+    if (!pdl_sys_csrf_ok()) {
+        $errors['_csrf'] = pdl_sys_csrf_error_text();
+    }
+    if ($form['nick'] === '') {
+        $errors['nick'] = 'Bitte geben Sie einen Benutzernamen ein.';
+    } elseif (strlen($form['nick']) > 64) {
+        $errors['nick'] = 'Der Benutzername darf höchstens 64 Zeichen lang sein.';
     } else {
-        pdl_admin_breadcrumb([
-            ['title' => 'Admin-Center', 'href' => 'index.php'],
-            ['title' => 'User', 'href' => 'edituser.php'],
-            ['title' => 'User editieren'],
-        ]);
-        echo '<h1 class="h3 pdl-page-title">User editieren</h1>';
+        $dupe = pdl_sys_scalar_int($db_handler, 'SELECT COUNT(*) FROM ' . $user_t . " WHERE nick = '"
+            . $db_handler->sql_escape_string($form['nick']) . "' AND user_id <> " . $edit_id);
+        if ($dupe > 0) {
+            $errors['nick'] = 'Diesen Benutzernamen verwendet bereits ein anderes Konto.';
+        }
+    }
+    if ($form['email'] === '' || filter_var($form['email'], FILTER_VALIDATE_EMAIL) === false || strlen($form['email']) > 128) {
+        $errors['email'] = 'Bitte geben Sie eine gültige E-Mail-Adresse ein, z. B. name@example.org.';
+    }
+    $url_error = pdl_validate_url_optional($form['homepage']);
+    if ($url_error !== null || strlen($form['homepage']) > 128) {
+        $errors['homepage'] = 'Bitte geben Sie eine gültige Adresse ein, die mit https:// oder http:// beginnt (höchstens 128 Zeichen), oder lassen Sie das Feld leer.';
+    }
+    if (!in_array($form['ugroup_id'], $group_ids, true)) {
+        $errors['nugroup_id'] = 'Bitte wählen Sie eine vorhandene Benutzergruppe.';
+    }
+
+    if ($errors === []) {
+        $ok = pdl_sys_exec($db_handler, 'UPDATE ' . $user_t . " SET nick = '" . $db_handler->sql_escape_string($form['nick'])
+            . "', email = '" . $db_handler->sql_escape_string($form['email'])
+            . "', homepage = '" . $db_handler->sql_escape_string($form['homepage'])
+            . "', get_letter = '" . $form['get_letter']
+            . "', ugroup_id = " . $form['ugroup_id']
+            . ' WHERE user_id = ' . $edit_id);
+        if ($ok) {
+            pdl_audit_log($db_handler, $sql_table, $user_details, 'update', 'user', $edit_id);
+            echo pdl_admin_alert('success', '<strong>Benutzer „' . htmlspecialchars($form['nick']) . '“ wurde gespeichert.</strong> '
+                . '<a class="alert-link" href="users.php" id="pdlEUSavedBack">Zurück zur Benutzerliste</a>');
+        } else {
+            echo pdl_admin_alert('danger', '<strong>Der Benutzer wurde nicht gespeichert.</strong> Die Datenbank hat die Änderung abgelehnt. Bitte prüfen Sie die Eingaben und versuchen Sie es erneut.');
+        }
+    } else {
+        echo pdl_admin_alert('danger', '<strong>Bitte korrigieren Sie die markierten Felder.</strong>'
+            . (isset($errors['_csrf']) ? '<br>' . htmlspecialchars($errors['_csrf']) : ''));
+    }
+}
+
+$invalid = static fn (string $key): string => isset($errors[$key]) ? ' is-invalid' : '';
+$feedback = static fn (string $key): string => isset($errors[$key]) ? '<div class="invalid-feedback">' . htmlspecialchars($errors[$key]) . '</div>' : '';
 ?>
-<form action="edituser.php?submit=1" method="post" novalidate>
-    <input type="hidden" name="user_id" value="<?php echo (int)$user_id; ?>">
+<?php echo pdl_sys_switch_style(); ?>
+<form action="edituser.php" method="post" id="pdlEUForm" novalidate>
+    <?php echo csrf_input(); ?>
+    <input type="hidden" name="user_id" value="<?php echo $edit_id; ?>">
     <section class="card pdl-card mb-4">
-        <header class="card-header"><h2 class="h5 mb-0">User-Daten</h2></header>
+        <header class="card-header"><h2 class="h5 mb-0">Benutzerdaten</h2></header>
         <div class="card-body">
             <div class="mb-3">
-                <label for="pdlEUNick" class="form-label">Nickname</label>
-                <input type="text" id="pdlEUNick" name="nick" class="form-control" required value="<?php echo htmlspecialchars($getuser['nick']); ?>">
-                <div class="form-text">Hier können Sie den Nickname des Users ändern.</div>
+                <label for="pdlEUNick" class="form-label">Benutzername</label>
+                <input type="text" id="pdlEUNick" name="nick" class="form-control<?php echo $invalid('nick'); ?>" required maxlength="64" style="max-width: 32rem" value="<?php echo htmlspecialchars($form['nick']); ?>" aria-describedby="pdlEUNickHelp">
+                <?php echo $feedback('nick'); ?>
+                <div class="form-text" id="pdlEUNickHelp">Mit diesem Namen meldet sich der Benutzer an. Er muss eindeutig sein.</div>
             </div>
             <div class="mb-3">
                 <label for="pdlEUEmail" class="form-label">E-Mail-Adresse</label>
-                <input type="email" id="pdlEUEmail" name="email" class="form-control" value="<?php echo htmlspecialchars($getuser['email']); ?>">
-                <div class="form-text">Hier können Sie die E-Mail-Adresse des Users einsehen bzw. ändern.</div>
+                <input type="email" id="pdlEUEmail" name="email" class="form-control<?php echo $invalid('email'); ?>" required maxlength="128" style="max-width: 32rem" value="<?php echo htmlspecialchars($form['email']); ?>" aria-describedby="pdlEUEmailHelp">
+                <?php echo $feedback('email'); ?>
+                <div class="form-text" id="pdlEUEmailHelp">An diese Adresse gehen Newsletter und Mails aus „Passwort vergessen“.</div>
             </div>
             <div class="mb-3">
                 <label for="pdlEUHomepage" class="form-label">Homepage</label>
-                <input type="url" id="pdlEUHomepage" name="homepage" class="form-control" value="<?php echo htmlspecialchars($getuser['homepage']); ?>">
-                <div class="form-text">Hier können Sie die Homepage des Users einsehen bzw. ändern.</div>
+                <input type="url" id="pdlEUHomepage" name="homepage" class="form-control<?php echo $invalid('homepage'); ?>" maxlength="128" style="max-width: 32rem" placeholder="https://" value="<?php echo htmlspecialchars($form['homepage']); ?>" aria-describedby="pdlEUHomepageHelp">
+                <?php echo $feedback('homepage'); ?>
+                <div class="form-text" id="pdlEUHomepageHelp">Optional. Adressen ohne https:// werden automatisch ergänzt, https:// bleibt erhalten.</div>
             </div>
-            <div class="form-check mb-3">
-                <input class="form-check-input" type="checkbox" id="pdlEUGetLetter" name="get_letter" value="Y"<?php if($getuser['get_letter'] == "Y") echo ' checked'; ?>>
-                <label class="form-check-label" for="pdlEUGetLetter">User soll den Newsletter erhalten</label>
-                <div class="form-text">Wenn Sie unbedingt möchten, dass der User den Newsletter erhält, können Sie das hier setzen.</div>
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" role="switch" id="pdlEUGetLetter" name="get_letter" value="Y"<?php echo $form['get_letter'] === 'Y' ? ' checked' : ''; ?> aria-describedby="pdlEUGetLetterHelp">
+                <label class="form-check-label" for="pdlEUGetLetter">Newsletter erhalten</label>
+                <div class="form-text" id="pdlEUGetLetterHelp">Den Newsletter erhalten nur Benutzer, die ihn bestellt haben. Ändern Sie diese Einstellung nur auf Wunsch des Benutzers.</div>
             </div>
-            <div class="mb-3">
-                <label for="pdlEUUGroup" class="form-label">Usergruppe</label>
-                <select id="pdlEUUGroup" name="nugroup_id" class="form-select">
+            <div class="mb-1">
+                <label for="pdlEUUGroup" class="form-label">Benutzergruppe</label>
+                <select id="pdlEUUGroup" name="nugroup_id" class="form-select<?php echo $invalid('nugroup_id'); ?>" style="max-width: 32rem" aria-describedby="pdlEUUGroupHelp"<?php echo $is_self ? ' disabled' : ''; ?>>
                     <?php
-                    $ugroups_res = $db_handler->sql_query("SELECT * FROM ".$sql_table['usergroup']." ORDER BY name ASC");
-                    while($ugroups_row = $db_handler->sql_fetch_array($ugroups_res))
-                     {
-                      echo '<option value="'.htmlspecialchars($ugroups_row['ugroup_id']).'"'.pdlif($ugroups_row['ugroup_id'] == $getuser['ugroup_id'],' selected','').'>'.htmlspecialchars($ugroups_row['name']).'</option>';
-                     }
+                    foreach ($groups as $group) {
+                        if ($group['ugroup_id'] === $guest_group_id) {
+                            continue;
+                        }
+                        $admin = $group['adminaccess'] === 'Y';
+                        echo '<option value="' . $group['ugroup_id'] . '" data-adminaccess="' . ($admin ? '1' : '0') . '"'
+                            . ($group['ugroup_id'] === $form['ugroup_id'] ? ' selected' : '') . '>'
+                            . htmlspecialchars($group['name']) . ($admin ? ' (mit Admin-Zugang)' : '') . '</option>';
+                    }
+                    if ($form['ugroup_id'] > 0 && !in_array($form['ugroup_id'], $group_ids, true)) {
+                        echo '<option value="' . $form['ugroup_id'] . '" selected>(keine gültige Gruppe – bitte wählen)</option>';
+                    }
                     ?>
                 </select>
-                <div class="form-text"><strong>Hinweis:</strong> Der Hauptadministrator (user_id 1) ist schreibgeschützt und kann nicht über dieses Formular bearbeitet werden. Sei vorsichtig, wenn du andere User in die Gruppe „Administrator" verschiebst – sie erhalten dann vollen Zugriff.</div>
+                <?php echo $feedback('nugroup_id'); ?>
+                <div class="form-text" id="pdlEUUGroupHelp">
+                    <?php if ($is_self) { ?>
+                        Ihre eigene Gruppe können Sie hier nicht ändern, damit Sie sich nicht versehentlich aus dem Adminbereich aussperren.
+                    <?php } else { ?>
+                        Die Gruppe bestimmt, was der Benutzer darf.<?php
+                        foreach ($groups as $group) {
+                            if ($group['ugroup_id'] === 1) {
+                                echo ' Neue Registrierungen landen in der Gruppe „' . htmlspecialchars($group['name']) . '“.';
+                            }
+                        } ?>
+                    <?php } ?>
+                </div>
+                <?php
+                $selected_admin = false;
+                foreach ($groups as $group) {
+                    if ($group['ugroup_id'] === $form['ugroup_id'] && $group['adminaccess'] === 'Y') {
+                        $selected_admin = true;
+                    }
+                }
+                ?>
+                <div class="alert alert-warning small py-2 mt-2<?php echo ($is_self || !$selected_admin) ? ' d-none' : ''; ?>" id="pdlEUAdminWarn" role="status">
+                    Diese Gruppe hat Zugang zum Adminbereich. Weisen Sie sie nur Personen zu, denen Sie die Verwaltung anvertrauen.
+                </div>
             </div>
         </div>
     </section>
     <div class="d-grid d-md-flex gap-2 justify-content-md-end">
-        <a href="edituser.php" class="btn btn-outline-light">Abbrechen</a>
-        <button type="submit" class="btn btn-primary">Änderungen speichern</button>
+        <a href="users.php" class="btn btn-outline-light" id="pdlEUBack">Zurück zur Benutzerliste</a>
+        <button type="submit" class="btn btn-primary" id="pdlEUSave">Änderungen speichern</button>
     </div>
 </form>
-<?php
+<script>
+(function () {
+    var select = document.getElementById('pdlEUUGroup');
+    var warn = document.getElementById('pdlEUAdminWarn');
+    if (!select || !warn || select.disabled) return;
+    function sync() {
+        var opt = select.options[select.selectedIndex];
+        warn.classList.toggle('d-none', !opt || opt.getAttribute('data-adminaccess') !== '1');
     }
-   }
-  else
-   {
-    pdl_admin_breadcrumb([
-        ['title' => 'Admin-Center', 'href' => 'index.php'],
-        ['title' => 'User'],
-        ['title' => 'User editieren'],
-    ]);
-    echo '<h1 class="h3 pdl-page-title">User editieren</h1>';
-
-    if(!$page) $page = 1;
-    $temp1=$page * 25 - 25;
-    $limit=$temp1.",25";
-    $safe_user_details_id = $db_handler->sql_escape_int($user_details['user_id']);
-    $count_query = "SELECT ".$sql_table['user'].".nick, ".$sql_table['user'].".user_id, ".$sql_table['usergroup'].".name AS ugroup_name FROM ".$sql_table['user'].",".$sql_table['usergroup']." WHERE ".$sql_table['usergroup'].".ugroup_id=".$sql_table['user'].".ugroup_id AND ".$sql_table['usergroup'].".ugroup_id!='1' AND ".$sql_table['user'].".user_id!='".$safe_user_details_id."'";
-    $total = $db_handler->sql_num_rows($db_handler->sql_query($count_query));
-    $user_res = $db_handler->sql_query($count_query . " ORDER BY ".$sql_table['user'].".nick ASC LIMIT $limit");
-?>
-<section class="card pdl-card">
-    <header class="card-header"><h2 class="h5 mb-0">User auswählen</h2></header>
-    <?php if ($db_handler->sql_num_rows($user_res) > 0) { ?>
-    <div class="table-responsive">
-        <table class="table table-striped table-hover mb-0 align-middle">
-            <thead>
-                <tr><th scope="col">Nick</th><th scope="col">Usergruppe</th><th scope="col" class="text-end">Aktion</th></tr>
-            </thead>
-            <tbody>
-            <?php while($user_row = $db_handler->sql_fetch_array($user_res)) { ?>
-                <tr>
-                    <td><?php echo htmlspecialchars($user_row['nick']); ?></td>
-                    <td><?php echo htmlspecialchars($user_row['ugroup_name']); ?></td>
-                    <td class="text-end">
-                        <a class="btn btn-sm btn-outline-light" href="edituser.php?user_id=<?php echo (int)$user_row['user_id']; ?>">editieren</a>
-                    </td>
-                </tr>
-            <?php } ?>
-            </tbody>
-        </table>
-    </div>
-    <?php } else { ?>
-    <div class="card-body"><p class="text-muted mb-0">Es sind keine editierbaren User vorhanden.</p></div>
-    <?php } ?>
-    <?php if ($total > 25) { ?>
-    <div class="card-footer text-center">
-        <?php echo seiten($total, 25, "", "edituser.php?"); ?>
-    </div>
-    <?php } ?>
-</section>
+    select.addEventListener('change', sync);
+    sync();
+})();
+</script>
 <?php
-   }
- }
-else
- { echo pdl_admin_alert('warning', 'Sie haben keine Berechtigung diese Seite zu sehen.'); }
 include("footer.inc.php");
-?>

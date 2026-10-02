@@ -17,6 +17,11 @@ services:
     environment:
       - APACHE_RUN_USER=www-data
       - APACHE_RUN_GROUP=www-data
+      # Zugangsdaten für PowerDownload (Vorrang vor pdl-inc/pdl_config.local.php)
+      - PDL_DB_HOST=db
+      - PDL_DB_NAME=pdl3
+      - PDL_DB_USER=pdl_user
+      - PDL_DB_PASS=pdl_password
     networks:
       - powerdownload_network
     restart: unless-stopped
@@ -39,7 +44,10 @@ services:
       MYSQL_PASSWORD: pdl_password
     volumes:
       - powerdownload_mysql_data:/var/lib/mysql
-      - ./initdb:/docker-entrypoint-initdb.d:ro
+      # Schema und Grunddaten (dieselbe Datei wie für den Web-Installer)
+      - ../pdl-inc/pdl3_schema.sql:/docker-entrypoint-initdb.d/01-pdl3-schema.sql:ro
+      # Nur Entwicklung: Admin admin / admin123 und Installationszeitpunkt
+      - ./initdb/02-dev-admin.sql:/docker-entrypoint-initdb.d/02-dev-admin.sql:ro
     networks:
       - powerdownload_network
     restart: unless-stopped
